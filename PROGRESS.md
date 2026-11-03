@@ -15,7 +15,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 8a – Two players | ✅ Approved |
 | 8b – Touch and options | ✅ Approved |
 | 9 – Polish and launch | ✅ Approved – v1 launched |
-| 10 – High jump | ✅ Done, awaiting play-test |
+| 10 – High jump | ✅ Approved |
 | 10+ – More events | – |
 | 11 – Online multiplayer (after v1) | – |
 
