@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { Rng } from '../src/core/rng';
-import { Dash100Event, roundHundredths } from '../src/events/dash100';
+import { Dash100Event, PLAYER_LANE, roundHundredths } from '../src/events/dash100';
+import type { Difficulty } from '../src/events/event';
 import { DASH100 } from '../src/game/tuning';
 import { NOTHING, STEP, pressed } from './helpers';
 
-function newRace(seed = 1): Dash100Event {
+function newRace(seed = 1, difficulty: Difficulty = 'normal'): Dash100Event {
   const e = new Dash100Event();
-  e.init({ players: [{ initials: 'P1' }], difficulty: 'normal', rng: new Rng(seed) });
+  e.init({ players: [{ initials: 'P1' }], difficulty, rng: new Rng(seed) });
   return e;
 }
 
@@ -20,13 +21,27 @@ function waitForGo(e: Dash100Event): number {
   return steps * STEP;
 }
 
+/** The player taps at `rate` taps/s until everyone has finished. */
+function runRace(e: Dash100Event, rate = 10): void {
+  const every = Math.round(60 / rate);
+  let left = true;
+  for (let i = 0; !e.isFinished() && i < 60 * 60; i++) {
+    const tap = i % every === 0;
+    e.update(STEP, tap ? pressed(left ? 'P1_LEFT' : 'P1_RIGHT') : NOTHING);
+    if (tap) left = !left;
+  }
+}
+
+function waitSeconds(e: Dash100Event, seconds: number): void {
+  for (let t = 0; t <= seconds + STEP; t += STEP) e.update(STEP, NOTHING);
+}
+
 describe('100 m start sequence', () => {
   it('goes ON YOUR MARKS, SET, then GO after a 1.0 to 2.5 s wait', () => {
     for (const seed of [1, 2, 3, 4, 5]) {
       const e = newRace(seed);
       expect(e.phase).toBe('marks');
-      const total = waitForGo(e);
-      const wait = total - DASH100.MARKS_TIME;
+      const wait = waitForGo(e) - DASH100.MARKS_TIME;
       expect(wait).toBeGreaterThanOrEqual(DASH100.SET_WAIT_MIN - STEP);
       expect(wait).toBeLessThanOrEqual(DASH100.SET_WAIT_MAX + 2 * STEP);
     }
@@ -35,32 +50,44 @@ describe('100 m start sequence', () => {
   it('the same seed gives the same wait', () => {
     expect(waitForGo(newRace(42))).toBe(waitForGo(newRace(42)));
   });
+
+  it('has the player in lane 2 and three CPUs', () => {
+    const e = newRace();
+    expect(e.lanes).toHaveLength(4);
+    expect(e.player.laneNumber).toBe(PLAYER_LANE);
+    expect(e.lanes.filter((l) => l.cpu !== null)).toHaveLength(3);
+  });
 });
 
 describe('false starts', () => {
-  it('a run key before GO is a false start, then the race restarts', () => {
+  it('a run key before GO is a false start, then everyone restarts', () => {
     const e = newRace();
     e.update(STEP, pressed('P1_LEFT'));
     expect(e.phase).toBe('falseStart');
     expect(e.falseStarts).toBe(1);
-    for (let t = 0; t <= DASH100.FALSE_START_TEXT_TIME + STEP; t += STEP) e.update(STEP, NOTHING);
+    waitSeconds(e, DASH100.FALSE_START_TEXT_TIME);
     expect(e.phase).toBe('marks');
-    expect(e.runner.position).toBe(0);
+    for (const lane of e.lanes) expect(lane.runner.position).toBe(0);
   });
 
-  it('a second false start disqualifies', () => {
+  it('a second false start disqualifies; the CPUs still race', () => {
     const e = newRace();
     e.update(STEP, pressed('P1_RIGHT'));
-    for (let t = 0; t <= DASH100.FALSE_START_TEXT_TIME + STEP; t += STEP) e.update(STEP, NOTHING);
-    // Wait into SET, then jump the gun again.
-    for (let t = 0; t <= DASH100.MARKS_TIME + STEP; t += STEP) e.update(STEP, NOTHING);
+    waitSeconds(e, DASH100.FALSE_START_TEXT_TIME);
+    waitSeconds(e, DASH100.MARKS_TIME);
     expect(e.phase).toBe('set');
     e.update(STEP, pressed('P2_LEFT'));
     expect(e.phase).toBe('disqualified');
+    expect(e.player.disqualified).toBe(true);
+
+    runRace(e);
     expect(e.isFinished()).toBe(true);
-    const [result] = e.getResults();
-    expect(result.disqualified).toBe(true);
-    expect(result.mark).toBeNull();
+    const results = e.getResults();
+    const me = results.find((r) => r.playerIndex === 0)!;
+    expect(me.disqualified).toBe(true);
+    expect(me.mark).toBeNull();
+    expect(results[results.length - 1]).toBe(me); // DQ ranks last
+    expect(results.filter((r) => r.mark !== null)).toHaveLength(3);
   });
 
   it('the action key before GO is not a false start', () => {
@@ -71,24 +98,25 @@ describe('false starts', () => {
 });
 
 describe('the race', () => {
-  it('alternating taps reach 100 m and give a time to 0.01 s', () => {
+  it('ends only when every runner has crossed the line', () => {
+    const e = newRace(3, 'easy');
+    waitForGo(e);
+    runRace(e, 10);
+    expect(e.isFinished()).toBe(true);
+    for (const lane of e.lanes) expect(lane.finishTime).not.toBeNull();
+  });
+
+  it('results are in finishing order with times to 0.01 s', () => {
     const e = newRace();
     waitForGo(e);
-    let left = true;
-    let steps = 0;
-    while (!e.isFinished() && steps < 60 * 60) {
-      // A tap every 6 steps = 10 taps per second.
-      e.update(STEP, steps % 6 === 0 ? pressed(left ? 'P1_LEFT' : 'P1_RIGHT') : NOTHING);
-      if (steps % 6 === 0) left = !left;
-      steps++;
-    }
-    expect(e.phase).toBe('finished');
-    const [result] = e.getResults();
-    expect(result.mark).not.toBeNull();
-    expect(result.mark!).toBeGreaterThan(9);
-    expect(result.mark!).toBeLessThan(10.5);
-    expect(result.mark).toBe(roundHundredths(result.mark!));
-    expect(result.reactionTime).toBeCloseTo(STEP);
+    runRace(e, 10);
+    const results = e.getResults();
+    for (let i = 1; i < results.length; i++) expect(results[i].mark!).toBeGreaterThanOrEqual(results[i - 1].mark!);
+    for (const r of results) expect(r.mark).toBe(roundHundredths(r.mark!));
+    const me = results.find((r) => r.playerIndex === 0)!;
+    expect(me.mark!).toBeGreaterThan(9);
+    expect(me.mark!).toBeLessThan(10.5);
+    expect(me.reactionTime).toBeCloseTo(STEP);
   });
 
   it('pressing one key over and over goes almost nowhere', () => {
@@ -116,7 +144,7 @@ describe('the race', () => {
     expect(e.runner.taps).toBe(2);
   });
 
-  it('finish time is interpolated within the step', () => {
+  it('finish time is worked out within the step', () => {
     const e = newRace();
     waitForGo(e);
     e.runner.position = 99.9;
@@ -124,7 +152,7 @@ describe('the race', () => {
     const timeBefore = e.raceTime;
     e.update(STEP, NOTHING);
     // 0.1 m at ~10 m/s ≈ 0.01 s, less than one step.
-    expect(e.finishTime! - timeBefore).toBeGreaterThan(0);
-    expect(e.finishTime! - timeBefore).toBeLessThan(STEP);
+    expect(e.player.finishTime! - timeBefore).toBeGreaterThan(0);
+    expect(e.player.finishTime! - timeBefore).toBeLessThan(STEP);
   });
 });

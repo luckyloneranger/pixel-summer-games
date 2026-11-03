@@ -6,6 +6,7 @@ import { Rng, seedFromQuery } from './rng';
 import { SceneManager } from './scene-manager';
 import { TitleScene } from '../scenes/title';
 import { DEBUG } from '../game/tuning';
+import type { Difficulty } from '../events/event';
 
 /** Owns the loop, the canvas, the scene stack and the shared services. */
 export class Game {
@@ -14,6 +15,8 @@ export class Game {
   readonly scenes = new SceneManager();
   readonly rng: Rng;
   readonly debug: DebugOverlay;
+  /** Temporary settings until the player setup screen (Phase 6). */
+  readonly settings: { difficulty: Difficulty } = { difficulty: 'normal' };
   private readonly clock = new FixedStepClock();
   private lastRenderMs = -1;
   private timeScaleIndex = DEBUG.TIME_SCALES.indexOf(1);

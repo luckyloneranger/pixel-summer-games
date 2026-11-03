@@ -54,6 +54,11 @@ export class Renderer {
     this.ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 
+  /** Draw an image (sprite or prebuilt background) at its natural size. */
+  image(img: HTMLCanvasElement, x: number, y: number): void {
+    this.ctx.drawImage(img, Math.round(x), Math.round(y));
+  }
+
   /** Draw text with the bitmap font. `scale` makes chunkier letters (2 = 16x16). */
   text(str: string, x: number, y: number, colour: string, align: TextAlign = 'left', scale = 1): void {
     const font = this.fontImage(colour);

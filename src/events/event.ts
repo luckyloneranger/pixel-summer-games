@@ -18,7 +18,11 @@ export interface EventContext {
 
 /** One player's outcome of an event. */
 export interface EventResult {
+  /** 0 or 1 for humans, -1 for CPU athletes. */
   playerIndex: number;
+  name: string;
+  /** Races only: lane number, 1 = top lane. */
+  lane?: number;
   /** Time in s (races) or distance in m (field events); null = no mark. */
   mark: number | null;
   foul: boolean;

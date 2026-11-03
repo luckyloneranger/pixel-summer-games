@@ -26,6 +26,7 @@ npm run preview  # serves the built dist/ folder locally
 | Key | Does |
 | --- | --- |
 | Enter | Start / confirm |
+| ↑ ↓ ← → | Menu: move, change difficulty |
 | Esc or P | Back |
 | A then D (or ← then →) | Run: alternate the two keys |
 | ` (backtick) | Toggle the debug overlay (or add `?debug=1` to the URL) |

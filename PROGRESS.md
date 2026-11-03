@@ -5,9 +5,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | Phase | Status |
 | --- | --- |
 | 0 – Setup and skeleton | ✅ Approved |
-| 1 – 100 m with plain boxes | ✅ Done, awaiting play-test |
-| 2 – 100 m art and CPU runners | ⏳ Next |
-| 3 – Long jump | – |
+| 1 – 100 m with plain boxes | ✅ Approved |
+| 2 – 100 m art and CPU runners | ✅ Done, awaiting play-test |
+| 3 – Long jump | ⏳ Next |
 | 4 – Javelin | – |
 | 5 – 110 m hurdles | – |
 | 6 – Game flow | – |
@@ -50,4 +50,23 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - A runner who never taps never finishes; press Esc.
 - Debug key `N` (skip to next event) waits for the championship in Phase 6.
 
-**Next:** Phase 2 – 100 m art and CPU runners.
+## Phase 2 – 100 m art and CPU runners
+
+**Done**
+- Full fixed 24-colour palette (`src/gfx/palette.ts`).
+- Original 16 × 24 athlete sprites drawn in code: stand, crouch, set, 4-frame run cycle, celebrate. Kit colour, skin tone and hair are swapped per athlete. The run cycle advances with distance covered, so it speeds up with the runner.
+- Stadium: crowd stand drawn in code with parallax and a 2-frame wave when you win, front wall boards, grass, 4-lane track, lane numbers, 10 m boards, chequered finish.
+- Scoreboard panel with timer box and a 16-segment speed meter (`src/ui/hud.ts`).
+- 3 CPU runners (ACE, JET, KAI) using the same running code, at 6.5 / 8.5 / 10.5 taps/s ±10% by difficulty, reacting in 0.15–0.35 s (`src/events/cpu.ts`).
+- The race ends when everyone has finished. A false start restarts every lane. After two false starts you're disqualified and the CPUs race without you.
+- Results screen: place, lane, name, time, reaction (`src/scenes/results.ts`). Enter runs again, Esc goes to the menu.
+- Temporary difficulty selector in the test menu.
+- 69 unit tests (adds CPU difficulty ordering, reaction range, sprite sizes, palette size, results order, DQ flow).
+
+**Known issues / notes**
+- Normal CPUs run about 10.5 s, so an average player (about 11.5 s) usually finishes 4th on Normal. Tune `CPU.TAP_RATE` if it feels too hard.
+- The crouch and set poses are small and simple; they could get a polish pass in Phase 9.
+- Jump, throw and stumble frames come with Phases 3–5. Photo finish and dust puffs are Phase 9 polish.
+- Your initials are fixed as "P1" until player setup (Phase 6).
+
+**Next:** Phase 3 – Long jump.

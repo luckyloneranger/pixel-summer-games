@@ -50,3 +50,19 @@ export const DASH100 = {
   PIXELS_PER_METER: 12, // px per m when drawing the track
   CAMERA_LEAD: 80, // px, runner's distance from the screen's left edge (shows the track ahead)
 };
+
+/** Computer opponents. */
+export const CPU = {
+  TAP_RATE: { easy: 6.5, normal: 8.5, hard: 10.5 }, // taps/s by difficulty
+  TAP_RATE_VARIATION: 0.1, // ± fraction, re-rolled for each race
+  REACTION_MIN: 0.15, // s, fastest reaction to GO
+  REACTION_MAX: 0.35, // s, slowest reaction to GO
+};
+
+/** Animation and presentation timing. */
+export const ANIMATION = {
+  STRIDE_PER_FRAME: 1.1, // m run per run-cycle frame (4 frames = 2 strides)
+  CROWD_PARALLAX: 0.35, // crowd scroll speed relative to the track (0-1)
+  WAVE_FRAME_TIME: 0.25, // s per frame of the crowd wave
+  RESULTS_DELAY: 2.0, // s after the race ends before the results screen
+};
