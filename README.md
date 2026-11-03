@@ -29,7 +29,7 @@ npm run preview  # serves the built dist/ folder locally
 | ↑ ↓ ← → | Menu: move, change difficulty |
 | Esc or P | Back |
 | A then D (or ← then →) | Run: alternate the two keys |
-| W or Space (hold, release) | Jump: hold to raise the angle, release to take off |
+| W or Space (hold, release) | Jump / throw: hold to raise the angle, release to go |
 | ` (backtick) | Toggle the debug overlay (or add `?debug=1` to the URL) |
 | [ and ] | Slow down / speed up the game (debug overlay open) |
 

@@ -59,6 +59,16 @@ export class Renderer {
     this.ctx.drawImage(img, Math.round(x), Math.round(y));
   }
 
+  /** Draw a 1px line (used for the javelin at any angle). */
+  line(x1: number, y1: number, x2: number, y2: number, colour: string): void {
+    const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1), 1);
+    this.ctx.fillStyle = colour;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      this.ctx.fillRect(Math.round(x1 + (x2 - x1) * t), Math.round(y1 + (y2 - y1) * t), 1, 1);
+    }
+  }
+
   /** Draw text with the bitmap font. `scale` makes chunkier letters (2 = 16x16). */
   text(str: string, x: number, y: number, colour: string, align: TextAlign = 'left', scale = 1): void {
     const font = this.fontImage(colour);

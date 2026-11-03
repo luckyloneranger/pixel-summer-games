@@ -59,7 +59,7 @@ export class Stadium {
 
   /** Crowd, front wall with boards, grass and the 4-lane track. */
   drawBackground(r: Renderer, cameraPx: number, crowdParallax: number, waveFrame: number): void {
-    this.drawStands(r, cameraPx, crowdParallax, waveFrame);
+    this.drawStands(r, cameraPx, crowdParallax, waveFrame, 0);
     r.rect(0, LAYOUT.TRACK_TOP, r.width, TRACK_BOTTOM - LAYOUT.TRACK_TOP, PALETTE.ORANGE);
     r.rect(0, TRACK_BOTTOM + 1, r.width, 1, PALETTE.GREEN_DARK);
     for (let i = 0; i <= LAYOUT.LANES; i++) {
@@ -67,25 +67,30 @@ export class Stadium {
     }
   }
 
-  /** Crowd stand, front wall and grass everywhere below it. Events add their own track. */
-  drawStands(r: Renderer, cameraPx: number, crowdParallax: number, waveFrame: number): void {
+  /**
+   * Crowd stand, front wall and grass everywhere below it. Events add their own
+   * track. `shiftDown` (px) moves it all down when the camera rises (javelin).
+   */
+  drawStands(r: Renderer, cameraPx: number, crowdParallax: number, waveFrame: number, shiftDown = 0): void {
     r.clear(PALETTE.NIGHT);
+    const dy = Math.round(shiftDown);
     // Crowd stand, scrolling slower than the track.
     const frames = this.crowd();
     const img = frames[waveFrame % frames.length];
     const shift = -Math.floor(cameraPx * crowdParallax) % CROWD_TILE_W;
-    for (let x = shift - CROWD_TILE_W; x < r.width; x += CROWD_TILE_W) r.image(img, x, LAYOUT.STAND_TOP);
+    for (let x = shift - CROWD_TILE_W; x < r.width; x += CROWD_TILE_W) r.image(img, x, LAYOUT.STAND_TOP + dy);
 
     // Front wall with sponsor-free boards that move with the track.
-    r.rect(0, LAYOUT.WALL_TOP, r.width, LAYOUT.WALL_HEIGHT, PALETTE.GREY_DARK);
-    r.rect(0, LAYOUT.WALL_TOP, r.width, 1, PALETTE.GREY);
+    const wallTop = LAYOUT.WALL_TOP + dy;
+    r.rect(0, wallTop, r.width, LAYOUT.WALL_HEIGHT, PALETTE.GREY_DARK);
+    r.rect(0, wallTop, r.width, 1, PALETTE.GREY);
     const boardEvery = 200; // px between boards
     for (let x = -(Math.floor(cameraPx) % boardEvery) - boardEvery; x < r.width; x += boardEvery) {
-      r.rect(x + 20, LAYOUT.WALL_TOP + 1, 112, LAYOUT.WALL_HEIGHT - 1, PALETTE.NAVY);
-      r.text('SUMMER GAMES', x + 76, LAYOUT.WALL_TOP + 1, PALETTE.YELLOW, 'center');
+      r.rect(x + 20, wallTop + 1, 112, LAYOUT.WALL_HEIGHT - 1, PALETTE.NAVY);
+      r.text('SUMMER GAMES', x + 76, wallTop + 1, PALETTE.YELLOW, 'center');
     }
 
-    const grassTop = LAYOUT.WALL_TOP + LAYOUT.WALL_HEIGHT;
+    const grassTop = wallTop + LAYOUT.WALL_HEIGHT;
     r.rect(0, grassTop, r.width, r.height - grassTop, PALETTE.GREEN);
   }
 

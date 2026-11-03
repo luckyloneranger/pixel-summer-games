@@ -7,9 +7,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 0 – Setup and skeleton | ✅ Approved |
 | 1 – 100 m with plain boxes | ✅ Approved |
 | 2 – 100 m art and CPU runners | ✅ Approved |
-| 3 – Long jump | ✅ Done, awaiting play-test |
-| 4 – Javelin | ⏳ Next |
-| 5 – 110 m hurdles | – |
+| 3 – Long jump | ✅ Approved |
+| 4 – Javelin | ✅ Done, awaiting play-test |
+| 5 – 110 m hurdles | ⏳ Next |
 | 6 – Game flow | – |
 | 7 – Audio | – |
 | 8 – Two players, touch and options | – |
@@ -88,4 +88,20 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - The Action key only starts the meter once you're moving.
 - CPUs don't appear on the runway; their marks show in the results.
 
-**Next:** Phase 4 – Javelin.
+## Phase 4 – Javelin
+
+**Done**
+- Shared base `src/events/run-up-event.ts` for run-up field events (run, hold, release, fouls, 3 attempts, CPU marks, results). The long jump now uses it; all of its tests pass unchanged.
+- Javelin (`src/events/javelin.ts`): 30 m runway and foul line. The javelin is carried over the shoulder and tips up with the angle meter. It flies from 1.8 m with launch speed = run speed × 2.62, tilts along its flight path, sticks in the grass, wobbles and gets a marker flag. The athlete brakes to a stop after the release.
+- The camera follows the javelin sideways and rises with high throws (the stands slide down), so it never leaves the screen.
+- Distance lines every 10 m on the grass; distance-to-line boards on the runway.
+- Throw follow-through sprite frame; renderer can draw lines.
+- CPU javelin marks: Easy 55–72, Normal 65–82, Hard 75–92 m, 15% fouls.
+- 103 unit tests (adds: 42–48° throws at 96%+ speed land 85–95 m, fouls, braking, tilt up then down, camera keeps the javelin on screen for 10°–80° throws).
+
+**Known issues / notes**
+- At 7 taps/s (86% speed) the best throw is about 69 m, just under the 70 m qualifying mark.
+- A very weak throw that lands behind the foul line scores 0.00 rather than counting as a foul (the spec doesn't say which).
+- Distance lines on the grass go out to 110 m.
+
+**Next:** Phase 5 – 110 m hurdles.

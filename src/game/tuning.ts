@@ -95,4 +95,23 @@ export const LONG_JUMP = {
 export const CPU_FIELD = {
   FOUL_CHANCE: 0.15, // chance any one CPU attempt is a foul
   LONG_JUMP: { easy: [6.0, 7.2], normal: [6.8, 8.0], hard: [7.5, 8.6] }, // m, [min, max]
+  JAVELIN: { easy: [55, 72], normal: [65, 82], hard: [75, 92] }, // m, [min, max]
+};
+
+/** Javelin throw. */
+export const JAVELIN = {
+  RUNWAY: 30, // m from the start of the runway to the foul line
+  ATTEMPTS: 3, // throws; the best one counts
+  LAUNCH_EFFICIENCY: 2.62, // throw speed = run speed x this (the arm adds a lot; 45° at top speed ≈ 94 m)
+  GRAVITY: 9.81, // m/s²
+  RELEASE_HEIGHT: 1.8, // m, the javelin leaves from shoulder height
+  QUALIFY: 70.0, // m, qualifying mark on Normal
+  BRAKE: 15, // m/s², how hard the athlete stops after the release
+  RESULT_TIME: 3.0, // s the mark (or FOUL) stays up before the next attempt
+  WOBBLE_TIME: 1.0, // s the stuck javelin keeps wobbling
+  WOBBLE_DEGREES: 8, // degrees, size of the first wobble
+  WOBBLE_SPEED: 30, // radians per second, how fast it wobbles
+  PIXELS_PER_METER: 8, // px per m when drawing (shows about 40 m of field)
+  CAMERA_LEAD: 100, // px, followed object's distance from the left edge of the screen
+  CAMERA_RISE_START: 80, // px above the ground before the camera starts rising with the javelin
 };
