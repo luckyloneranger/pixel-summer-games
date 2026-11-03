@@ -17,7 +17,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 9 – Polish and launch | ✅ Approved – v1 launched |
 | 10 – High jump | ✅ Approved |
 | 10+ – More events | – |
-| 11a – Online: server, lobby, races | ✅ Done, awaiting play-test (server deploy needs Cloudflare secrets) |
+| 11a – Online: server, lobby, races | ✅ Approved (room server live on Cloudflare) |
 | 11b – Online: field events, reconnect | – |
 
 ## Phase 0 – Setup and skeleton
@@ -250,7 +250,7 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 
 **Known issues / notes**
 - Online field events (long jump, high jump, javelin) come in 11b; the lobby offers races only.
-- The live site needs the two Cloudflare secrets before online play works.
+- The room server is live at pixel-summer-games-rooms.pixel-summer.workers.dev; every push to main redeploys it with the game.
 - Some phone networks may add lag; it only affects how smoothly the other runner moves, never anyone's time.
 
 **Next:** Phase 11b – online field events and reconnect.
