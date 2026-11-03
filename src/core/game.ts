@@ -14,6 +14,8 @@ import { AudioEngine } from '../audio/synth';
 import type { SoundSink } from '../events/event';
 import { AUDIO } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
+import { TouchControls, drawRotateNotice } from '../ui/touch-controls';
+import { buildKeymap } from './keymap';
 
 /** Owns the loop, the canvas, the scene stack and the shared services. */
 export class Game {
@@ -28,6 +30,8 @@ export class Game {
   session: Session | null = null;
   readonly audio: AudioEngine;
   private readonly music: MusicPlayer;
+  readonly touch: TouchControls;
+  private portrait = false;
   private toastText = '';
   private toastTime = 0;
   private readonly clock = new FixedStepClock();
@@ -39,6 +43,8 @@ export class Game {
     this.rng = new Rng(seedFromQuery(location.search));
     this.debug = new DebugOverlay(location.search);
     attachKeyboard(this.input);
+    this.applyControls();
+    this.touch = new TouchControls(canvas, this.input);
     this.audio = new AudioEngine(this.store.data.settings);
     this.music = new MusicPlayer(this.audio);
     // Browsers only allow sound after the player interacts, so switch it on then.
@@ -71,6 +77,16 @@ export class Game {
   /** Sound output handed to events. */
   readonly sound: SoundSink = { play: (cue, param) => this.sfx(cue, param) };
 
+  /** Apply saved key remapping. */
+  applyControls(): void {
+    this.input.setKeymap(buildKeymap(this.store.data.settings.controls));
+  }
+
+  /** Reduce shake and flashing is on: blinking text stays steady. */
+  get steady(): boolean {
+    return this.store.data.settings.reduceFlashing;
+  }
+
   /** Re-apply volume settings after Options changes them. */
   applyVolumes(): void {
     this.audio.setVolumes(this.store.data.settings);
@@ -93,8 +109,7 @@ export class Game {
     else if (i.justPressed('BACK')) this.sfx('menuBack');
     else if (
       i.justPressed('MENU_UP') || i.justPressed('MENU_DOWN') ||
-      i.justPressed('P1_LEFT') || i.justPressed('P1_RIGHT') ||
-      i.justPressed('P2_LEFT') || i.justPressed('P2_RIGHT')
+      i.justPressed('MENU_LEFT') || i.justPressed('MENU_RIGHT')
     ) {
       this.sfx('menuMove');
     }
@@ -105,6 +120,11 @@ export class Game {
     if (this.input.justPressed('DEBUG')) this.debug.visible = !this.debug.visible;
     if (this.input.justPressed('MUTE')) this.toggleMute();
     this.toastTime = Math.max(0, this.toastTime - dt);
+    // A touch device held upright: pause everything until it's turned sideways.
+    const portrait = this.touch.enabled && window.innerHeight > window.innerWidth;
+    if (portrait && !this.portrait) this.scenes.top?.onFocusLost?.();
+    this.portrait = portrait;
+    if (portrait) return;
     this.menuSounds();
     if (this.debug.visible) {
       // Debug-only slow motion / fast forward with [ and ].
@@ -125,6 +145,9 @@ export class Game {
     this.audio.setCrowd(this.scenes.top?.crowdLevel?.() ?? 0);
 
     this.scenes.render(this.renderer);
+    this.touch.setLayout(this.scenes.top?.name === 'EVENT' ? 'event' : 'menu');
+    this.touch.render(this.renderer);
+    if (this.portrait) drawRotateNotice(this.renderer);
     if (this.toastTime > 0) {
       const w = this.toastText.length * 8 + 8;
       this.renderer.rect(this.renderer.width - w - 2, this.renderer.height - 14, w, 12, PALETTE.INK);

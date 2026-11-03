@@ -2,6 +2,7 @@ import type { Difficulty, EventId } from '../events/event';
 import type { TeamKit } from '../gfx/sprites/athlete';
 import type { HighScore, PersonalBests } from '../game/records';
 import { AUDIO } from '../game/tuning';
+import type { Controls } from './keymap';
 
 /** Everything the game remembers between visits. */
 export interface SaveData {
@@ -20,6 +21,9 @@ export interface SaveData {
     sfx: number; // 0-10
     muted: boolean;
     reduceFlashing: boolean;
+    assist: boolean;
+    /** Remapped gameplay keys, or null for the defaults. */
+    controls: Controls | null;
   };
   highScores: { championship: HighScore[]; versus: HighScore[] };
   personalBests: PersonalBests;
@@ -45,6 +49,8 @@ export function defaultSave(): SaveData {
       sfx: AUDIO.DEFAULT_SFX,
       muted: false,
       reduceFlashing: false,
+      assist: false,
+      controls: null,
     },
     highScores: { championship: [], versus: [] },
     personalBests: {},

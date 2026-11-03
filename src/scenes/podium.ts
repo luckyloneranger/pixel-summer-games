@@ -2,6 +2,7 @@ import type { Game } from '../core/game';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
+import { blink } from '../ui/widgets';
 import { cpuLineup, playerLook } from '../events/cpu';
 import type { Standing } from '../game/championship';
 import type { Session } from '../game/session';
@@ -78,6 +79,6 @@ export class PodiumScene implements Scene {
       .filter(({ s, i }) => s.playerIndex >= 0 && i >= 3)
       .map(({ s, i }) => `${s.name} ${PLACES[i]}`);
     if (off.length) r.text(off.join('  '), cx, 32, PALETTE.WHITE, 'center');
-    if (Math.floor(this.time * 2) % 2 === 0) r.text('PRESS ENTER', cx, 172, PALETTE.GREY_LIGHT, 'center');
+    if (blink(this.time, 1, this.game.steady)) r.text('PRESS ENTER', cx, 172, PALETTE.GREY_LIGHT, 'center');
   }
 }

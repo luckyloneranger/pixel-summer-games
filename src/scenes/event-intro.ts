@@ -2,6 +2,7 @@ import type { Game } from '../core/game';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
+import { blink } from '../ui/widgets';
 import type { EventId } from '../events/event';
 import { EVENT_HINTS } from '../game/events';
 import { EVENT_NAMES, formatMark, qualifyingMark } from '../game/scoring';
@@ -66,6 +67,6 @@ export class EventIntroScene implements Scene {
     const twoPlayers = this.session.activePlayers().length > 1;
     r.text(EVENT_HINTS[this.eventId], cx, 114, PALETTE.CYAN, 'center');
     if (twoPlayers) r.text('P1: A D W     P2: LEFT RIGHT UP', cx, 126, PALETTE.CYAN, 'center');
-    if (Math.floor(this.time * 2) % 2 === 0) r.text('PRESS ENTER', cx, 144, PALETTE.WHITE, 'center');
+    if (blink(this.time, 1, this.game.steady)) r.text('PRESS ENTER', cx, 144, PALETTE.WHITE, 'center');
   }
 }

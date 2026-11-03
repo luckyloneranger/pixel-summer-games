@@ -2,6 +2,7 @@ import type { Game } from '../core/game';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
+import { blink } from '../ui/widgets';
 import type { Session } from '../game/session';
 import { PALETTE } from '../gfx/palette';
 import { finishSeries } from './high-score-entry';
@@ -33,6 +34,6 @@ export class GameOverScene implements Scene {
     const totals = s.players.map((p, i) => `${two ? p.initials + ' ' : 'TOTAL '}${s.series?.playerTotal(i) ?? 0}`).join('   ');
     r.text(totals, cx, 104, PALETTE.YELLOW, 'center');
     r.text('TIP: CASUAL MODE IN OPTIONS', cx, 128, PALETTE.GREY, 'center');
-    if (Math.floor(this.time * 2) % 2 === 0) r.text('PRESS ENTER', cx, 152, PALETTE.GREY_LIGHT, 'center');
+    if (blink(this.time, 1, this.game.steady)) r.text('PRESS ENTER', cx, 152, PALETTE.GREY_LIGHT, 'center');
   }
 }

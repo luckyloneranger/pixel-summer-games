@@ -164,7 +164,7 @@ export class PlayerSetupScene implements Scene {
       case 'P2 NAME': {
         const p = row === 'P1 NAME' ? 0 : 1;
         const entry = this.names[p];
-        if (this.editing === entry) entry.render(r, x + 28, y - 5, this.time, true);
+        if (this.editing === entry) entry.render(r, x + 28, y - 5, this.time, true, this.game.steady);
         else r.text(entry.value, x, y, PALETTE.WHITE);
         break;
       }

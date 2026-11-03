@@ -32,6 +32,7 @@ export class EventPlayScene implements Scene {
       rng: this.game.rng,
       practice: this.session.mode !== 'championship', // only championships have qualifying marks
       sound: this.game.sound,
+      assist: this.game.store.data.settings.assist,
     });
   }
 

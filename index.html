@@ -17,6 +17,14 @@
         justify-content: center;
         height: 100dvh;
       }
+      html, body, #screen {
+        /* Stop the browser's own scrolling, zooming and text selection on touch. */
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
       #screen {
         display: block;
         /* Keep pixels sharp when the browser scales the canvas. */

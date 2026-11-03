@@ -5,6 +5,7 @@ import type { Scene } from '../core/scene-manager';
 import { TITLE } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import { MenuScene } from './menu';
+import { blink } from '../ui/widgets';
 
 /** Placeholder title screen. Art and the attract-mode demo come later. */
 export class TitleScene implements Scene {
@@ -34,7 +35,7 @@ export class TitleScene implements Scene {
     r.text('PIXEL', r.width / 2, 40, PALETTE.YELLOW, 'center', 2);
     r.text('SUMMER GAMES', r.width / 2, 60, PALETTE.YELLOW, 'center', 2);
 
-    const blinkOn = this.time % TITLE.BLINK_PERIOD < TITLE.BLINK_PERIOD / 2;
+    const blinkOn = blink(this.time, TITLE.BLINK_PERIOD, this.game.steady);
     if (blinkOn) r.text('PRESS START', r.width / 2, 104, PALETTE.WHITE, 'center');
     r.text('ENTER', r.width / 2, 118, PALETTE.GREY, 'center');
     const top = this.game.store.data.highScores.championship[0];

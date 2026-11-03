@@ -20,6 +20,8 @@ export class Input implements InputSnapshot {
   private readonly down = new Set<Action>();
   private readonly pressed = new Set<Action>();
   private readonly released = new Set<Action>();
+  /** The most recent physical key pressed (any key, mapped or not). */
+  private lastKey: string | null = null;
 
   constructor(private keymap: KeyMap = DEFAULT_KEYMAP) {
     this.setKeymap(keymap);
@@ -40,6 +42,7 @@ export class Input implements InputSnapshot {
   /** Raw key press. Auto-repeat (key held down) is ignored. */
   keyDown(code: string, repeat = false): void {
     if (repeat || this.heldKeys.has(code)) return;
+    if (!code.startsWith('Touch')) this.lastKey = code;
     const actions = this.actionsByKey.get(code);
     if (!actions) return;
     for (const a of actions) {
@@ -69,6 +72,13 @@ export class Input implements InputSnapshot {
     for (const action of Object.keys(this.keymap) as Action[]) {
       if (this.isActionHeld(action)) this.down.add(action);
     }
+  }
+
+  /** Take (and forget) the last physical key pressed, for remapping. */
+  takeLastKey(): string | null {
+    const k = this.lastKey;
+    this.lastKey = null;
+    return k;
   }
 
   isDown(action: Action): boolean {

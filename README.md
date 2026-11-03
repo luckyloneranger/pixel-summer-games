@@ -29,6 +29,8 @@ npm run preview  # serves the built dist/ folder locally
 | ↑ ↓ ← → (or W S A D) | Menus: move and change options; initials: change letter / move |
 | Esc or P | Back; pause during an event |
 | M | Sound on / off |
+
+On a phone or tablet (held sideways), on-screen buttons appear: two run pads, an ACTION button, pause and sound icons, and arrow / OK / BACK buttons in menus. Options has key remapping, Assist run (hold to run) and Reduce flashing.
 | A then D (or ← then →) | Run: alternate the two keys (2 players: P1 uses A/D/W, P2 uses ←/→/↑) |
 | W or Space (hold, release) | Long jump / javelin: hold to raise the angle, release to go |
 | W or Space (tap) | Hurdles: jump |

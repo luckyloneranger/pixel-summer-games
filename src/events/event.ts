@@ -31,6 +31,8 @@ export interface EventContext {
   rng: Rng;
   /** Practice or Versus: no qualifying mark is shown. */
   practice?: boolean;
+  /** Assist run: holding a run key builds speed up to 80%. */
+  assist?: boolean;
   /** Where sound cues go (silent if not given). */
   sound?: SoundSink;
 }

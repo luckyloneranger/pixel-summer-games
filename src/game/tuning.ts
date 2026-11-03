@@ -181,3 +181,25 @@ export const AUDIO = {
   CROWD_RESPONSE: 0.25, // s, how quickly the crowd follows the action
   TOAST_TIME: 1.5, // s the SOUND ON/OFF message stays up
 };
+
+/** Assist run: hold a run key to build up speed without tapping. */
+export const ASSIST = {
+  SPEED_FRACTION: 0.8, // fraction of top speed that holding a key reaches
+  ACCEL: 5, // m/s², how quickly holding builds speed (on top of beating the drag)
+};
+
+/** On-screen touch controls, in game pixels (the screen is 320 x 180). */
+export const TOUCH = {
+  MARGIN: 4, // px from the screen edges
+  PAD_W: 64, // run pad width
+  PAD_H: 56, // run pad height
+  ACTION_W: 96, // action button width
+  ACTION_H: 40, // action button height
+  ARROW: 24, // menu arrow button size (square)
+  MENU_BTN_W: 40, // OK / BACK width
+  MENU_BTN_H: 26, // OK / BACK height
+  ICON_W: 16, // pause / speaker icon width
+  ICON_H: 11, // pause / speaker icon height
+  HIT_SLOP: 4, // px of extra touch area around every button
+  SWITCH_GUARD: 1.0, // s after the buttons change (event <-> menu) when new touches are ignored
+};

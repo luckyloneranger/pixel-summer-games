@@ -65,7 +65,7 @@ Every event uses the same two systems: alternate-tap running and a hold-and-rele
 | Back / pause | Esc or P | – | Pause icon |
 | Mute | M | – | Speaker icon |
 
-In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1\_RIGHT, P1\_ACTION and so on) so they can be remapped in Options.
+In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1\_RIGHT, P1\_ACTION and so on) so they can be remapped in Options. Only the six gameplay keys can be remapped; Enter, Esc, P, M and the backtick key stay reserved for menus, pause, mute and debug (decided in Phase 8b). Touch buttons stay visible on touch devices, hide when a physical key is pressed, and ignore new touches for a moment after switching between event and menu buttons, so a finger still tapping a run pad can't hit a menu button.
 
 ### Alternate-tap running
 

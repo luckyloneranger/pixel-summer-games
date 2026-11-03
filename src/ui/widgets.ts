@@ -9,11 +9,19 @@ export function moveSelection(input: InputSnapshot, index: number, count: number
   return index;
 }
 
-/** -1 for left, +1 for right, 0 for neither (either player's keys). */
+/** -1 for left, +1 for right, 0 for neither (menu keys: arrows, A/D or touch). */
 export function leftRight(input: InputSnapshot): number {
-  const left = input.justPressed('P1_LEFT') || input.justPressed('P2_LEFT');
-  const right = input.justPressed('P1_RIGHT') || input.justPressed('P2_RIGHT');
+  const left = input.justPressed('MENU_LEFT');
+  const right = input.justPressed('MENU_RIGHT');
   return (right ? 1 : 0) - (left ? 1 : 0);
+}
+
+/**
+ * Is blinking text visible right now? With "reduce flashing" on (`steady`)
+ * it's always shown, so nothing flashes.
+ */
+export function blink(time: number, period: number, steady: boolean): boolean {
+  return steady || time % period < period / 2;
 }
 
 /** Step through a list of choices with left/right, wrapping around. */
@@ -82,13 +90,13 @@ export class InitialsEntry {
   }
 
   /** Big letters centred at cx, with the current one blinking/underlined. */
-  render(r: Renderer, cx: number, y: number, time: number, active = true): void {
+  render(r: Renderer, cx: number, y: number, time: number, active = true, steady = false): void {
     const size = 16;
     const left = cx - (size * 3 + 8) / 2;
     for (let i = 0; i < 3; i++) {
       const x = left + i * (size + 4);
       const current = active && i === this.position;
-      const show = !current || Math.floor(time * 4) % 2 === 0;
+      const show = !current || blink(time, 0.5, steady);
       if (show) r.text(this.letters[i], x, y, current ? PALETTE.YELLOW : PALETTE.WHITE, 'left', 2);
       r.rect(x, y + size + 2, size - 2, 2, current ? PALETTE.YELLOW : PALETTE.GREY_DARK);
     }

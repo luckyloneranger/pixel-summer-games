@@ -7,7 +7,7 @@ import { EVENT_NAMES } from '../game/scoring';
 import type { Session } from '../game/session';
 import { PALETTE } from '../gfx/palette';
 import { AthleteSprites } from '../gfx/sprites/athlete';
-import { drawHeader } from '../ui/widgets';
+import { blink, drawHeader } from '../ui/widgets';
 import { finishSeries } from './high-score-entry';
 
 /** End of Versus: points per event for both players and the winner. */
@@ -66,7 +66,7 @@ export class VersusResultScene implements Scene {
     const msg = w === -1 ? 'IT IS A DRAW!' : `${s.players[w].initials} WINS!`;
     r.text(msg, cx, 124, PALETTE.YELLOW, 'center', 2);
     if (w >= 0) r.image(this.sprites[w].get('celebrate'), cx - 8, 140);
-    const show = this.game.store.data.settings.reduceFlashing || Math.floor(this.time * 2) % 2 === 0;
+    const show = blink(this.time, 1, this.game.steady);
     if (show) r.text('PRESS ENTER', cx, 168, PALETTE.GREY_LIGHT, 'center');
   }
 }

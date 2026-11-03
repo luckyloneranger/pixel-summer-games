@@ -213,7 +213,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       case 'running':
         for (const lane of this.racers) {
           const k: PlayerKeys = lane.cpu ? NO_KEYS : this.keysOf(input, lane);
-          this.updateRacer(lane, dt, k.left, k.right, k.action);
+          this.updateRacer(lane, dt, k);
         }
         this.raceTime += dt;
         if (this.racers.every((l) => l.finishTime !== null)) this.enterPhase('finished');
@@ -230,7 +230,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     }
   }
 
-  private updateRacer(lane: L, dt: number, left: boolean, right: boolean, action: boolean): void {
+  private updateRacer(lane: L, dt: number, keys: PlayerKeys): void {
+    const { left, right, action } = keys;
     const r = lane.runner;
     const racing = lane.finishTime === null;
     if (racing) this.beforeMove(lane, dt, lane.cpu ? false : action);
@@ -238,9 +239,11 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       const sinceGo = this.raceTime + dt;
       const allowed = this.canTap(lane);
       // A player's presses always keep their left/right rhythm; they only add speed when allowed.
-      const tapped = lane.cpu
+      let tapped = lane.cpu
         ? lane.cpu.update(r, sinceGo, allowed)
         : applyRunPresses(r, left, right, allowed);
+      // Assist run: holding a run key builds speed (only when taps could).
+      if (!lane.cpu && this.ctx.assist && keys.runHeld && allowed && r.assist(dt)) tapped = true;
       // The press happened some time during this step, so count the whole step.
       if (tapped && lane.reactionTime === null) lane.reactionTime = sinceGo;
     }
@@ -519,4 +522,4 @@ export function roundHundredths(seconds: number): number {
 }
 
 /** CPUs read no keys. */
-const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHeld: false };
+const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHeld: false, runHeld: false };

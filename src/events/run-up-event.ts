@@ -70,6 +70,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected phaseTimer = 0;
   protected clock = 0; // s since the event started (animations)
   protected readonly stadium = new Stadium();
+  private assist = false;
   protected sound: SoundSink = SILENT;
   private readonly footsteps = new Footsteps();
   /** Sounds for letting go and for landing (set by each event). */
@@ -96,6 +97,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   init(ctx: EventContext): void {
     this.sound = ctx.sound ?? SILENT;
+    this.assist = ctx.assist ?? false;
     this.competitors = ctx.players.map((p, i) => ({
       playerIndex: p.index ?? i,
       name: p.initials,
@@ -168,6 +170,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
       case 'ready':
       case 'runup':
         if (applyRunPresses(this.runner, left, right)) this.phase = 'runup';
+        if (this.assist && keys.runHeld && this.runner.assist(dt)) this.phase = 'runup';
         // The meter only starts once you're moving, so you can't get stuck at a standstill.
         if (actionPressed && this.runner.speed > 0) {
           this.meter.start();

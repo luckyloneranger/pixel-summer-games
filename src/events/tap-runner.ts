@@ -1,4 +1,4 @@
-import { RUNNER } from '../game/tuning';
+import { ASSIST, RUNNER } from '../game/tuning';
 
 export type RunKey = 'left' | 'right';
 export type RunnerConfig = typeof RUNNER;
@@ -53,6 +53,19 @@ export class TapRunner {
   get nextKey(): RunKey | null {
     if (this.lastKey === null) return null;
     return this.lastKey === 'left' ? 'right' : 'left';
+  }
+
+  /**
+   * Assist run: while a run key is held, build speed up to 80% of the top.
+   * Call before update(). Returns true if it added speed.
+   */
+  assist(dt: number): boolean {
+    if (!this.canAccelerate) return false;
+    const target = this.cfg.MAX_SPEED * ASSIST.SPEED_FRACTION;
+    if (this.speed >= target) return false;
+    // Enough to beat this step's drag, plus the assist build-up.
+    this.speed = Math.min(target, this.speed + (ASSIST.ACCEL + this.cfg.DRAG) * dt);
+    return true;
   }
 
   /** Advance one logic step: drain speed, then move. */

@@ -12,9 +12,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 5 – 110 m hurdles | ✅ Approved |
 | 6 – Game flow | ✅ Approved |
 | 7 – Audio | ✅ Approved |
-| 8a – Two players | ✅ Done, awaiting play-test |
-| 8b – Touch and options | ⏳ Next |
-| 9 – Polish and launch | – |
+| 8a – Two players | ✅ Approved |
+| 8b – Touch and options | ✅ Done, awaiting play-test |
+| 9 – Polish and launch | ⏳ Next |
 | 10+ – More events | – |
 | 11 – Online multiplayer (after v1) | – |
 
@@ -176,4 +176,22 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - Some keyboards can't register many keys at once ("ghosting"), which can drop presses when both players tap together.
 - In a 2-player game, personal bests are shared (one per event per browser).
 
-**Next:** Phase 8b – Touch controls, key remapping, assist run, reduce shake and flashing.
+## Phase 8b – Touch and options
+
+**Done**
+- Touch controls (`src/ui/touch-controls.ts`), shown automatically on phones and tablets (and after any touch): in events, left and right run pads, a large ACTION button, pause and sound icons; in menus, arrow buttons plus OK and BACK. Each button presses a "Touch..." key, so the same input pipeline drives everything. Multi-touch; sliding a finger between pads works. Pressing a physical key hides them.
+- After the buttons switch between event and menu layouts, new touches are ignored for 1 s, so a finger still tapping a run pad can't press the menu button that appears in its place (found in phone testing).
+- "ROTATE YOUR PHONE" screen when a touch device is held upright (the game pauses). Browser scrolling, zooming and long-press menus are switched off on the game page.
+- Key remapping (Options → Controls): P1/P2 Left, Right and Action. Clashing keys swap; menu keys (Enter, Esc, P, M, `) are reserved; reset to defaults; saved. Menus now use their own left/right keys, so remapping can't break them.
+- Assist run (Options): hold a run key to build up to 80% of top speed; tapping still goes faster. Not while holding the angle, in the air, or stumbling.
+- Reduce flashing (Options): all blinking text stays steady (the Phase 9 screen shake will respect it too).
+- Arrow glyphs added to the font.
+- 191 unit tests (adds touch hit-testing and coordinates, button layouts on screen with no overlaps, remap swaps/reserved keys/saving, assist run limits, steady blinking).
+- Checked on an emulated iPhone held sideways: menus, a 100 m race, a long jump (hold and release) and pause, all by touch only.
+
+**Known issues / notes**
+- On touch devices only player 1 has on-screen controls (two players need a keyboard).
+- Touch buttons are drawn as outlines over the game and can cover parts of the track or help text.
+- Real-phone feel (button size and position) still needs checking on a real device: see `TOUCH` in tuning.ts.
+
+**Next:** Phase 9 – Polish and launch.

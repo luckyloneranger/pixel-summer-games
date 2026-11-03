@@ -9,7 +9,7 @@ import { EVENT_KIND, EVENT_NAMES, scoreResults } from '../game/scoring';
 import type { Session } from '../game/session';
 import { RECORDS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { drawHeader } from '../ui/widgets';
+import { blink, drawHeader } from '../ui/widgets';
 import { EventIntroScene } from './event-intro';
 import { GameOverScene } from './game-over';
 import { PodiumScene } from './podium';
@@ -147,13 +147,13 @@ export class ResultsScene implements Scene {
     const cx = r.width / 2;
     const top = HEADER_Y + 15 + this.results.length * ROW_H + 4;
     const humans = this.humans;
-    const blink = this.game.store.data.settings.reduceFlashing || Math.floor(this.time / RECORDS.NEW_RECORD_FLASH) % 2 === 0;
+    const show = blink(this.time, RECORDS.NEW_RECORD_FLASH * 2, this.game.steady);
 
     if (humans.length === 1) {
       const m = this.medalPlace(humans[0]);
       if (m >= 0) r.text(MEDAL_NAMES[m], cx, top, MEDAL_COLOURS[m], 'center');
     }
-    if (this.newRecord && blink) r.text('NEW RECORD!', cx, top + 12, PALETTE.CYAN, 'center');
+    if (this.newRecord && show) r.text('NEW RECORD!', cx, top + 12, PALETTE.CYAN, 'center');
 
     const series = this.session.series;
     if (!series || !this.outcome) {
