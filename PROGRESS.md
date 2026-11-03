@@ -317,5 +317,6 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 
 **Known issues / notes**
 - In the lobby on a phone, the "BACK: CLOSE ROOM" line is under the control bar; the BACK button still closes the room.
+- The two-browser online test now runs in Chromium and Firefox only. Headless WebKit on GitHub's machines gives the second game window almost no animation frames, so the match couldn't finish in time (it passed there once, by luck). The game itself is the same in Safari; WebKit still runs the desktop and phone smoke tests. Each test player now also gets their own browser, like two real devices.
 
 **Next:** waiting for approval.
