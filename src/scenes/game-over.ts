@@ -9,6 +9,8 @@ import { finishChampionship } from './high-score-entry';
 /** Missed a qualifying mark: the championship is over. */
 export class GameOverScene implements Scene {
   readonly name = 'GAME OVER';
+  readonly isMenu = true;
+  readonly music = null;
   private time = 0;
 
   constructor(

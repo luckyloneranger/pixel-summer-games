@@ -7,7 +7,9 @@ import { AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
 import { AngleMeter } from './angle-meter';
 import { cpuFieldMarks, cpuLineup, playerLook } from './cpu';
 import { qualifyingMark } from '../game/scoring';
-import type { AthleticsEvent, Difficulty, EventContext, EventId, EventResult } from './event';
+import { SILENT, type AthleticsEvent, type Difficulty, type EventContext, type EventId, type EventResult, type SoundCue, type SoundSink } from './event';
+import { Footsteps, runningCrowd } from './footsteps';
+import { AUDIO } from '../game/tuning';
 import { FieldAttempts } from './field-attempts';
 import { Projectile } from './projectile';
 import { TapRunner, applyRunPresses } from './tap-runner';
@@ -56,6 +58,11 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected phaseTimer = 0;
   protected clock = 0; // s since the event started (animations)
   protected readonly stadium = new Stadium();
+  protected sound: SoundSink = SILENT;
+  private readonly footsteps = new Footsteps();
+  /** Sounds for letting go and for landing (set by each event). */
+  protected abstract readonly releaseCue: SoundCue;
+  protected abstract readonly landCue: SoundCue;
   private sprites: AthleteSprites | null = null;
 
   constructor(
@@ -69,6 +76,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   init(ctx: EventContext): void {
     this.playerName = ctx.players[0].initials;
+    this.sound = ctx.sound ?? SILENT;
     this.look = playerLook(ctx.players[0].team);
     this.sprites = null;
     this.qualifyMark = qualifyingMark(this.id, ctx.difficulty);
@@ -85,6 +93,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected startAttempt(): void {
     this.runner.reset();
     this.meter.reset();
+    this.footsteps.reset();
     this.takeoffX = 0;
     this.lastMark = null;
     this.foulReason = '';
@@ -181,6 +190,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   /** Move along the runway; crossing the line without releasing is a foul. */
   private moveOnRunway(dt: number): void {
     this.runner.update(dt);
+    this.footsteps.update(this.runner, this.sound);
     if (this.athleteX > 0) this.foul('OVER THE LINE');
   }
 
@@ -194,18 +204,22 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     const speed = this.runner.speed * this.cfg.LAUNCH_EFFICIENCY;
     this.flight.launch(this.takeoffX, this.launchHeight(), speed, angle);
     this.onRelease();
+    this.sound.play(this.releaseCue);
     this.enterPhase('flight');
   }
 
   private land(): void {
     this.lastMark = this.markFor(this.flight.x);
     this.record.record(this.lastMark);
+    this.sound.play(this.landCue);
+    if (this.lastMark >= this.qualifyMark) this.sound.play('cheer', 0.8);
     this.enterPhase('landed');
   }
 
   private foul(reason: string): void {
     this.foulReason = reason;
     this.record.record(null);
+    this.sound.play('buzzer');
     this.enterPhase('foul');
   }
 
@@ -220,6 +234,18 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     ];
     // Best mark first; anyone with no valid attempt goes last.
     return all.sort((a, b) => (b.mark ?? -1) - (a.mark ?? -1));
+  }
+
+  crowdLevel(): number {
+    switch (this.phase) {
+      case 'runup':
+      case 'hold':
+        return runningCrowd(this.runner.speedFraction);
+      case 'flight':
+        return AUDIO.CROWD_RUNNING; // everyone watches the flight
+      default:
+        return AUDIO.CROWD_IDLE;
+    }
   }
 
   debugLines(): string[] {

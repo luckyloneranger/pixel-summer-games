@@ -25,6 +25,8 @@ const BLOCK_W = 52;
 /** Championship podium: the top three by total points, with medals. */
 export class PodiumScene implements Scene {
   readonly name = 'PODIUM';
+  readonly isMenu = true;
+  readonly music = 'podium' as const;
   private time = 0;
   private readonly standings: Standing[];
   private readonly stadium = new Stadium();

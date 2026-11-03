@@ -10,9 +10,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 3 – Long jump | ✅ Approved |
 | 4 – Javelin | ✅ Approved |
 | 5 – 110 m hurdles | ✅ Approved |
-| 6 – Game flow | ✅ Done, awaiting play-test |
-| 7 – Audio | ⏳ Next |
-| 8 – Two players, touch and options | – |
+| 6 – Game flow | ✅ Approved |
+| 7 – Audio | ✅ Done, awaiting play-test |
+| 8 – Two players, touch and options | ⏳ Next |
 | 9 – Polish and launch | – |
 
 ## Phase 0 – Setup and skeleton
@@ -141,4 +141,19 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - When `N` skips a race, CPUs have no time (0 points) because their race wasn't run.
 - Versus and How to Play are placeholders until Phases 8 and 9.
 
-**Next:** Phase 7 – Audio.
+## Phase 7 – Audio
+
+**Done**
+- Synthesiser (`src/audio/synth.ts`) on the Web Audio API imitating 4 classic channels: square (50%, 25%, 12.5% pulse), triangle and filtered noise, through music and effects volume buses. Nothing is created until the first key press, click or tap.
+- Sound effects (`src/audio/sfx.ts`): menu move / select / back, starting pistol, false-start and foul buzzer, footsteps (faster and higher with speed), jump, javelin whoosh, sand landing, javelin thud, hurdle clank, crowd cheer, medal fanfare, new-record jingle.
+- Crowd ambience: hushes for ON YOUR MARKS / SET, grows with your running speed, cheers on a finish or a qualifying mark.
+- Music (`src/audio/music.ts`, `src/audio/songs.ts`): three original looping tunes written as note lists (title, menus/results, podium). Events play crowd noise only.
+- Events send sound cues (`pistol`, `clank`, ...) to a sound output; logic stays separate from audio and tests check the cues.
+- M mutes from anywhere (with a SOUND ON / OFF message). Options: master, music and effects volume (0–10) and mute, all saved.
+- 157 unit tests (adds note maths, song validity, volume maths, no audio before first input, sound cues for every event).
+
+**Known issues / notes**
+- Sound balance is by ear: all levels are in `AUDIO` in tuning.ts and in `src/audio/sfx.ts`.
+- Footsteps play for your athlete only.
+
+**Next:** Phase 8 – Two players, touch and options.

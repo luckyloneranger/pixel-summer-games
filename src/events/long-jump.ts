@@ -15,6 +15,8 @@ export type { FieldPhase as JumpPhase } from './run-up-event';
 export class LongJumpEvent extends RunUpFieldEvent {
   readonly id = 'longJump';
   readonly name = 'LONG JUMP';
+  protected readonly releaseCue = 'jump';
+  protected readonly landCue = 'sand';
   /** True when the current jump took off within the perfect zone. */
   perfect = false;
 

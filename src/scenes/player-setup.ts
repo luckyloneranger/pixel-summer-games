@@ -17,6 +17,8 @@ const ROWS = ['NAME', 'TEAM', 'DIFFICULTY', 'START'] as const;
 /** Championship setup: initials, team colour and difficulty. */
 export class PlayerSetupScene implements Scene {
   readonly name = 'SETUP';
+  readonly isMenu = true;
+  readonly music = 'menu' as const;
   private row = 0;
   private editing = false;
   private time = 0;

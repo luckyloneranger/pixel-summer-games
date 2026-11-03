@@ -15,6 +15,8 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
 /** Practice: pick any event (and the CPU difficulty). */
 export class EventSelectScene implements Scene {
   readonly name = 'EVENT SELECT';
+  readonly isMenu = true;
+  readonly music = 'menu' as const;
   private row = 0;
 
   constructor(private readonly game: Game) {}

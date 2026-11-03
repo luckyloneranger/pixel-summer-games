@@ -17,6 +17,7 @@ const ITEMS: MenuItem[] = [
 /** Pause overlay, drawn over the frozen event. */
 export class PauseScene implements Scene {
   readonly name = 'PAUSE';
+  readonly isMenu = true;
   readonly isOverlay = true;
   private selected = 0;
 

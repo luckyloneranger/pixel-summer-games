@@ -88,6 +88,7 @@ export class Hurdles110Event extends RaceEvent<HurdleLane> {
       if (next !== undefined && distance <= (lane.runner.speed * HURDLES.JUMP_TIME) / 2) lane.jumpTime = 0;
     } else if (actionPressed) {
       lane.jumpTime = 0;
+      this.sound.play('jump');
     }
   }
 
@@ -109,6 +110,7 @@ export class Hurdles110Event extends RaceEvent<HurdleLane> {
     lane.knocked[lane.nextHurdle] = true;
     lane.hits++;
     lane.sinceHit = 0;
+    if (lane.playerIndex >= 0) this.sound.play('clank');
     const loss = outcome === 'crash' ? HURDLES.CRASH_SPEED_LOSS : HURDLES.HIT_SPEED_LOSS;
     lane.runner.speed *= 1 - loss;
     if (outcome === 'crash') lane.stumbleTime = HURDLES.STUMBLE_TIME;

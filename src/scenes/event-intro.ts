@@ -13,6 +13,8 @@ import { EventPlayScene } from './event-play';
 /** Card shown before each event: name, qualifying mark, controls, your best. */
 export class EventIntroScene implements Scene {
   readonly name = 'INTRO';
+  readonly isMenu = true;
+  readonly music = 'menu' as const;
   private time = 0;
 
   constructor(

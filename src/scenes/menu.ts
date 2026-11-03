@@ -21,6 +21,8 @@ const ITEMS: MenuItem[] = [
 /** Main menu. */
 export class MenuScene implements Scene {
   readonly name = 'MENU';
+  readonly isMenu = true;
+  readonly music = 'menu' as const;
   private selected = 0;
 
   constructor(private readonly game: Game) {}

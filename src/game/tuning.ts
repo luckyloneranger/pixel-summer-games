@@ -162,3 +162,22 @@ export const RECORDS = {
   HIGH_SCORES_KEPT: 10, // entries per high-score table
   NEW_RECORD_FLASH: 0.25, // s per on/off blink of "NEW RECORD!"
 };
+
+/** Sound (all levels 0-1 unless noted). */
+export const AUDIO = {
+  DEFAULT_MASTER: 8, // 0-10, starting master volume
+  DEFAULT_MUSIC: 6, // 0-10, starting music volume
+  DEFAULT_SFX: 8, // 0-10, starting effects volume
+  VOLUME_STEPS: 10, // volume settings go 0..this
+  HEADROOM: 0.5, // master gain at full volume (keeps the mix from clipping)
+  LOOKAHEAD: 0.25, // s, how far ahead music is scheduled
+  STEP_DISTANCE: 2.2, // m run per footstep
+  FOOTSTEP_PITCH_LOW: 90, // Hz, footstep pitch when slow
+  FOOTSTEP_PITCH_HIGH: 190, // Hz, footstep pitch at top speed
+  CROWD_HUSH: 0.05, // crowd level during ON YOUR MARKS / SET
+  CROWD_IDLE: 0.15, // crowd level when nothing much is happening
+  CROWD_RUNNING: 0.5, // crowd level at your top speed
+  CROWD_MAX_GAIN: 0.35, // gain of the crowd noise at level 1
+  CROWD_RESPONSE: 0.25, // s, how quickly the crowd follows the action
+  TOAST_TIME: 1.5, // s the SOUND ON/OFF message stays up
+};

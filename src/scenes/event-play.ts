@@ -13,6 +13,7 @@ import { ResultsScene } from './results';
 /** Plays one event, then moves on to its results. Esc pauses. */
 export class EventPlayScene implements Scene {
   readonly name = 'EVENT';
+  readonly music = null;
   private readonly event: AthleticsEvent;
   private finishedFor = 0; // s since the event finished
 
@@ -30,6 +31,7 @@ export class EventPlayScene implements Scene {
       difficulty: this.session.difficulty,
       rng: this.game.rng,
       practice: this.session.mode === 'practice',
+      sound: this.game.sound,
     });
   }
 
@@ -77,6 +79,10 @@ export class EventPlayScene implements Scene {
 
   onFocusLost(): void {
     if (!this.event.isFinished()) this.game.scenes.push(new PauseScene(this.game, this));
+  }
+
+  crowdLevel(): number {
+    return this.event.crowdLevel?.() ?? 0;
   }
 
   render(r: Renderer): void {

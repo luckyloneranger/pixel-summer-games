@@ -32,6 +32,8 @@ export function javelinToScreen(x: number, height: number, cam: { x: number; y: 
 export class JavelinEvent extends RunUpFieldEvent {
   readonly id = 'javelin';
   readonly name = 'JAVELIN';
+  protected readonly releaseCue = 'whoosh';
+  protected readonly landCue = 'thud';
   /** Direction the javelin was pointing when it stuck in, in degrees. */
   landingHeading = -45;
 

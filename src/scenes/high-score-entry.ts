@@ -22,6 +22,8 @@ export function finishChampionship(game: Game, session: Session): void {
 /** Arcade-style initials entry for a new high score. */
 export class HighScoreEntryScene implements Scene {
   readonly name = 'HIGH SCORE ENTRY';
+  readonly isMenu = true;
+  readonly music = 'menu' as const;
   private readonly entry: InitialsEntry;
   private time = 0;
 

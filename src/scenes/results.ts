@@ -26,6 +26,8 @@ const ROW_H = 12;
  */
 export class ResultsScene implements Scene {
   readonly name = 'RESULTS';
+  readonly isMenu = true;
+  readonly music = 'menu' as const;
   private readonly results: EventResult[];
   private readonly qualified: boolean;
   private readonly newRecord: boolean;
@@ -50,6 +52,10 @@ export class ResultsScene implements Scene {
     const mark = mine && !mine.disqualified ? mine.mark : null;
     this.newRecord = updatePersonalBest(game.store.data.personalBests, eventId, mark);
     if (this.newRecord) game.store.save();
+    // A jingle for a new record, otherwise a fanfare for a medal.
+    const place = this.results.findIndex((r) => r.playerIndex === 0);
+    if (this.newRecord) game.sfx('newRecord');
+    else if (mark !== null && place >= 0 && place < 3) game.sfx('medal');
   }
 
   update(dt: number, input: InputSnapshot): void {

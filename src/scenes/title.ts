@@ -9,6 +9,8 @@ import { MenuScene } from './menu';
 /** Placeholder title screen. Art and the attract-mode demo come later. */
 export class TitleScene implements Scene {
   readonly name = 'TITLE';
+  readonly isMenu = true;
+  readonly music = 'title' as const;
   private time = 0;
 
   constructor(private readonly game: Game) {}

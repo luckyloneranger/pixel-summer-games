@@ -1,5 +1,6 @@
 import type { InputSnapshot } from './input';
 import type { Renderer } from './renderer';
+import type { SongName } from '../audio/songs';
 
 /** One screen of the game: title, menu, an event, the pause overlay... */
 export interface Scene {
@@ -7,6 +8,12 @@ export interface Scene {
   readonly name: string;
   /** True for overlays (like Pause) that draw on top of the scene below. */
   readonly isOverlay?: boolean;
+  /** Menu-style screens get blips for moving and confirming. */
+  readonly isMenu?: boolean;
+  /** Background music for this screen (null = none). Overlays keep the music below. */
+  readonly music?: SongName | null;
+  /** How loud the crowd should be (events only), 0-1. */
+  crowdLevel?(): number;
   enter?(): void;
   exit?(): void;
   update(dt: number, input: InputSnapshot): void;
@@ -48,6 +55,14 @@ export class SceneManager {
   /** Pop scenes until the one named `name` is on top (e.g. back to the menu). */
   popTo(name: string): void {
     while (this.stack.length > 1 && this.top?.name !== name) this.pop();
+  }
+
+  /** The music wanted by the top scene that isn't an overlay. */
+  get music(): SongName | null {
+    for (let i = this.stack.length - 1; i >= 0; i--) {
+      if (!this.stack[i].isOverlay) return this.stack[i].music ?? null;
+    }
+    return null;
   }
 
   /** Is a scene with this name anywhere in the stack? */

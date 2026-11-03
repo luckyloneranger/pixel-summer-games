@@ -28,6 +28,7 @@ npm run preview  # serves the built dist/ folder locally
 | Enter | Start / confirm |
 | ↑ ↓ ← → (or W S A D) | Menus: move and change options; initials: change letter / move |
 | Esc or P | Back; pause during an event |
+| M | Sound on / off |
 | A then D (or ← then →) | Run: alternate the two keys |
 | W or Space (hold, release) | Long jump / javelin: hold to raise the angle, release to go |
 | W or Space (tap) | Hurdles: jump |

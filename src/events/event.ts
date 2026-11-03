@@ -11,6 +11,17 @@ export interface PlayerInfo {
   team?: TeamKit; // kit colour, red if not given
 }
 
+/** Sounds an event can ask for. The event only names them; audio plays them. */
+export type SoundCue = 'pistol' | 'buzzer' | 'footstep' | 'jump' | 'whoosh' | 'sand' | 'thud' | 'clank' | 'cheer';
+
+/** Where events send sound cues. `param` is 0-1 (footstep: speed, cheer: size). */
+export interface SoundSink {
+  play(cue: SoundCue, param?: number): void;
+}
+
+/** A sink that ignores everything (tests, and before audio is ready). */
+export const SILENT: SoundSink = { play: () => {} };
+
 /** What an event needs to start. */
 export interface EventContext {
   players: PlayerInfo[];
@@ -18,6 +29,8 @@ export interface EventContext {
   rng: Rng;
   /** Practice mode: no qualifying mark is shown. */
   practice?: boolean;
+  /** Where sound cues go (silent if not given). */
+  sound?: SoundSink;
 }
 
 /** One player's outcome of an event. */
@@ -52,4 +65,6 @@ export interface AthleticsEvent {
   getResults(): EventResult[];
   /** Extra lines for the debug overlay. */
   debugLines?(): string[];
+  /** How loud the crowd should be right now, 0-1. */
+  crowdLevel?(): number;
 }

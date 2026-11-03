@@ -1,6 +1,7 @@
 import type { Difficulty } from '../events/event';
 import type { TeamKit } from '../gfx/sprites/athlete';
 import type { HighScore, PersonalBests } from '../game/records';
+import { AUDIO } from '../game/tuning';
 
 /** Everything the game remembers between visits. */
 export interface SaveData {
@@ -10,6 +11,10 @@ export interface SaveData {
     team: TeamKit;
     difficulty: Difficulty;
     casual: boolean;
+    master: number; // 0-10
+    music: number; // 0-10
+    sfx: number; // 0-10
+    muted: boolean;
   };
   highScores: { championship: HighScore[] };
   personalBests: PersonalBests;
@@ -21,7 +26,16 @@ export const STORAGE_KEY = 'psg:v1';
 export function defaultSave(): SaveData {
   return {
     version: 1,
-    settings: { initials: 'AAA', team: 'red', difficulty: 'normal', casual: false },
+    settings: {
+      initials: 'AAA',
+      team: 'red',
+      difficulty: 'normal',
+      casual: false,
+      master: AUDIO.DEFAULT_MASTER,
+      music: AUDIO.DEFAULT_MUSIC,
+      sfx: AUDIO.DEFAULT_SFX,
+      muted: false,
+    },
     highScores: { championship: [] },
     personalBests: {},
   };

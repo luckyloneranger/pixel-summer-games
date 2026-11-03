@@ -8,7 +8,9 @@ import type { Look } from '../gfx/sprite';
 import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { CpuTapper, cpuLineup, playerLook } from './cpu';
-import type { AthleticsEvent, EventContext, EventId, EventResult } from './event';
+import { SILENT, type AthleticsEvent, type EventContext, type EventId, type EventResult, type SoundSink } from './event';
+import { Footsteps, runningCrowd } from './footsteps';
+import { AUDIO } from '../game/tuning';
 import { TapRunner, applyRunPresses } from './tap-runner';
 
 /** Where the race is up to. */
@@ -60,6 +62,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   clock = 0;
 
   protected ctx!: EventContext;
+  protected sound: SoundSink = SILENT;
+  private readonly footsteps = new Footsteps();
   protected rng!: Rng;
   protected phaseTimer = 0; // s spent in the current phase
   private setWait = 0; // s, random gap between SET and GO for this start
@@ -100,6 +104,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   init(ctx: EventContext): void {
     this.ctx = ctx;
     this.rng = ctx.rng;
+    this.sound = ctx.sound ?? SILENT;
     this.falseStarts = 0;
     this.clock = 0;
     const team = ctx.players[0].team;
@@ -144,6 +149,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       this.resetLane(lane);
     }
     this.raceTime = 0;
+    this.footsteps.reset();
     this.enterPhase('marks');
   }
 
@@ -151,6 +157,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     this.phase = phase;
     this.phaseTimer = 0;
     if (phase === 'set') this.setWait = this.rng.range(RACE_START.SET_WAIT_MIN, RACE_START.SET_WAIT_MAX);
+    if (phase === 'running') this.sound.play('pistol');
+    if (phase === 'falseStart' || phase === 'disqualified') this.sound.play('buzzer');
   }
 
   /** Lanes still in the race. */
@@ -212,10 +220,12 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     const before = r.position;
     r.update(dt);
     if (racing) this.afterMove(lane, dt, before);
+    if (lane.playerIndex >= 0 && racing) this.footsteps.update(r, this.sound);
     if (lane.finishTime === null && r.position >= this.cfg.DISTANCE) {
       // Work out the exact moment within this step that the line was crossed.
       const fraction = (this.cfg.DISTANCE - before) / (r.position - before);
       lane.finishTime = this.raceTime + fraction * dt;
+      if (lane.playerIndex >= 0) this.sound.play('cheer', this.playerWon ? 1 : 0.4);
     }
   }
 
@@ -256,6 +266,18 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     const p = this.player;
     if (p.finishTime === null) return false;
     return this.racers.every((l) => l === p || l.finishTime === null || l.finishTime > p.finishTime!);
+  }
+
+  crowdLevel(): number {
+    switch (this.phase) {
+      case 'marks':
+      case 'set':
+        return AUDIO.CROWD_HUSH; // the crowd goes quiet for the start
+      case 'running':
+        return runningCrowd(this.runner.speedFraction);
+      default:
+        return AUDIO.CROWD_IDLE;
+    }
   }
 
   debugLines(): string[] {

@@ -11,6 +11,8 @@ import { drawHeader } from '../ui/widgets';
 /** Top 10 championship scores and your personal bests. */
 export class HighScoresScene implements Scene {
   readonly name = 'HIGH SCORES';
+  readonly isMenu = true;
+  readonly music = 'menu' as const;
   private time = 0;
 
   constructor(
