@@ -90,6 +90,30 @@ const LEGS_FAR_PLANTED = [
   '........ww......',
   '........bbbb....',
 ];
+// Passing frames (legs crossing mid-stride), between the planted and forward poses.
+const LEGS_PASS_NEAR = [
+  '......KKkk......',
+  '.......Kkk......',
+  '.......kkKK.....',
+  '.......kk.KK....',
+  '.......kk..K....',
+  '.......kk..w....',
+  '.......kk..bb...',
+  '.......ww.......',
+  '.......bbbb.....',
+];
+const LEGS_PASS_FAR = [
+  '......kkKK......',
+  '.......kKK......',
+  '.......KKkk.....',
+  '.......KK.kk....',
+  '.......KK..k....',
+  '.......KK..w....',
+  '.......KK..bb...',
+  '.......ww.......',
+  '.......bbbb.....',
+];
+
 const LEGS_STAND = [
   '......KKkk......',
   '......KKkk......',
@@ -292,10 +316,48 @@ export const ATHLETE_FRAMES = {
   run1: [...UPPER_ARM_BACK, ...LEGS_NEAR_PLANTED],
   run2: [...UPPER_ARM_FORWARD, ...LEGS_FAR_FORWARD],
   run3: [...UPPER_ARM_FORWARD, ...LEGS_FAR_PLANTED],
+  runPassA: [...UPPER_ARM_BACK, ...LEGS_PASS_NEAR],
+  runPassB: [...UPPER_ARM_FORWARD, ...LEGS_PASS_FAR],
 } satisfies Record<string, string[]>;
 
 export type Pose = keyof typeof ATHLETE_FRAMES;
-export const RUN_CYCLE: readonly Pose[] = ['run0', 'run1', 'run2', 'run3'];
+/** Six frames: forward, planted, passing, then the same with the other leg. */
+export const RUN_CYCLE: readonly Pose[] = ['run0', 'run1', 'runPassA', 'run2', 'run3', 'runPassB'];
+
+/** Hair styles, so athletes don't all look alike. */
+export type HairStyle = 'short' | 'bun' | 'long';
+
+/** Poses where the head is upright (hair styles are added only to these). */
+const UPRIGHT: ReadonlySet<Pose> = new Set(['stand', 'crouch', 'set', 'jump', 'land', 'throw', 'stumble', 'celebrate', ...RUN_CYCLE]);
+
+/**
+ * Add a hair style to a pose's pixel map. Athletes face right, so the back of
+ * the head is the left edge of the hair: a bun sits on top at the back, long
+ * hair hangs down behind the neck.
+ */
+export function withHair(map: readonly string[], style: HairStyle, pose: Pose): string[] {
+  const rows = map.map((r) => [...r]);
+  if (style === 'short' || !UPRIGHT.has(pose)) return rows.map((r) => r.join(''));
+  // The back-most hair pixel in the top hair row, and the lowest hair row.
+  const top = rows.findIndex((r) => r.includes('h'));
+  if (top < 0) return rows.map((r) => r.join(''));
+  const back = rows[top].indexOf('h');
+  const set = (x: number, y: number) => {
+    if (y >= 0 && y < rows.length && x >= 0 && x < rows[y].length && rows[y][x] === '.') rows[y][x] = 'h';
+  };
+  if (style === 'bun') {
+    set(back - 1, top);
+    set(back - 1, top - 1);
+    set(back, top - 1);
+  } else {
+    // Long: two columns down the back of the head to the shoulders.
+    for (let y = top + 1; y <= top + 5; y++) {
+      const first = rows[y].findIndex((c) => c !== '.');
+      if (first > 0) set(first - 1, y);
+    }
+  }
+  return rows.map((r) => r.join(''));
+}
 
 /** Team kits: shirt and its shade. Player 1 is red. */
 export const TEAM_KITS = {
@@ -314,8 +376,8 @@ export const SKIN_TONES = {
 };
 export type SkinTone = keyof typeof SKIN_TONES;
 
-export function makeLook(kit: TeamKit, skin: SkinTone, hair: string): Look {
-  return { ...TEAM_KITS[kit], ...SKIN_TONES[skin], hair };
+export function makeLook(kit: TeamKit, skin: SkinTone, hair: string, hairStyle: HairStyle = 'short'): Look {
+  return { ...TEAM_KITS[kit], ...SKIN_TONES[skin], hair, hairStyle };
 }
 
 /** All frames for one athlete look, built on first use and then reused. */
@@ -327,7 +389,7 @@ export class AthleteSprites {
   get(pose: Pose): HTMLCanvasElement {
     let img = this.frames.get(pose);
     if (!img) {
-      img = buildSprite(ATHLETE_FRAMES[pose], this.look);
+      img = buildSprite(withHair(ATHLETE_FRAMES[pose], this.look.hairStyle ?? 'short', pose), this.look, true);
       this.frames.set(pose, img);
     }
     return img;

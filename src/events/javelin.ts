@@ -5,6 +5,7 @@ import { ATHLETE_H, ATHLETE_W, type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { floorCentimetres } from './field-attempts';
 import { RunUpFieldEvent } from './run-up-event';
+import { drawGroundShadow, drawSpeedLines } from '../gfx/effects';
 
 /**
  * Where the camera sits (in px) for something at `x` m along the field and
@@ -83,6 +84,9 @@ export class JavelinEvent extends RunUpFieldEvent {
 
     // Athlete, carrying the javelin until it's thrown.
     const athlete = at(this.athleteX, 0);
+    const top = athlete.sy - ATHLETE_H + 1;
+    drawGroundShadow(r, athlete.sx, athlete.sy, 0, PALETTE.ORANGE_DARK);
+    if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, athlete.sx - ATHLETE_W / 2, top, this.runner.speedFraction, this.clock);
     r.image(this.athleteSprites().get(this.pose()), athlete.sx - ATHLETE_W / 2, athlete.sy - ATHLETE_H + 1);
     const thrown = this.phase === 'flight' || this.phase === 'landed';
     if (!thrown) {
@@ -92,6 +96,7 @@ export class JavelinEvent extends RunUpFieldEvent {
     if (this.phase === 'hold') this.drawAngle(r, athlete.sx, athlete.sy - 12);
 
     if (this.phase === 'flight') {
+      this.drawTrail(r, at);
       const j = at(this.flight.x, this.flight.y);
       drawJavelin(r, j.sx, j.sy, this.flight.headingDegrees);
     } else if (this.phase === 'landed') {
@@ -139,6 +144,19 @@ export class JavelinEvent extends RunUpFieldEvent {
   }
 
   /** The javelin stuck in the grass, wobbling for a moment. */
+  /** A fading trail of dots behind the flying javelin, and its shadow on the grass. */
+  private drawTrail(r: Renderer, at: (x: number, h: number) => { sx: number; sy: number }): void {
+    const shadow = at(this.flight.x, 0);
+    r.rect(shadow.sx - 4, shadow.sy, 8, 1, PALETTE.GREEN_DARK);
+    for (let i = 1; i <= TRAIL_DOTS; i++) {
+      const x = this.flight.x - i * TRAIL_GAP;
+      const h = this.flight.heightAt(x);
+      if (h === null) break;
+      const p = at(x, h);
+      r.rect(p.sx, p.sy, 1, 1, i <= TRAIL_DOTS / 2 ? PALETTE.CLOUD : PALETTE.GREY_LIGHT);
+    }
+  }
+
   private drawStuckJavelin(r: Renderer, at: (x: number, h: number) => { sx: number; sy: number }): void {
     const t = this.phaseTimer;
     const fade = Math.max(0, 1 - t / JAVELIN.WOBBLE_TIME);
@@ -193,3 +211,5 @@ const MARK_DELAY = 0.4; // s after landing before the distance is shown
 const FIRST_FIELD_LINE = 20; // m
 const LAST_FIELD_LINE = 110; // m
 const FIELD_LINE_EVERY = 10; // m
+const TRAIL_DOTS = 8; // dots in the javelin's flight trail
+const TRAIL_GAP = 0.9; // m between trail dots

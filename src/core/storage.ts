@@ -21,6 +21,8 @@ export interface SaveData {
     sfx: number; // 0-10
     muted: boolean;
     reduceFlashing: boolean;
+    /** Retro TV look: scanlines and darker corners (off by default). */
+    crt: boolean;
     assist: boolean;
     /** Remapped gameplay keys, or null for the defaults. */
     controls: Controls | null;
@@ -49,6 +51,7 @@ export function defaultSave(): SaveData {
       sfx: AUDIO.DEFAULT_SFX,
       muted: false,
       reduceFlashing: false,
+      crt: false,
       assist: false,
       controls: null,
     },

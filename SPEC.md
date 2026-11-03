@@ -214,9 +214,9 @@ All graphics and sound are generated in code, so v1 needs no image or audio file
 ### Visuals
 
 - **Resolution:** draw everything at 320 × 180 pixels (16:9) on an offscreen canvas. Scale it up by the largest whole number that fits the window, centred with black bars. Turn image smoothing off (`imageSmoothingEnabled = false`, CSS `image-rendering: pixelated`) so pixels stay sharp.
-- **Palette:** one fixed palette of 24 original colours in `palette.ts`, in the spirit of 8-bit consoles. Use no colours outside it.
+- **Palette:** one fixed palette of 36 original colours in `palette.ts` (24 until Phase 13), in the spirit of 8-bit consoles, arranged in light and dark shades for shading. Use no colours outside it. Blend with dithering (checkerboard rows), not with see-through colours. The only exception is the optional Retro TV filter, which darkens the finished picture.
 - **Sprites:** define them in code as pixel maps (arrays of strings, one character per palette colour). Turn them into small canvases at load time.
-- **Athlete:** 16 × 24 pixels. Frames: 4-frame run cycle, crouch, set, jump, throw, celebrate, stumble. Team colours come from swapping palette entries.
+- **Athlete:** 16 × 24 pixels (kept at this size in Phase 13 so four runners fit their 14-pixel lanes). Frames: 6-frame run cycle (with two passing frames), crouch, set, jump, throw, celebrate, stumble, flop, lie. Team colours come from swapping palette entries. Sprites get a dark outline and lighter top edges when built, plus a hair style (short, bun or long). A soft shadow sits on the ground under every athlete.
 - **Stadium:** crowd stand that scrolls slower than the track (parallax), with a 2-frame wave on big results. Track with lane lines and distance markers. Scoreboard panel at the top showing event, attempt, time or distance, and the speed meter.
 - **Font:** an 8 × 8 pixel bitmap font defined in code (preferred, no extra files). Alternative: "Press Start 2P", which is under the SIL Open Font License, bundled locally.
 - **Game feel:** dust puffs at high speed, sand splash, small screen shake on a hurdle hit, flashing "NEW RECORD!", camera that leads in the running direction. Shake and flashes can be turned off in Options.
@@ -388,6 +388,14 @@ Build in this order. Get the feel of the running right with plain boxes before a
   - Reconnect: a dropped player reconnects to the same seat by themselves for up to 10 seconds (`NET.RECONNECT_WINDOW`) while the match carries on. Their screen shows "RECONNECTING… n"; the other shows "WAITING FOR XXX TO RECONNECT n". After that the match ends ("CONNECTION LOST" / "YOUR FRIEND LEFT"). Leaving on purpose ends it at once.
   - An automated test (`tests/e2e/online.spec.ts`) runs the room server locally and plays a race and a long jump between two browsers, cutting and restoring one connection in each.
 - Done when: two people on two devices can finish a Versus match together, and a dropped connection is handled cleanly.
+
+**Phase 13 – Graphics quality** (13a–13d built together at the user's request)
+
+- 13a – Athletes: outlines, highlights, a 6-frame run, hair styles, ground shadows; the palette grows to 36 colours.
+- 13b – Stadiums: a time of day for each event (day for the 100 m and long jump, sunset for the hurdles and javelin, night for the high jump) with dithered skies, sun, clouds or stars, a roof with floodlight towers, waving flags, mown grass stripes, and camera flashes in the crowd on big marks. The stand starts lower so the sky shows under the scoreboard.
+- 13c – Effects: speed lines near top speed, a javelin trail and shadow, a sand burst on landing, a mat squash, a slow-motion zoom highlight when a jump or throw is heading past the qualifying mark (offline only, as it would put online games out of step), and a blinds wipe between screens.
+- 13d – Retro TV (Options, off by default): scanlines and darker corners.
+- Reduce flashing turns off the camera flashes, screen shake and the highlight. Game logic is unchanged; slow motion can't change a mark because flights use an exact formula.
 
 ## 10. Testing, quality and definition of done
 

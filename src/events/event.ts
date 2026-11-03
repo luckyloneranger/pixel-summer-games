@@ -42,9 +42,13 @@ export interface NetLink {
 /** Screen effects an event can ask for (the game may skip them, e.g. reduce shake). */
 export interface EffectsSink {
   shake(pixels: number): void;
+  /** A big jump or throw: a moment of slow motion and zoom (the game decides if it can). */
+  highlight(): void;
+  /** Reduce flashing is on: skip camera flashes and the like. */
+  readonly calm: boolean;
 }
 
-export const NO_EFFECTS: EffectsSink = { shake: () => {} };
+export const NO_EFFECTS: EffectsSink = { shake: () => {}, highlight: () => {}, calm: true };
 
 /** What an event needs to start. */
 export interface EventContext {

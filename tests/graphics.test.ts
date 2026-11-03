@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { layoutCrowd } from '../src/gfx/backgrounds';
-import { PALETTE } from '../src/gfx/palette';
+import { PALETTE, lighter } from '../src/gfx/palette';
 import { SPRITE_CHARS, colourOf } from '../src/gfx/sprite';
 import { ATHLETE_FRAMES, ATHLETE_H, ATHLETE_W, makeLook } from '../src/gfx/sprites/athlete';
 
 describe('palette', () => {
-  it('has exactly 24 different colours', () => {
+  it('has exactly 36 different colours', () => {
     const colours = Object.values(PALETTE);
-    expect(colours).toHaveLength(24);
-    expect(new Set(colours).size).toBe(24);
+    expect(colours).toHaveLength(36);
+    expect(new Set(colours).size).toBe(36);
+  });
+
+  it('every highlight shade is itself in the palette', () => {
+    const allowed = new Set<string>(Object.values(PALETTE));
+    for (const c of Object.values(PALETTE)) expect(allowed.has(lighter(c))).toBe(true);
+    expect(lighter(PALETTE.RED)).toBe(PALETTE.RED_LIGHT);
   });
 });
 

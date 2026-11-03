@@ -1,7 +1,7 @@
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import { ANIMATION, RUNNER } from '../game/tuning';
-import { Stadium } from '../gfx/backgrounds';
+import { STADIUM_THEMES, Stadium } from '../gfx/backgrounds';
 import { PALETTE } from '../gfx/palette';
 import { AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
 import { AngleMeter } from './angle-meter';
@@ -125,6 +125,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.assist = ctx.assist ?? false;
     this.effects = ctx.effects ?? NO_EFFECTS;
     this.dust.clear();
+    this.stadium.theme = STADIUM_THEMES[this.id];
     this.net = ctx.net ?? null;
     this.prompts = ctx.prompts ?? KEYBOARD_PROMPTS;
     this.netQueue.length = 0;
@@ -188,6 +189,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected onRelease(): void {}
   /** Every step after the release (flight and landed). */
   protected afterRelease(_dt: number): void {}
+  /** Called once when the athlete or javelin comes down (sand bursts and the like). */
+  protected onLand(): void {}
   /** Screen y (px) of the runway surface, where dust puffs start. */
   protected dustGroundY(): number {
     return 0;
@@ -218,6 +221,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.clock += dt;
     this.phaseTimer += dt;
     this.dust.update(dt);
+    this.stadium.time = this.clock;
+    this.stadium.flashes = this.crowdWaves && !this.effects.calm;
     if (this.net) this.receiveNet();
     if (!this.localTurn) {
       this.spectate(dt);
@@ -419,6 +424,9 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   private launch(speed: number, angle: number): void {
     this.flight.launch(this.takeoffX, this.launchHeight(), speed, angle);
     this.onRelease();
+    // A jump or throw heading for the qualifying mark gets a slow-motion highlight.
+    const predicted = this.markFor(this.flight.landingX);
+    if (predicted !== null && predicted >= this.qualifyMark) this.effects.highlight();
     this.sound.play(this.releaseCue);
     this.enterPhase('flight');
   }
@@ -430,6 +438,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.pendingMark = null;
     this.record.record(this.lastMark);
     this.sound.play(this.landCue);
+    this.onLand();
     this.effects.shake(EFFECTS.SHAKE_LAND);
     if (this.lastMark !== null && this.lastMark >= this.qualifyMark) this.sound.play('cheer', 0.8);
     this.enterPhase('landed');

@@ -236,6 +236,17 @@ export const EFFECTS = {
   PHOTO_FINISH_TIME: 1.5, // s the race freezes for the photo finish
   DNF_STOP_TIME: 3, // s stopped (after everyone else finished) before "DID NOT FINISH"
   ATTRACT_DELAY: 15, // s of no input on the title before the demo race starts
+  // Phase 13 graphics
+  SHADOW_WIDTH: 12, // px, ground shadow width under a standing athlete
+  SPEED_LINES_FROM: 0.85, // fraction of top speed where speed lines appear
+  SLOW_MO: 0.4, // game speed during a big-jump highlight (offline only)
+  HIGHLIGHT_TIME: 1.1, // s (real time) a big-jump highlight lasts
+  HIGHLIGHT_ZOOM: 1.25, // how far the picture zooms in at the middle of a highlight
+  WIPE_TIME: 0.32, // s for the blinds wipe between screens
+  WIPE_BANDS: 9, // number of horizontal blinds in the wipe
+  CRT_SCANLINE_DARK: 0.28, // 0-1, how dark the retro TV scanlines are
+  CRT_VIGNETTE: 0.35, // 0-1, how dark the retro TV corners get
+  CAMERA_FLASH_CHANCE: 0.012, // chance per spectator per frame of a camera flash on a big mark
 };
 
 /** High jump. */

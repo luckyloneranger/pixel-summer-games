@@ -16,6 +16,8 @@ import { AudioEngine } from '../audio/synth';
 import type { EffectsSink, SoundSink } from '../events/event';
 import { AUDIO, EFFECTS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
+import { drawWipe, highlightZoom, wipeCover } from '../gfx/screen-fx';
+import type { Scene } from './scene-manager';
 import { TouchControls, drawRotateNotice } from '../ui/touch-controls';
 import { buildKeymap } from './keymap';
 import { Prompts } from '../ui/prompts';
@@ -38,6 +40,9 @@ export class Game {
   private shakeLeft = 0; // s of screen shake left
   private shakePixels = 0;
   private toastText = '';
+  private highlightAge = Infinity; // s since a big-jump highlight started
+  private wipeAge = 0; // s since the current screen appeared (for the wipe)
+  private lastTop: Scene | undefined;
   private toastTime = 0;
   /** Online: what to say while a connection is being waited for (null = nothing). */
   private onlineBanner: string | null = null;
@@ -83,12 +88,18 @@ export class Game {
   }
 
   /** Screen effects handed to events. Shake is skipped with "reduce flashing" on. */
-  readonly effects: EffectsSink = {
+  readonly effects: EffectsSink & { calm: boolean } = {
     shake: (pixels) => {
       if (this.steady) return;
       this.shakePixels = Math.max(this.shakePixels, pixels);
       this.shakeLeft = EFFECTS.SHAKE_TIME;
     },
+    // Slow motion would put the two online games out of step, so it's offline only.
+    highlight: () => {
+      if (this.session?.online || this.steady) return;
+      this.highlightAge = 0;
+    },
+    calm: false, // kept up to date in update()
   };
 
   /** Sound output handed to events. */
@@ -152,6 +163,9 @@ export class Game {
 
   private update(dt: number): void {
     this.input.beginStep();
+    this.effects.calm = this.steady;
+    this.highlightAge += dt;
+    this.wipeAge += dt;
     if (this.input.justPressed('DEBUG')) this.debug.visible = !this.debug.visible;
     if (this.input.justPressed('MUTE')) this.toggleMute();
     this.toastTime = Math.max(0, this.toastTime - dt);
@@ -170,7 +184,10 @@ export class Game {
       if (this.input.justPressed('DEBUG_SLOWER')) this.timeScaleIndex = Math.max(0, this.timeScaleIndex - 1);
       if (this.input.justPressed('DEBUG_FASTER')) this.timeScaleIndex = Math.min(last, this.timeScaleIndex + 1);
     }
-    this.scenes.update(dt * DEBUG.TIME_SCALES[this.timeScaleIndex], this.input);
+    // A big-jump highlight slows the event down for a moment (game time only).
+    const slow = this.highlightAge < EFFECTS.HIGHLIGHT_TIME && this.scenes.top?.name === 'EVENT' ? EFFECTS.SLOW_MO : 1;
+    this.scenes.update(dt * slow * DEBUG.TIME_SCALES[this.timeScaleIndex], this.input);
+    this.noticeNewScreen();
   }
 
   private render(nowMs: number): void {
@@ -183,6 +200,7 @@ export class Game {
     this.audio.setCrowd(this.scenes.top?.crowdLevel?.() ?? 0);
 
     this.scenes.render(this.renderer);
+    drawWipe(this.renderer, wipeCover(this.wipeAge));
     const top = this.scenes.top?.name;
     this.touch.setLayout(top === 'EVENT' ? 'event' : top === 'TITLE' || top === 'DEMO' ? 'title' : 'menu');
     this.touch.render(this.renderer);
@@ -202,7 +220,18 @@ export class Game {
       sx = Math.round((Math.random() * 2 - 1) * amount); // visual only: keep the seeded rng for gameplay
       sy = Math.round((Math.random() * 2 - 1) * amount);
     }
-    this.renderer.present(sx, sy);
+    this.renderer.crt = this.store.data.settings.crt;
+    const zoom = this.steady ? 1 : highlightZoom(this.highlightAge);
+    this.renderer.present(sx, sy, zoom);
+  }
+
+  /** A new screen (not a pause overlay coming or going) starts the blinds wipe. */
+  private noticeNewScreen(): void {
+    const top = this.scenes.top;
+    if (top === this.lastTop) return;
+    const overlay = top?.isOverlay || this.lastTop?.isOverlay;
+    this.lastTop = top;
+    if (!overlay) this.wipeAge = 0;
   }
 
   /** A strip across the top of the screen (online connection trouble). */

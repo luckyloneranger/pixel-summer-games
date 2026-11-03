@@ -13,7 +13,7 @@ import { NOTHING, STEP, pressed } from './helpers';
 
 function shakes(): EffectsSink & { amounts: number[] } {
   const amounts: number[] = [];
-  return { amounts, shake: (px) => void amounts.push(px) };
+  return { amounts, shake: (px) => void amounts.push(px), highlight: () => {}, calm: false };
 }
 
 function waitForGo(e: Dash100Event | Hurdles110Event): void {

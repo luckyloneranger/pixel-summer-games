@@ -21,6 +21,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 11b – Online: field events, reconnect | ✅ Approved |
 | 12 – A more fun title screen | 🔍 Ready for review |
 | 12b – Hints that match the device | 🔍 Ready for review |
+| 13 – Graphics quality (13a–13d) | 🔍 Ready for review |
 
 ## Phase 0 – Setup and skeleton
 
@@ -318,5 +319,43 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 **Known issues / notes**
 - In the lobby on a phone, the "BACK: CLOSE ROOM" line is under the control bar; the BACK button still closes the room.
 - The two-browser online test now runs in Chromium and Firefox only. Headless WebKit on GitHub's machines gives the second game window almost no animation frames, so the match couldn't finish in time (it passed there once, by luck). The game itself is the same in Safari; WebKit still runs the desktop and phone smoke tests. Each test player now also gets their own browser, like two real devices.
+
+**Next:** Phase 13 – graphics quality.
+
+## Phase 13 – Graphics quality (13a–13d together)
+
+Built in one go at the user's request, instead of one sub-phase at a time.
+
+**Done**
+- **13a – Athletes.**
+  - Every sprite now has a dark outline and lighter top edges (shoulders, hair). This is done when the sprite is built, so all poses and kits get it.
+  - The run cycle has 6 frames instead of 4 (two new passing frames).
+  - New hair styles: CPU athletes now have short hair, a bun or long hair.
+  - A soft shadow sits on the ground under every athlete. It shrinks as they leave the ground, and takes the colour of what's under it (track, sand or mat).
+  - The palette grows from 24 to 36 colours, with highlight shades and sky colours.
+- **13b – Stadiums.**
+  - A time of day for each event: day for the 100 m and long jump, sunset for the hurdles and javelin, night for the high jump.
+  - Dithered sky gradients with a sun, drifting clouds or twinkling stars.
+  - A roof with floodlight towers (lit at sunset and night), flags flapping on the front wall, mown grass stripes.
+  - Camera flashes in the crowd on a winning run or a qualifying mark.
+  - The stand now starts lower (row 40 instead of 24) so a strip of sky shows under the scoreboard. The crowd has 6 rows instead of 8.
+- **13c – Effects.**
+  - Speed lines behind you near top speed.
+  - A javelin trail and its shadow on the grass.
+  - A sand burst on long-jump landings and a mat squash in the high jump.
+  - A blinds wipe between screens.
+  - **Highlight:** when a jump or throw is heading past the qualifying mark, the game drops to slow motion and zooms in for about a second. This is offline only, because it would put online games out of step.
+- **13d – Retro TV** (Options, off by default): scanlines and darker corners over the finished picture.
+- **Reduce flashing** also turns off camera flashes and the highlight. The Options rows are packed a little closer to fit the new row.
+- **Tests:** 279 unit tests. The new ones cover:
+  - outlines and highlights staying in the palette;
+  - sprite size and hair styles;
+  - sky themes and dithered gradients;
+  - speed lines, the wipe and the zoom curve;
+  - the highlight coming on for a qualifying jump and not for a short one.
+
+**Known issues / notes**
+- Athletes stay 16×24 rather than the 24×32 first suggested. Four runners share 14-pixel lanes, so taller sprites would overlap the wall and each other, and every event would need re-laying out. The outlines, shading and extra frames give most of the gain.
+- The highlight zoom isn't pixel-perfect (it's a 1.25× enlargement for about a second). That's deliberate: it reads as a camera move.
 
 **Next:** waiting for approval.

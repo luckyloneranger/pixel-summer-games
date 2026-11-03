@@ -1,3 +1,4 @@
+import { EFFECTS } from '../game/tuning';
 import { DISPLAY } from '../game/tuning';
 import { GLYPHS, GLYPH_ORDER, GLYPH_SIZE, glyphIndex, textWidth } from '../gfx/font';
 import { PALETTE } from '../gfx/palette';
@@ -89,15 +90,55 @@ export class Renderer {
     }
   }
 
-  /** Copy the low-resolution frame to the screen, shifted by whole game pixels for shake. */
-  present(shakeX = 0, shakeY = 0): void {
-    this.screenCtx.imageSmoothingEnabled = false;
+  /**
+   * Copy the low-resolution frame to the screen, shifted by whole game pixels
+   * for shake. `zoom` above 1 enlarges the middle of the picture (highlights).
+   */
+  present(shakeX = 0, shakeY = 0, zoom = 1): void {
+    const ctx = this.screenCtx;
+    ctx.imageSmoothingEnabled = false;
     if (shakeX !== 0 || shakeY !== 0) {
-      this.screenCtx.fillStyle = PALETTE.BLACK;
-      this.screenCtx.fillRect(0, 0, this.screen.width, this.screen.height);
+      ctx.fillStyle = PALETTE.BLACK;
+      ctx.fillRect(0, 0, this.screen.width, this.screen.height);
     }
     const s = this.scale;
-    this.screenCtx.drawImage(this.low, shakeX * s, shakeY * s, this.screen.width, this.screen.height);
+    if (zoom > 1) {
+      // Crop round a point a little below the middle (where the athletes are).
+      const w = this.width / zoom;
+      const h = this.height / zoom;
+      const sx = (this.width - w) / 2;
+      const sy = Math.min(this.height - h, (this.height - h) * 0.7);
+      ctx.drawImage(this.low, sx, sy, w, h, shakeX * s, shakeY * s, this.screen.width, this.screen.height);
+    } else {
+      ctx.drawImage(this.low, shakeX * s, shakeY * s, this.screen.width, this.screen.height);
+    }
+    if (this.crt) ctx.drawImage(this.crtOverlay(), 0, 0);
+  }
+
+  /** Retro TV look (Options): scanlines and darker corners over the finished picture. */
+  crt = false;
+  private crtImage: HTMLCanvasElement | null = null;
+
+  /** The scanline and vignette layer, built once per screen size. */
+  private crtOverlay(): HTMLCanvasElement {
+    const { width, height } = this.screen;
+    if (this.crtImage && this.crtImage.width === width && this.crtImage.height === height) return this.crtImage;
+    const img = document.createElement('canvas');
+    img.width = width;
+    img.height = height;
+    const c = get2d(img);
+    // A dark line along the bottom of each game pixel row.
+    const line = Math.max(1, Math.floor(this.scale / 3));
+    c.fillStyle = `rgba(0, 0, 0, ${EFFECTS.CRT_SCANLINE_DARK})`;
+    for (let y = 0; y < this.height; y++) c.fillRect(0, (y + 1) * this.scale - line, width, line);
+    // Corners fade darker, like the curved glass of an old TV.
+    const g = c.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.45, width / 2, height / 2, Math.hypot(width, height) / 2);
+    g.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    g.addColorStop(1, `rgba(0, 0, 0, ${EFFECTS.CRT_VIGNETTE})`);
+    c.fillStyle = g;
+    c.fillRect(0, 0, width, height);
+    this.crtImage = img;
+    return img;
   }
 
   /** The font as one strip image in a colour, built once and then reused. */

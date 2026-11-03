@@ -11,6 +11,7 @@ type Row =
   | 'CASUAL MODE'
   | 'ASSIST RUN'
   | 'REDUCE FLASHING'
+  | 'RETRO TV'
   | 'MASTER VOLUME'
   | 'MUSIC VOLUME'
   | 'EFFECTS VOLUME'
@@ -20,6 +21,7 @@ const ROWS: Row[] = [
   'CASUAL MODE',
   'ASSIST RUN',
   'REDUCE FLASHING',
+  'RETRO TV',
   'MASTER VOLUME',
   'MUSIC VOLUME',
   'EFFECTS VOLUME',
@@ -27,11 +29,14 @@ const ROWS: Row[] = [
   'CONTROLS',
 ];
 
+const ROW_H = 11; // px between option rows (9 rows fit above the help lines)
+
 /** A short explanation shown under the list for the selected row. */
 const HELP: Partial<Record<Row, [string, string]>> = {
   'CASUAL MODE': ['MISS A QUALIFYING MARK AND', 'KEEP GOING WITH 0 POINTS'],
   'ASSIST RUN': ['HOLD RUN TO REACH 80% OF TOP', 'SPEED. TAPPING STILL GOES FASTER'],
-  'REDUCE FLASHING': ['NO BLINKING TEXT', 'AND NO SCREEN SHAKE'],
+  'REDUCE FLASHING': ['NO BLINKING, FLASHES, SHAKE', 'OR SLOW-MOTION ZOOM'],
+  'RETRO TV': ['SCANLINES AND DARK CORNERS', 'LIKE AN OLD TELEVISION'],
   CONTROLS: ['CHANGE THE KEYS FOR', 'PLAYER 1 AND PLAYER 2'],
 };
 
@@ -65,6 +70,9 @@ export class OptionsScene implements Scene {
       case 'REDUCE FLASHING':
         if (toggle) s.reduceFlashing = !s.reduceFlashing;
         break;
+      case 'RETRO TV':
+        if (toggle) s.crt = !s.crt;
+        break;
       case 'MASTER VOLUME':
         s.master = clamp(s.master);
         break;
@@ -97,6 +105,7 @@ export class OptionsScene implements Scene {
       onOff(s.casual),
       onOff(s.assist),
       onOff(s.reduceFlashing),
+      onOff(s.crt),
       s.master,
       s.music,
       s.sfx,
@@ -104,7 +113,7 @@ export class OptionsScene implements Scene {
       '...',
     ];
     ROWS.forEach((label, i) => {
-      const y = 30 + i * 13;
+      const y = 28 + i * ROW_H;
       const selected = i === this.row;
       if (selected) r.text('>', 18, y, PALETTE.YELLOW);
       r.text(label, 32, y, selected ? PALETTE.WHITE : PALETTE.GREY_LIGHT);

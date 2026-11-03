@@ -1,7 +1,7 @@
 import type { Rng } from '../core/rng';
 import { CPU, CPU_FIELD } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { makeLook, type SkinTone, type TeamKit } from '../gfx/sprites/athlete';
+import { makeLook, type HairStyle, type SkinTone, type TeamKit } from '../gfx/sprites/athlete';
 import type { Look } from '../gfx/sprite';
 import type { Difficulty } from './event';
 import type { RunKey, TapRunner } from './tap-runner';
@@ -45,11 +45,11 @@ export class CpuTapper {
   }
 }
 
-const CPU_DEFS: { name: string; kit: TeamKit; skin: SkinTone; hair: string }[] = [
-  { name: 'ACE', kit: 'blue', skin: 'medium', hair: PALETTE.INK },
-  { name: 'JET', kit: 'green', skin: 'dark', hair: PALETTE.INK },
-  { name: 'KAI', kit: 'yellow', skin: 'light', hair: PALETTE.BROWN },
-  { name: 'ZED', kit: 'purple', skin: 'medium', hair: PALETTE.BROWN }, // only in the demo race
+const CPU_DEFS: { name: string; kit: TeamKit; skin: SkinTone; hair: string; style: HairStyle }[] = [
+  { name: 'ACE', kit: 'blue', skin: 'medium', hair: PALETTE.INK, style: 'short' },
+  { name: 'JET', kit: 'green', skin: 'dark', hair: PALETTE.INK, style: 'bun' },
+  { name: 'KAI', kit: 'yellow', skin: 'light', hair: PALETTE.BROWN, style: 'long' },
+  { name: 'ZED', kit: 'purple', skin: 'medium', hair: PALETTE.BROWN, style: 'bun' }, // only in the demo race
 ];
 
 const ALL_KITS: TeamKit[] = ['red', 'blue', 'green', 'yellow', 'purple'];
@@ -71,7 +71,7 @@ export function cpuLineup(
       kit = ALL_KITS.find((k) => !taken.has(k) && !cpuKits.includes(k))!;
       taken.add(kit);
     }
-    return { name: d.name, look: makeLook(kit, d.skin, d.hair) };
+    return { name: d.name, look: makeLook(kit, d.skin, d.hair, d.style) };
   });
 }
 

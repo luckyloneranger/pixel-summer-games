@@ -5,6 +5,7 @@ import { ATHLETE_H, ATHLETE_W, type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { floorCentimetres } from './field-attempts';
 import { RunUpFieldEvent } from './run-up-event';
+import { drawGroundShadow, drawSpeedLines } from '../gfx/effects';
 
 export type { FieldPhase as JumpPhase } from './run-up-event';
 
@@ -39,6 +40,11 @@ export class LongJumpEvent extends RunUpFieldEvent {
     this.perfect = this.takeoffX >= -LONG_JUMP.PERFECT_ZONE;
   }
 
+  /** Sand sprays up where the jumper lands. */
+  protected onLand(): void {
+    for (const dx of [-0.5, -0.2, 0.1, 0.4, 0.7]) this.dust.add(this.flight.x + dx, GROUND_Y);
+  }
+
   protected dustGroundY(): number {
     return GROUND_Y;
   }
@@ -62,7 +68,10 @@ export class LongJumpEvent extends RunUpFieldEvent {
     const x = toScreen(this.athleteX);
     const flying = this.phase === 'flight' || this.phase === 'landed';
     const lift = flying ? Math.round(this.flight.y * ppm) : 0;
-    r.image(this.athleteSprites().get(this.pose()), x - ATHLETE_W / 2, GROUND_Y - ATHLETE_H + 1 - lift);
+    const top = GROUND_Y - ATHLETE_H + 1 - lift;
+    drawGroundShadow(r, x, GROUND_Y, lift, this.athleteX > 0 ? PALETTE.GOLD : PALETTE.ORANGE_DARK);
+    if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x - ATHLETE_W / 2, top, this.runner.speedFraction, this.clock);
+    r.image(this.athleteSprites().get(this.pose()), x - ATHLETE_W / 2, top);
 
     if (this.phase === 'hold' || this.phase === 'flight') this.drawAngle(r, x, GROUND_Y - 12);
     if (this.phase === 'landed') this.drawLanding(r, toScreen);

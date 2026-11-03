@@ -60,3 +60,36 @@ export class DustTrail {
     return true;
   }
 }
+
+/** A soft shadow on the ground under an athlete: smaller the higher they are. Draw it before the athlete. */
+export function drawGroundShadow(r: Renderer, cx: number, groundY: number, liftPx: number, colour: string): void {
+  const w = Math.max(4, EFFECTS.SHADOW_WIDTH - Math.round(liftPx / 4));
+  r.rect(cx - w / 2, groundY, w, 1, colour);
+  r.rect(cx - w / 2 + 2, groundY + 1, Math.max(2, w - 4), 1, colour);
+}
+
+/** One speed line: starts `dx` px behind the athlete's back, `y` px below the sprite top. */
+export interface SpeedLine {
+  dx: number;
+  y: number;
+  length: number;
+}
+
+/** Streaks behind a runner near top speed (none below SPEED_LINES_FROM). They flicker with time. */
+export function speedLines(speedFraction: number, t: number): SpeedLine[] {
+  if (speedFraction < EFFECTS.SPEED_LINES_FROM) return [];
+  const strength = (speedFraction - EFFECTS.SPEED_LINES_FROM) / (1 - EFFECTS.SPEED_LINES_FROM); // 0-1
+  const flick = Math.floor(t * 20);
+  return [7, 12, 17].map((y, i) => ({
+    dx: 2 + ((flick + i * 3) % 4),
+    y,
+    length: Math.round(3 + strength * 7) - ((flick + i) % 2) * 2,
+  }));
+}
+
+/** Draw speed lines behind an athlete whose sprite's left edge is at `left` and top at `top`. */
+export function drawSpeedLines(r: Renderer, left: number, top: number, speedFraction: number, t: number): void {
+  for (const l of speedLines(speedFraction, t)) {
+    r.rect(left - l.dx - l.length, top + l.y, l.length, 1, PALETTE.CLOUD);
+  }
+}

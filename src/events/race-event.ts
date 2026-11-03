@@ -2,7 +2,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import { ANIMATION, RACE_START, RUNNER } from '../game/tuning';
-import { LAYOUT, Stadium, TRACK_BOTTOM } from '../gfx/backgrounds';
+import { LAYOUT, STADIUM_THEMES, Stadium, TRACK_BOTTOM } from '../gfx/backgrounds';
 import { PALETTE } from '../gfx/palette';
 import type { Look } from '../gfx/sprite';
 import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
@@ -15,7 +15,7 @@ import type { NetLink } from './event';
 import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
 import type { RunnerState, StartPhase } from '../net/protocol';
 import { NET } from '../game/tuning';
-import { DustPuffs, DustTrail } from '../gfx/effects';
+import { DustPuffs, DustTrail, drawGroundShadow, drawSpeedLines } from '../gfx/effects';
 import { EFFECTS } from '../game/tuning';
 import { AUDIO } from '../game/tuning';
 import { TapRunner, applyRunPresses } from './tap-runner';
@@ -150,6 +150,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
 
   init(ctx: EventContext): void {
     this.ctx = ctx;
+    this.stadium.theme = STADIUM_THEMES[this.id];
     this.rng = ctx.rng;
     this.sound = ctx.sound ?? SILENT;
     this.net = ctx.net ?? null;
@@ -578,6 +579,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     const toScreen = (metres: number) => metres * ppm - cameraPx;
 
     const waveFrame = this.playerWon ? Math.floor(this.clock / ANIMATION.WAVE_FRAME_TIME) % 2 : 0;
+    this.stadium.time = this.clock;
+    this.stadium.flashes = this.playerWon && !(this.ctx.effects?.calm ?? true);
     this.stadium.drawBackground(r, cameraPx, ANIMATION.CROWD_PARALLAX, waveFrame);
     this.drawTrackMarkings(r, toScreen);
     this.dust.render(r, toScreen);
@@ -594,7 +597,10 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
         continue;
       }
       if (x < -ATHLETE_W || x > r.width) continue;
-      const y = footY - ATHLETE_H + 1 - this.liftFor(lane);
+      const lift = this.liftFor(lane);
+      const y = footY - ATHLETE_H + 1 - lift;
+      drawGroundShadow(r, x + ATHLETE_W / 2, footY, lift, PALETTE.ORANGE_DARK);
+      if (lane.playerIndex >= 0 && this.phase === 'running') drawSpeedLines(r, x, y, lane.runner.speedFraction, this.clock);
       r.image(this.spritesFor(lane).get(this.poseFor(lane)), x, y);
     }
 

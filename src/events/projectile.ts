@@ -31,6 +31,11 @@ export class Projectile {
     return (this.vy + Math.sqrt(this.vy * this.vy + 2 * g * this.y0)) / g;
   }
 
+  /** Where it will come down (m along the ground). */
+  get landingX(): number {
+    return this.x0 + this.vx * this.flightTime;
+  }
+
   update(dt: number): void {
     if (this.landed) return;
     this.t = Math.min(this.t + dt, this.flightTime);

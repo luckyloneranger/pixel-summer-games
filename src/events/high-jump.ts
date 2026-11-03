@@ -7,6 +7,7 @@ import { drawScoreboard } from '../ui/hud';
 import type { AttemptTracker } from './field-attempts';
 import { HeightAttempts } from './height-attempts';
 import { RunUpFieldEvent } from './run-up-event';
+import { drawGroundShadow, drawSpeedLines } from '../gfx/effects';
 
 /** Highest bar height at or below `best`, or null if it's under the first height. */
 export function heightFor(best: number): number | null {
@@ -138,8 +139,10 @@ export class HighJumpEvent extends RunUpFieldEvent {
     // Landing mat: a deep blue block with a lighter top edge.
     const matL = toScreen(HIGH_JUMP.MAT_START);
     const matR = toScreen(HIGH_JUMP.MAT_END);
-    r.rect(matL, MAT_TOP, matR - matL, GROUND_Y - MAT_TOP + 2, PALETTE.BLUE);
-    r.rect(matL, MAT_TOP, matR - matL, 2, PALETTE.SKY);
+    // The mat squashes down for a moment when the jumper lands on it.
+    const squash = this.phase === 'landed' && this.phaseTimer < MAT_SQUASH_TIME ? 2 : 0;
+    r.rect(matL, MAT_TOP + squash, matR - matL, GROUND_Y - MAT_TOP + 2 - squash, PALETTE.BLUE);
+    r.rect(matL, MAT_TOP + squash, matR - matL, 2, PALETTE.SKY);
     r.rect(matL, MAT_TOP + 5, matR - matL, 1, PALETTE.NAVY);
     // Distance-to-line boards on the run-up.
     for (let m = 5; m < HIGH_JUMP.RUNWAY; m += 5) {
@@ -185,6 +188,8 @@ export class HighJumpEvent extends RunUpFieldEvent {
       const centre = GROUND_Y - this.flight.y * ppm;
       bottom = Math.min(floor + 1, Math.round(centre + ATHLETE_H / 2));
     }
+    drawGroundShadow(r, x + ATHLETE_W / 2, floor, Math.max(0, floor - bottom), onMat ? PALETTE.NAVY : PALETTE.ORANGE_DARK);
+    if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x, bottom - ATHLETE_H, this.runner.speedFraction, this.clock);
     r.image(this.athleteSprites().get(this.pose(onMat)), x, bottom - ATHLETE_H);
   }
 
@@ -222,3 +227,4 @@ const MAT_TOP = GROUND_Y - 9; // top surface of the landing mat
 const UPRIGHT_HEIGHT = 2.6; // m, height of the uprights
 const FLOP_FROM = 0.6; // m before the bar where the athlete turns into the arched flop
 const RESULT_DELAY = 0.3; // s after landing before CLEARED / MISS shows
+const MAT_SQUASH_TIME = 0.2; // s the mat stays squashed after a landing
