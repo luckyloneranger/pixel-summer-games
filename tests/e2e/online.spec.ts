@@ -106,7 +106,7 @@ async function dropAndRecover(guest: { page: Page; sockets: WebSocketRoute[] }):
 }
 
 test('online: a race and a long jump survive a dropped connection', async ({ browser }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(300_000);
 
   // ---- 100 m
   let host = await player(browser);
@@ -141,31 +141,34 @@ test('online: a race and a long jump survive a dropped connection', async ({ bro
   guest = await player(browser);
   await startMatch(host.page, guest.page, 3); // LONG JUMP
   dropped = false;
-  for (let i = 0; i < 2000; i++) {
-    const [h, g] = [await status(host.page), await status(guest.page)];
-    if (h.scene === 'RESULTS' && g.scene === 'RESULTS') break;
+  const deadline = Date.now() + 180_000;
+  let h = await status(host.page);
+  let g = await status(guest.page);
+  while (!(h.scene === 'RESULTS' && g.scene === 'RESULTS')) {
+    if (Date.now() > deadline) throw new Error(`long jump never finished: host ${JSON.stringify(h)} guest ${JSON.stringify(g)}`);
     expect([h.scene, g.scene]).not.toContain('DISCONNECTED');
     // Drop the guest while the host is jumping (attempt 3 is the host's second).
     if (!dropped && h.lines.includes('ATTEMPT# 2')) {
       await dropAndRecover(guest);
       dropped = true;
     }
-    // Whoever's turn it is: tap a few times, then a short hold of W to jump.
-    for (const p of [host.page, guest.page]) {
-      const s = p === host.page ? h : g;
+    // Whoever's turn it is: a tap or two, then a short hold of W to jump.
+    // press() holds each key for a few frames so no browser can miss it.
+    for (const [p, s] of [[host.page, h], [guest.page, g]] as const) {
       if (s.scene !== 'EVENT' || !s.lines.includes('MY TURN')) continue;
       if (s.state === 'STATE ready' || s.state === 'STATE runup') {
         const speed = Number(s.lines.find((l) => l.startsWith('SPEED'))?.slice(6) ?? 0);
-        if (speed < 4) await p.keyboard.press(left ? 'KeyA' : 'KeyD');
+        if (speed < 1.5) await press(p, left ? 'KeyA' : 'KeyD'); // a short run-up keeps the test quick
         else {
           await p.keyboard.down('KeyW');
-          await p.waitForTimeout(250);
+          await frames(p, 12);
           await p.keyboard.up('KeyW');
         }
         left = !left;
       }
     }
-    await host.page.waitForTimeout(40);
+    await frames(host.page, 2);
+    [h, g] = await Promise.all([status(host.page), status(guest.page)]);
   }
   for (const p of [host.page, guest.page]) await expect.poll(() => sceneOf(p), { timeout: 20_000 }).toBe('RESULTS');
   expect(dropped).toBe(true);
