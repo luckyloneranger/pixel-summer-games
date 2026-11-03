@@ -11,6 +11,8 @@ export interface Scene {
   exit?(): void;
   update(dt: number, input: InputSnapshot): void;
   render(r: Renderer): void;
+  /** Extra lines for the debug overlay. */
+  debugLines?(): string[];
 }
 
 /** A stack of scenes. Only the top one updates; overlays let the one below show. */

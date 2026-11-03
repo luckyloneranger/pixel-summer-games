@@ -5,6 +5,7 @@ import { Renderer } from './renderer';
 import { Rng, seedFromQuery } from './rng';
 import { SceneManager } from './scene-manager';
 import { TitleScene } from '../scenes/title';
+import { DEBUG } from '../game/tuning';
 
 /** Owns the loop, the canvas, the scene stack and the shared services. */
 export class Game {
@@ -15,9 +16,7 @@ export class Game {
   readonly debug: DebugOverlay;
   private readonly clock = new FixedStepClock();
   private lastRenderMs = -1;
-  private fpsText = '';
-  private sceneText = '';
-  private readonly debugLines: string[] = [];
+  private timeScaleIndex = DEBUG.TIME_SCALES.indexOf(1);
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new Renderer(canvas);
@@ -38,7 +37,13 @@ export class Game {
   private update(dt: number): void {
     this.input.beginStep();
     if (this.input.justPressed('DEBUG')) this.debug.visible = !this.debug.visible;
-    this.scenes.update(dt, this.input);
+    if (this.debug.visible) {
+      // Debug-only slow motion / fast forward with [ and ].
+      const last = DEBUG.TIME_SCALES.length - 1;
+      if (this.input.justPressed('DEBUG_SLOWER')) this.timeScaleIndex = Math.max(0, this.timeScaleIndex - 1);
+      if (this.input.justPressed('DEBUG_FASTER')) this.timeScaleIndex = Math.min(last, this.timeScaleIndex + 1);
+    }
+    this.scenes.update(dt * DEBUG.TIME_SCALES[this.timeScaleIndex], this.input);
   }
 
   private render(nowMs: number): void {
@@ -50,16 +55,15 @@ export class Game {
     this.renderer.present();
   }
 
-  /** Rebuild the overlay text only when a value changes, to avoid per-frame garbage. */
-  private buildDebugLines(): readonly string[] {
-    const fps = `FPS   ${this.debug.fpsCounter.fps}`;
-    const scene = `SCENE ${this.scenes.top?.name ?? '-'}`;
-    if (fps !== this.fpsText || scene !== this.sceneText || this.debugLines.length === 0) {
-      this.fpsText = fps;
-      this.sceneText = scene;
-      this.debugLines.length = 0;
-      this.debugLines.push(fps, scene, `SCALE ${this.renderer.scale}X`, `SEED  ${this.rng.seed}`);
-    }
-    return this.debugLines;
+  /** Debug text is rebuilt every frame, but only while the overlay is open. */
+  private buildDebugLines(): string[] {
+    const top = this.scenes.top;
+    return [
+      `FPS   ${this.debug.fpsCounter.fps}`,
+      `SCENE ${top?.name ?? '-'}`,
+      `SCALE ${this.renderer.scale}X  SEED ${this.rng.seed}`,
+      `GAME SPEED ${DEBUG.TIME_SCALES[this.timeScaleIndex]}X ([ ])`,
+      ...(top?.debugLines?.() ?? []),
+    ];
   }
 }

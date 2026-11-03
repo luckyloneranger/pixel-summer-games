@@ -4,9 +4,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 
 | Phase | Status |
 | --- | --- |
-| 0 – Setup and skeleton | ✅ Done, awaiting play-test |
-| 1 – 100 m with plain boxes | ⏳ Next |
-| 2 – 100 m art and CPU runners | – |
+| 0 – Setup and skeleton | ✅ Approved |
+| 1 – 100 m with plain boxes | ✅ Done, awaiting play-test |
+| 2 – 100 m art and CPU runners | ⏳ Next |
 | 3 – Long jump | – |
 | 4 – Javelin | – |
 | 5 – 110 m hurdles | – |
@@ -32,6 +32,22 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 **Known issues / notes**
 - Palette is a 10-colour placeholder; the full 24-colour palette comes in Phase 2.
 - The game doesn't pause on tab switch yet (nothing to pause). The loop's 250 ms cap already stops a jump forward on return. Pause overlay arrives in Phase 6.
-- Debug-only keys `[`, `]` and `N` are not wired up yet; they need events to be useful (Phase 1+).
 
-**Next:** Phase 1 – 100 m with plain boxes (TapRunner, start sequence, false starts, timer).
+## Phase 1 – 100 m with plain boxes
+
+**Done**
+- `TapRunner` (`src/events/tap-runner.ts`): only alternating presses count; same key twice, held keys and auto-repeat add nothing; pressing both keys at once counts once. Speed drains every frame and is capped.
+- Speed formula uses `AIM_SPEED` above `MAX_SPEED` so 10 taps/s reaches the top (user chose option A; SPEC section 4 updated).
+- 100 m race (`src/events/dash100.ts`): ON YOUR MARKS → SET → random 1.0–2.5 s → GO, false start → restart, second false start → disqualified, timer to 0.01 s (finish moment worked out within the step), reaction time.
+- Plain-box runner with legs that swap on every tap, 4-lane track, 10 m markers, chequered finish, camera that looks ahead, speed meter.
+- Temporary test menu with "100 M DASH"; Enter retries, Esc returns.
+- Debug overlay adds race state, speed, taps/s, position; `[` and `]` change game speed (0.25×–4×) while the overlay is open.
+- 51 unit tests, including simulated 7 and 10 taps/s races against the SPEC time targets.
+
+**Known issues / notes**
+- Simulated times: 7 taps/s ≈ 11.5 s, 10 taps/s ≈ 9.9 s (plus your reaction time).
+- No CPU runners, art or sound yet (Phases 2 and 7). Lanes 1, 3 and 4 are empty.
+- A runner who never taps never finishes; press Esc.
+- Debug key `N` (skip to next event) waits for the championship in Phase 6.
+
+**Next:** Phase 2 – 100 m art and CPU runners.

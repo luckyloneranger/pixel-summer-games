@@ -27,7 +27,9 @@ npm run preview  # serves the built dist/ folder locally
 | --- | --- |
 | Enter | Start / confirm |
 | Esc or P | Back |
+| A then D (or ← then →) | Run: alternate the two keys |
 | ` (backtick) | Toggle the debug overlay (or add `?debug=1` to the URL) |
+| [ and ] | Slow down / speed up the game (debug overlay open) |
 
 Add `?seed=1234` to the URL to replay the same random sequence.
 

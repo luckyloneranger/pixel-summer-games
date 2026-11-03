@@ -77,11 +77,15 @@ In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1
 - Show a speed meter. Tie the run-cycle frame rate and footstep sound to speed.
 
 ```
-on valid tap:  speed += TAP_IMPULSE * (1 - speed / MAX_SPEED)
+on valid tap:  speed += TAP_IMPULSE * (1 - speed / AIM_SPEED)
+               speed = min(speed, MAX_SPEED)
 every tick:    speed = max(0, speed - DRAG * dt)
                speed = min(speed, MAX_SPEED)
                position += speed * dt        // metres
 ```
+
+- `AIM_SPEED` is set above `MAX_SPEED` so that 10 taps a second actually reaches the cap. (With `MAX_SPEED` in the formula, speed only creeps towards the top and 10 taps a second would give about 90%.) Decided in Phase 1.
+- If both run keys are pressed in the same instant, only one tap counts, so pressing both together isn't a shortcut.
 
 ### Hold-and-release angle (long jump, javelin)
 
