@@ -20,11 +20,28 @@ async function status(page: Page): Promise<Status> {
 
 const sceneOf = async (page: Page) => (await status(page)).scene;
 
-/** Press a key, then wait long enough that the next press is a separate game step. */
+/** Wait for the page to draw a few frames (the game steps once per frame or more). */
+async function frames(page: Page, n = 3): Promise<void> {
+  await page.evaluate(
+    (count) =>
+      new Promise<void>((done) => {
+        const tick = (left: number) => (left <= 0 ? done() : requestAnimationFrame(() => tick(left - 1)));
+        tick(count);
+      }),
+    n,
+  );
+}
+
+/**
+ * Press a key so the game sees it as its own press: hold it for a few frames,
+ * then let go for a few (a fixed delay isn't enough on slower browsers).
+ */
 async function press(page: Page, key: string, times = 1): Promise<void> {
   for (let i = 0; i < times; i++) {
-    await page.keyboard.press(key);
-    await page.waitForTimeout(70);
+    await page.keyboard.down(key);
+    await frames(page);
+    await page.keyboard.up(key);
+    await frames(page);
   }
 }
 
