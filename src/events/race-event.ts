@@ -5,9 +5,9 @@ import { ANIMATION, RACE_START, RUNNER } from '../game/tuning';
 import { LAYOUT, Stadium, TRACK_BOTTOM } from '../gfx/backgrounds';
 import { PALETTE } from '../gfx/palette';
 import type { Look } from '../gfx/sprite';
-import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, makeLook, type Pose } from '../gfx/sprites/athlete';
+import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
-import { CPU_ATHLETES, CpuTapper } from './cpu';
+import { CpuTapper, cpuLineup, playerLook } from './cpu';
 import type { AthleticsEvent, EventContext, EventId, EventResult } from './event';
 import { TapRunner, applyRunPresses } from './tap-runner';
 
@@ -102,14 +102,15 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     this.rng = ctx.rng;
     this.falseStarts = 0;
     this.clock = 0;
-    const cpus = [...CPU_ATHLETES];
+    const team = ctx.players[0].team;
+    const cpus = cpuLineup(team);
     this.lanes = [1, 2, 3, 4].map((laneNumber) => {
       const human = laneNumber === PLAYER_LANE;
       const cpu = human ? null : cpus.shift()!;
       return this.createLane({
         laneNumber,
         name: human ? ctx.players[0].initials : cpu!.name,
-        look: human ? makeLook('red', 'light', PALETTE.BROWN) : cpu!.look,
+        look: human ? playerLook(team) : cpu!.look,
         runner: new TapRunner(RUNNER),
         cpu: null,
         playerIndex: human ? 0 : -1,

@@ -35,5 +35,7 @@ export class TitleScene implements Scene {
     const blinkOn = this.time % TITLE.BLINK_PERIOD < TITLE.BLINK_PERIOD / 2;
     if (blinkOn) r.text('PRESS START', r.width / 2, 104, PALETTE.WHITE, 'center');
     r.text('ENTER', r.width / 2, 118, PALETTE.GREY, 'center');
+    const top = this.game.store.data.highScores.championship[0];
+    if (top) r.text(`HI ${top.score} ${top.initials}`, r.width / 2, 8, PALETTE.WHITE, 'center');
   }
 }

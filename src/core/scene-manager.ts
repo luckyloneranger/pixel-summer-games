@@ -13,6 +13,8 @@ export interface Scene {
   render(r: Renderer): void;
   /** Extra lines for the debug overlay. */
   debugLines?(): string[];
+  /** The tab was hidden or the window lost focus (events pause themselves). */
+  onFocusLost?(): void;
 }
 
 /** A stack of scenes. Only the top one updates; overlays let the one below show. */
@@ -41,6 +43,16 @@ export class SceneManager {
   replace(scene: Scene): void {
     this.pop();
     this.push(scene);
+  }
+
+  /** Pop scenes until the one named `name` is on top (e.g. back to the menu). */
+  popTo(name: string): void {
+    while (this.stack.length > 1 && this.top?.name !== name) this.pop();
+  }
+
+  /** Is a scene with this name anywhere in the stack? */
+  has(name: string): boolean {
+    return this.stack.some((s) => s.name === name);
   }
 
   update(dt: number, input: InputSnapshot): void {

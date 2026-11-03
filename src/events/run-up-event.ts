@@ -3,9 +3,10 @@ import type { Renderer } from '../core/renderer';
 import { ANIMATION, RUNNER } from '../game/tuning';
 import { Stadium } from '../gfx/backgrounds';
 import { PALETTE } from '../gfx/palette';
-import { AthleteSprites, RUN_CYCLE, makeLook, type Pose } from '../gfx/sprites/athlete';
+import { AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
 import { AngleMeter } from './angle-meter';
-import { CPU_ATHLETES, cpuFieldMarks } from './cpu';
+import { cpuFieldMarks, cpuLineup, playerLook } from './cpu';
+import { qualifyingMark } from '../game/scoring';
 import type { AthleticsEvent, Difficulty, EventContext, EventId, EventResult } from './event';
 import { FieldAttempts } from './field-attempts';
 import { Projectile } from './projectile';
@@ -20,7 +21,6 @@ export interface RunUpConfig {
   ATTEMPTS: number;
   LAUNCH_EFFICIENCY: number; // launch speed = run speed x this
   GRAVITY: number; // m/s²
-  QUALIFY: number; // m
   RESULT_TIME: number; // s the mark (or FOUL) stays up
 }
 
@@ -47,6 +47,11 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   foulReason = '';
 
   protected playerName = 'P1';
+  private look = playerLook();
+  /** Qualifying mark for this difficulty (m). The crowd cheers marks that reach it. */
+  protected qualifyMark = 0;
+  /** Practice mode doesn't show the qualifying mark. */
+  private showQualify = true;
   protected cpus: { name: string; marks: (number | null)[] }[] = [];
   protected phaseTimer = 0;
   protected clock = 0; // s since the event started (animations)
@@ -64,8 +69,12 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   init(ctx: EventContext): void {
     this.playerName = ctx.players[0].initials;
+    this.look = playerLook(ctx.players[0].team);
+    this.sprites = null;
+    this.qualifyMark = qualifyingMark(this.id, ctx.difficulty);
+    this.showQualify = !ctx.practice;
     this.record = new FieldAttempts(this.cfg.ATTEMPTS);
-    this.cpus = CPU_ATHLETES.map((a) => ({
+    this.cpus = cpuLineup(ctx.players[0].team).map((a) => ({
       name: a.name,
       marks: cpuFieldMarks(this.cpuRanges[ctx.difficulty], this.cfg.ATTEMPTS, ctx.rng),
     }));
@@ -229,7 +238,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   /** True when the crowd should wave (a qualifying mark is on the board). */
   protected get crowdWaves(): boolean {
-    return this.phase === 'landed' && (this.lastMark ?? 0) >= this.cfg.QUALIFY;
+    return this.phase === 'landed' && (this.lastMark ?? 0) >= this.qualifyMark;
   }
 
   protected get waveFrame(): number {
@@ -241,7 +250,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   }
 
   protected athleteSprites(): AthleteSprites {
-    this.sprites ??= new AthleteSprites(makeLook('red', 'light', PALETTE.BROWN));
+    this.sprites ??= new AthleteSprites(this.look);
     return this.sprites;
   }
 
@@ -268,7 +277,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
       case 'ready':
         band();
         r.text(`ATTEMPT ${this.record.current} OF ${this.cfg.ATTEMPTS}`, cx, y, PALETTE.WHITE, 'center', 2);
-        r.text(`QUALIFY ${this.cfg.QUALIFY.toFixed(2)} M  ${hint}`, cx, y + 20, PALETTE.YELLOW, 'center');
+        const target = this.showQualify ? `QUALIFY ${this.qualifyMark.toFixed(2)} M  ` : '';
+        r.text(`${target}${hint}`, cx, y + 20, PALETTE.YELLOW, 'center');
         break;
       case 'landed':
         if (!showMark) break;

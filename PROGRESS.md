@@ -9,9 +9,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 2 – 100 m art and CPU runners | ✅ Approved |
 | 3 – Long jump | ✅ Approved |
 | 4 – Javelin | ✅ Approved |
-| 5 – 110 m hurdles | ✅ Done, awaiting play-test |
-| 6 – Game flow | ⏳ Next |
-| 7 – Audio | – |
+| 5 – 110 m hurdles | ✅ Approved |
+| 6 – Game flow | ✅ Done, awaiting play-test |
+| 7 – Audio | ⏳ Next |
 | 8 – Two players, touch and options | – |
 | 9 – Polish and launch | – |
 
@@ -121,4 +121,24 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - Screen shake on a hit and the clank sound come in Phases 9 and 7.
 - An average tapper (about 7 taps/s) needs clean jumps to get near the 15.50 s qualifying mark.
 
-**Next:** Phase 6 – Game flow (menus, championship, scoring, high scores, pause).
+## Phase 6 – Game flow
+
+**Done**
+- Full screen flow: Title → Main menu → Player setup (initials, team colour, difficulty) → Event intro card → Event → Results → next event / Game over → Podium → High-score entry → High scores → Title.
+- Main menu: Championship, Practice, Versus (greyed, Phase 8), High Scores, How to Play (greyed, Phase 9), Options.
+- Scoring (`src/game/scoring.ts`): straight-line points from the SPEC table, capped at 1,200; fouls/DQ/no mark = 0. Qualifying marks scaled by difficulty (Easy +8% time / −10% distance, Hard −4% / +6%). All numbers in `SCORING` and `DIFFICULTY_MARKS` in tuning.ts.
+- Championship (`src/game/championship.ts`): 100 m → long jump → javelin → hurdles; missing a mark ends the run; Casual mode (Options) carries on with 0 points. CPUs score points from their marks too; the podium ranks everyone by total.
+- Results show points, your medal, QUALIFIED / NOT QUALIFIED, the running total and a flashing NEW RECORD! on a personal best.
+- Practice: pick any event and CPU difficulty, personal best shown, retry or back.
+- Pause (Esc/P): Resume, Restart event, Options, Quit to menu. Events pause themselves when the tab is hidden or the window loses focus.
+- Saving (`src/core/storage.ts`): settings, top-10 championship scores and personal bests under `psg:v1` in localStorage, falling back to memory if storage is blocked.
+- Your initials and team colour are used in every event; CPUs never wear your colour.
+- Debug: `N` (overlay open) skips a championship event with exactly the qualifying mark.
+- 138 unit tests (adds scoring, qualifying, championship rules, high-score table, personal bests, storage fallback, popTo, CPU colours).
+
+**Known issues / notes**
+- A race only ends when everyone finishes, so if you stop running you have to pause and quit.
+- When `N` skips a race, CPUs have no time (0 points) because their race wasn't run.
+- Versus and How to Play are placeholders until Phases 8 and 9.
+
+**Next:** Phase 7 – Audio.

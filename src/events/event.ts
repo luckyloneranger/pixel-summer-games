@@ -1,12 +1,14 @@
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
+import type { TeamKit } from '../gfx/sprites/athlete';
 
 export type EventId = 'dash100' | 'longJump' | 'javelin' | 'hurdles110';
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface PlayerInfo {
   initials: string;
+  team?: TeamKit; // kit colour, red if not given
 }
 
 /** What an event needs to start. */
@@ -14,6 +16,8 @@ export interface EventContext {
   players: PlayerInfo[];
   difficulty: Difficulty;
   rng: Rng;
+  /** Practice mode: no qualifying mark is shown. */
+  practice?: boolean;
 }
 
 /** One player's outcome of an event. */

@@ -1,0 +1,64 @@
+import type { Game } from '../core/game';
+import type { InputSnapshot } from '../core/input';
+import type { Renderer } from '../core/renderer';
+import type { Scene } from '../core/scene-manager';
+import type { Difficulty } from '../events/event';
+import { CHAMPIONSHIP_EVENTS } from '../game/championship';
+import { EVENT_NAMES, formatMark } from '../game/scoring';
+import { Session } from '../game/session';
+import { PALETTE } from '../gfx/palette';
+import { cycle, drawHeader, leftRight, moveSelection } from '../ui/widgets';
+import { EventIntroScene } from './event-intro';
+
+const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
+
+/** Practice: pick any event (and the CPU difficulty). */
+export class EventSelectScene implements Scene {
+  readonly name = 'EVENT SELECT';
+  private row = 0;
+
+  constructor(private readonly game: Game) {}
+
+  update(_dt: number, input: InputSnapshot): void {
+    const g = this.game;
+    if (input.justPressed('BACK')) {
+      g.scenes.pop();
+      return;
+    }
+    const rows = CHAMPIONSHIP_EVENTS.length + 1;
+    this.row = moveSelection(input, this.row, rows);
+    const settings = g.store.data.settings;
+    const isDifficultyRow = this.row === CHAMPIONSHIP_EVENTS.length;
+    const step = leftRight(input);
+    if (isDifficultyRow && step !== 0) {
+      settings.difficulty = cycle(DIFFICULTIES, settings.difficulty, step);
+      g.store.save();
+    }
+    if (input.justPressed('CONFIRM') && !isDifficultyRow) {
+      const id = CHAMPIONSHIP_EVENTS[this.row];
+      const session = new Session('practice', settings.initials, settings.team, settings.difficulty, false, id);
+      g.session = session;
+      g.scenes.push(new EventIntroScene(g, session, id));
+    }
+  }
+
+  render(r: Renderer): void {
+    r.clear(PALETTE.NAVY);
+    drawHeader(r, 'PRACTICE');
+    r.text('EVENT', 40, 36, PALETTE.GREY);
+    r.text('YOUR BEST', 200, 36, PALETTE.GREY);
+    const bests = this.game.store.data.personalBests;
+    CHAMPIONSHIP_EVENTS.forEach((id, i) => {
+      const y = 52 + i * 16;
+      const selected = i === this.row;
+      if (selected) r.text('>', 26, y, PALETTE.YELLOW);
+      r.text(EVENT_NAMES[id], 40, y, selected ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
+      r.text(formatMark(id, bests[id] ?? null), 200, y, PALETTE.YELLOW);
+    });
+    const dy = 52 + CHAMPIONSHIP_EVENTS.length * 16 + 8;
+    const sel = this.row === CHAMPIONSHIP_EVENTS.length;
+    if (sel) r.text('>', 26, dy, PALETTE.YELLOW);
+    r.text(`CPU DIFFICULTY < ${this.game.store.data.settings.difficulty} >`, 40, dy, sel ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
+    r.text('ENTER: PLAY  ESC: BACK', r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
+  }
+}

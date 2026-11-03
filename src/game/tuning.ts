@@ -85,7 +85,6 @@ export const LONG_JUMP = {
   GRAVITY: 9.81, // m/s²
   PERFECT_ZONE: 0.2, // m before the foul line that counts as a perfect take-off
   PERFECT_BONUS: 0.05, // fraction added to the distance for a perfect take-off
-  QUALIFY: 7.0, // m, qualifying mark on Normal
   PIT_START: 1.0, // m past the foul line where the sand starts
   PIT_END: 10.0, // m past the foul line where the sand ends
   RESULT_TIME: 2.5, // s the mark (or FOUL) stays up before the next attempt
@@ -109,7 +108,6 @@ export const JAVELIN = {
   LAUNCH_EFFICIENCY: 2.62, // throw speed = run speed x this (the arm adds a lot; 45° at top speed ≈ 94 m)
   GRAVITY: 9.81, // m/s²
   RELEASE_HEIGHT: 1.8, // m, the javelin leaves from shoulder height
-  QUALIFY: 70.0, // m, qualifying mark on Normal
   BRAKE: 15, // m/s², how hard the athlete stops after the release
   RESULT_TIME: 3.0, // s the mark (or FOUL) stays up before the next attempt
   WOBBLE_TIME: 1.0, // s the stuck javelin keeps wobbling
@@ -134,8 +132,33 @@ export const HURDLES = {
   CRASH_SPEED_LOSS: 0.7, // fraction of speed lost running straight into one
   STUMBLE_TIME: 0.4, // s of stumbling after a crash
   HIT_TEXT_TIME: 0.6, // s the "HIT!" label shows over the athlete
-  QUALIFY: 15.5, // s, qualifying time on Normal
   CPU_HIT_CHANCE: { easy: 0.25, normal: 0.12, hard: 0.05 }, // chance a CPU clips each hurdle
   PIXELS_PER_METER: 12, // px per m when drawing the track
   CAMERA_LEAD: 80, // px, runner's distance from the left edge of the screen
+};
+
+/**
+ * Points and qualifying marks per event (SPEC section 6). Points run in a
+ * straight line from ZERO (0 points) to PAR (1,000 points), capped at MAX.
+ * QUALIFY is the Normal-difficulty mark needed to stay in a championship.
+ */
+export const SCORING = {
+  dash100: { ZERO: 14.0, PAR: 9.8, QUALIFY: 12.0 }, // s
+  longJump: { ZERO: 4.0, PAR: 8.5, QUALIFY: 7.0 }, // m
+  javelin: { ZERO: 30.0, PAR: 90.0, QUALIFY: 70.0 }, // m
+  hurdles110: { ZERO: 20.0, PAR: 13.0, QUALIFY: 15.5 }, // s
+  PAR_POINTS: 1000, // points at the PAR mark
+  MAX_POINTS: 1200, // points cap for beating PAR
+};
+
+/** Qualifying marks are scaled by difficulty: times (races) and distances (field). */
+export const DIFFICULTY_MARKS = {
+  race: { easy: 1.08, normal: 1, hard: 0.96 }, // Easy 8% slower allowed, Hard 4% faster needed
+  field: { easy: 0.9, normal: 1, hard: 1.06 }, // Easy 10% shorter allowed, Hard 6% longer needed
+};
+
+/** Saving and high scores. */
+export const RECORDS = {
+  HIGH_SCORES_KEPT: 10, // entries per high-score table
+  NEW_RECORD_FLASH: 0.25, // s per on/off blink of "NEW RECORD!"
 };

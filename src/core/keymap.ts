@@ -16,7 +16,8 @@ export type Action =
   | 'MUTE'
   | 'DEBUG'
   | 'DEBUG_SLOWER'
-  | 'DEBUG_FASTER';
+  | 'DEBUG_FASTER'
+  | 'DEBUG_SKIP';
 
 export type KeyMap = Record<Action, string[]>;
 
@@ -35,6 +36,7 @@ export const DEFAULT_KEYMAP: KeyMap = {
   DEBUG: ['Backquote'],
   DEBUG_SLOWER: ['BracketLeft'],
   DEBUG_FASTER: ['BracketRight'],
+  DEBUG_SKIP: ['KeyN'],
 };
 
 /** Keys whose browser default (page scrolling) we block. */

@@ -1,7 +1,7 @@
 import type { Rng } from '../core/rng';
 import { CPU, CPU_FIELD } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { makeLook } from '../gfx/sprites/athlete';
+import { makeLook, type SkinTone, type TeamKit } from '../gfx/sprites/athlete';
 import type { Look } from '../gfx/sprite';
 import type { Difficulty } from './event';
 import type { RunKey, TapRunner } from './tap-runner';
@@ -45,12 +45,27 @@ export class CpuTapper {
   }
 }
 
-/** The made-up CPU athletes who fill the empty lanes. */
-export const CPU_ATHLETES: { name: string; look: Look }[] = [
-  { name: 'ACE', look: makeLook('blue', 'medium', PALETTE.INK) },
-  { name: 'JET', look: makeLook('green', 'dark', PALETTE.INK) },
-  { name: 'KAI', look: makeLook('yellow', 'light', PALETTE.BROWN) },
+const CPU_DEFS: { name: string; kit: TeamKit; skin: SkinTone; hair: string }[] = [
+  { name: 'ACE', kit: 'blue', skin: 'medium', hair: PALETTE.INK },
+  { name: 'JET', kit: 'green', skin: 'dark', hair: PALETTE.INK },
+  { name: 'KAI', kit: 'yellow', skin: 'light', hair: PALETTE.BROWN },
 ];
+
+/**
+ * The made-up CPU athletes who fill the empty lanes. A CPU whose kit matches
+ * the player's team wears red instead, so you never race your own colour.
+ */
+export function cpuLineup(playerTeam: TeamKit = 'red'): { name: string; look: Look }[] {
+  return CPU_DEFS.map((d) => ({
+    name: d.name,
+    look: makeLook(d.kit === playerTeam ? 'red' : d.kit, d.skin, d.hair),
+  }));
+}
+
+/** The player's look for a team colour. */
+export function playerLook(team: TeamKit = 'red'): Look {
+  return makeLook(team, 'light', PALETTE.BROWN);
+}
 
 /**
  * A CPU's marks for a field event: each attempt is a foul (null) or a
