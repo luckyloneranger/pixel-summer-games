@@ -14,7 +14,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 7 – Audio | ✅ Approved |
 | 8a – Two players | ✅ Approved |
 | 8b – Touch and options | ✅ Approved |
-| 9 – Polish and launch | ✅ Done, awaiting play-test (launch needs two GitHub settings) |
+| 9 – Polish and launch | ✅ Approved – v1 launched |
 | 10+ – More events | – |
 | 11 – Online multiplayer (after v1) | – |
 
@@ -212,3 +212,10 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - Repository renamed to `pixel-summer-games` (no "Olympic" in the public address) and GitHub Pages switched to deploy from GitHub Actions.
 - Live at https://luckyloneranger.github.io/pixel-summer-games/
 - The claude.ai preview artifact is a separate single-file build (that host only allows inline scripts).
+
+## v1 complete
+
+All of Phases 0–9 are approved. The game is live at https://luckyloneranger.github.io/pixel-summer-games/ and redeploys automatically on every push to `main`.
+
+**Next:** Phase 10 – the first backlog event (SPEC section 3 order: high jump), or Phase 11 – online multiplayer.
+
