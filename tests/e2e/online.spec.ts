@@ -105,12 +105,15 @@ async function dropAndRecover(guest: { page: Page; sockets: WebSocketRoute[] }):
   expect(guest.sockets.length).toBeGreaterThan(before);
 }
 
-test('online: a race and a long jump survive a dropped connection', async ({ browser }) => {
+test('online: a race and a long jump survive a dropped connection', async ({ browser, playwright, browserName }) => {
   test.setTimeout(300_000);
 
   // ---- 100 m
+  // Each player gets their own browser, as on two devices. (With two windows in
+  // one WebKit browser, the one behind barely runs: it gets no animation frames.)
+  const guestBrowser = await playwright[browserName].launch();
   let host = await player(browser);
-  let guest = await player(browser);
+  let guest = await player(guestBrowser);
   await startMatch(host.page, guest.page, 2); // 100 M
   for (const p of [host.page, guest.page]) {
     await expect.poll(async () => (await status(p)).state, { timeout: 15_000 }).toBe('STATE running');
@@ -138,7 +141,7 @@ test('online: a race and a long jump survive a dropped connection', async ({ bro
 
   // ---- Long jump: each attempt is a few taps and a quick jump.
   host = await player(browser);
-  guest = await player(browser);
+  guest = await player(guestBrowser);
   await startMatch(host.page, guest.page, 3); // LONG JUMP
   dropped = false;
   const deadline = Date.now() + 180_000;
@@ -171,6 +174,7 @@ test('online: a race and a long jump survive a dropped connection', async ({ bro
   for (const p of [host.page, guest.page]) await expect.poll(() => sceneOf(p), { timeout: 20_000 }).toBe('RESULTS');
   expect(dropped).toBe(true);
   await sameResults(host.page, guest.page);
+  await guestBrowser.close();
 });
 
 /** Both screens show the same results table (and it has the two players in it). */
