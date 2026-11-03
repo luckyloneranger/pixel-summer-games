@@ -8,12 +8,17 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "server:dev": "wrangler dev --config server/wrangler.jsonc --port 8787",
+    "server:deploy": "wrangler deploy --config server/wrangler.jsonc",
+    "typecheck:server": "tsc -p server/tsconfig.json"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261103.1",
     "@playwright/test": "^1.63.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "wrangler": "^4.157.0"
   }
 }

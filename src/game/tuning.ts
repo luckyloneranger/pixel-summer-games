@@ -236,3 +236,8 @@ export const HIGH_JUMP = {
   PIXELS_PER_METER: 14, // px per m when drawing (same scale as the long jump)
   CAMERA_LEAD: 150, // px, athlete's distance from the left edge of the screen
 };
+
+/** Online play. */
+export const NET = {
+  SNAPSHOT_EVERY: 0.05, // s between sending your runner's state (20 per second)
+};

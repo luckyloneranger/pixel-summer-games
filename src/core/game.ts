@@ -5,6 +5,7 @@ import { Renderer } from './renderer';
 import { Rng, seedFromQuery } from './rng';
 import { SceneManager } from './scene-manager';
 import { TitleScene } from '../scenes/title';
+import { DisconnectedScene } from '../scenes/disconnected';
 import { DEBUG } from '../game/tuning';
 import { Session } from '../game/session';
 import { SaveStore } from './storage';
@@ -113,6 +114,18 @@ export class Game {
     this.toastTime = AUDIO.TOAST_TIME;
   }
 
+  /** Online match: if the other player leaves (or the connection drops), say so. */
+  private watchOnline(): void {
+    const online = this.session?.online;
+    if (!online || this.scenes.has('DISCONNECTED')) return;
+    if (this.session?.series?.state !== 'playing') return; // match finished: leaving is fine
+    const c = online.conn;
+    if (c.peerLeft) this.scenes.push(new DisconnectedScene(this, 'YOUR FRIEND LEFT'));
+    else if (c.state === 'failed' || (c.state === 'closed' && this.session)) {
+      this.scenes.push(new DisconnectedScene(this, 'CONNECTION LOST'));
+    }
+  }
+
   /** Blips for menu screens, based on the keys pressed this step. */
   private menuSounds(): void {
     const i = this.input;
@@ -140,6 +153,7 @@ export class Game {
     this.portrait = portrait;
     if (portrait) return;
     this.menuSounds();
+    this.watchOnline();
     if (this.debug.visible) {
       // Debug-only slow motion / fast forward with [ and ].
       const last = DEBUG.TIME_SCALES.length - 1;

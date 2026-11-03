@@ -14,6 +14,9 @@ const ITEMS: MenuItem[] = [
   { label: 'QUIT TO MENU' },
 ];
 
+/** Online the match carries on for the other player, so there's only resume or leave. */
+const ONLINE_ITEMS: MenuItem[] = [{ label: 'RESUME' }, { label: 'LEAVE MATCH' }];
+
 /** Pause overlay, drawn over the frozen event. */
 export class PauseScene implements Scene {
   readonly name = 'PAUSE';
@@ -24,17 +27,23 @@ export class PauseScene implements Scene {
   constructor(
     private readonly game: Game,
     private readonly play: EventPlayScene,
+    private readonly online = false,
   ) {}
 
-  update(_dt: number, input: InputSnapshot): void {
+  private get items(): MenuItem[] {
+    return this.online ? ONLINE_ITEMS : ITEMS;
+  }
+
+  update(dt: number, input: InputSnapshot): void {
     const g = this.game;
+    if (this.online) this.play.tickUnderPause(dt); // the race doesn't stop for one player
     if (input.justPressed('BACK')) {
       g.scenes.pop();
       return;
     }
-    this.selected = moveSelection(input, this.selected, ITEMS.length);
+    this.selected = moveSelection(input, this.selected, this.items.length);
     if (!input.justPressed('CONFIRM')) return;
-    switch (ITEMS[this.selected].label) {
+    switch (this.items[this.selected].label) {
       case 'RESUME':
         g.scenes.pop();
         break;
@@ -49,17 +58,22 @@ export class PauseScene implements Scene {
         g.session = null;
         g.scenes.popTo('MENU');
         break;
+      case 'LEAVE MATCH':
+        g.session?.online?.conn.close();
+        g.session = null;
+        g.scenes.popTo('MENU');
+        break;
     }
   }
 
   render(r: Renderer): void {
     const w = 160;
-    const h = 92;
+    const h = this.online ? 66 : 92;
     const x = (r.width - w) / 2;
     const y = (r.height - h) / 2;
     r.rect(x - 2, y - 2, w + 4, h + 4, PALETTE.YELLOW);
     r.rect(x, y, w, h, PALETTE.INK);
     r.text('PAUSED', r.width / 2, y + 8, PALETTE.YELLOW, 'center', 2);
-    drawMenu(r, ITEMS, this.selected, x + 32, y + 34, 13);
+    drawMenu(r, this.items, this.selected, x + 32, y + 34, 13);
   }
 }

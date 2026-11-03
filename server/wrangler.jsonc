@@ -1,0 +1,11 @@
+{
+  // Room relay for online play. Deploy with: npx wrangler deploy --config server/wrangler.jsonc
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "pixel-summer-games-rooms",
+  "main": "index.ts",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }]
+}

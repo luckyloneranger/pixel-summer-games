@@ -1,8 +1,18 @@
 import type { Difficulty, EventId, PlayerInfo } from '../events/event';
 import type { TeamKit } from '../gfx/sprites/athlete';
 import { CHAMPIONSHIP_EVENTS, Championship } from './championship';
+import type { RoomConnection } from '../net/connection';
 
 export type Mode = 'championship' | 'practice' | 'versus';
+
+/** An online match: the connection and which player is on this device. */
+export interface OnlineMatch {
+  conn: RoomConnection;
+  /** 0 = host, 1 = guest. */
+  localIndex: number;
+  /** Shared random seed, so both games run the same CPUs and start timing. */
+  seed: number;
+}
 
 /** A human in this session. */
 export interface SessionPlayer {
@@ -22,6 +32,8 @@ export class Session {
     casual: boolean,
     /** Practice: the event being practised. Versus: the events chosen. */
     events: readonly EventId[] = CHAMPIONSHIP_EVENTS,
+    /** Online Versus: the match link (null for local play). */
+    readonly online: OnlineMatch | null = null,
   ) {
     if (mode === 'championship') {
       this.series = new Championship(difficulty, casual, players.length);

@@ -8,12 +8,14 @@ import { EventSelectScene } from './event-select';
 import { HighScoresScene } from './high-scores';
 import { HowToPlayScene } from './how-to-play';
 import { OptionsScene } from './options';
+import { OnlineMenuScene } from './online-menu';
 import { PlayerSetupScene } from './player-setup';
 
 const ITEMS: MenuItem[] = [
   { label: 'CHAMPIONSHIP' },
   { label: 'PRACTICE' },
   { label: 'VERSUS' },
+  { label: 'ONLINE' },
   { label: 'HIGH SCORES' },
   { label: 'HOW TO PLAY' },
   { label: 'OPTIONS' },
@@ -43,6 +45,9 @@ export class MenuScene implements Scene {
       case 'VERSUS':
         g.scenes.push(new PlayerSetupScene(g, 'versus'));
         break;
+      case 'ONLINE':
+        g.scenes.push(new OnlineMenuScene(g));
+        break;
       case 'PRACTICE':
         g.scenes.push(new EventSelectScene(g));
         break;
@@ -61,7 +66,7 @@ export class MenuScene implements Scene {
   render(r: Renderer): void {
     r.clear(PALETTE.NAVY);
     drawHeader(r, 'MAIN MENU');
-    drawMenu(r, ITEMS, this.selected, 104, 48, 16);
+    drawMenu(r, ITEMS, this.selected, 104, 40, 15);
     r.text('UP/DOWN: CHOOSE  ENTER: OK', r.width / 2, 156, PALETTE.GREY_LIGHT, 'center');
     r.text('ESC: BACK', r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
   }

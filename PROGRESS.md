@@ -17,7 +17,8 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 9 – Polish and launch | ✅ Approved – v1 launched |
 | 10 – High jump | ✅ Approved |
 | 10+ – More events | – |
-| 11 – Online multiplayer (after v1) | – |
+| 11a – Online: server, lobby, races | ✅ Done, awaiting play-test (server deploy needs Cloudflare secrets) |
+| 11b – Online: field events, reconnect | – |
 
 ## Phase 0 – Setup and skeleton
 
@@ -234,5 +235,23 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 - Starting the hold is a real skill: at top speed you need to begin about 8 m before the line to reach 60° in time.
 - The landing is detected at ground level rather than the mat's top, so the CLEARED banner appears about 0.1 s late.
 
-**Next:** the next backlog event (triple jump), or Phase 11 – online multiplayer.
+## Phase 11a – Online: server, lobby and races
+
+**Done**
+- Decisions recorded in SPEC (Phase 11 section) and working rule 6 updated in SPEC and CLAUDE.md: network use is allowed in Online mode only.
+- Room relay server (`server/index.ts`, `server/wrangler.jsonc`): a Cloudflare Worker with one Durable Object per 4-letter room; at most two players; relays well-formed messages only; tells each player when the other joins or leaves; stores nothing. Uses the hibernation WebSocket API so idle rooms cost nothing.
+- Shared message format with no imports (`src/net/protocol.ts`), checked on both ends; connection class with an inbox the game reads each step (`src/net/connection.ts`). Server address from `VITE_ROOMS_URL` (set by the deploy workflow), `ws://127.0.0.1:8787` locally.
+- Screens: Online menu (Create / Join), join by code (arcade letters), lobby (code shown big, both players' initials, host picks races and CPU level), ready-up on every intro card, online pause (Resume / Leave match; the race carries on), "YOUR FRIEND LEFT" / "CONNECTION LOST".
+- Online races: each device runs its own runner and sends its state 20 times a second; the other runner is drawn from that and moved smoothly between messages. The host runs the start sequence and rules on false starts (the guest reports early presses). CPUs use a shared seed per event, so both screens agree. Hurdles also share jumps, knocked hurdles and stumbles. No photo-finish freeze online.
+- Only your own score goes into your high-score table online; the connection closes when the match ends.
+- Deploy workflow deploys the server (when the Cloudflare secrets exist) and builds the game pointing at it.
+- 228 unit tests (adds two linked race games with simulated lag giving identical results, guest false starts and disqualification on both screens, hurdles sync, room codes, message checks, the connection).
+- Checked with the real server locally (`wrangler dev`): two browsers completed a full online match (both races, winner screen identical on both), and a guest closing their tab mid-race shows "YOUR FRIEND LEFT" on the host.
+
+**Known issues / notes**
+- Online field events (long jump, high jump, javelin) come in 11b; the lobby offers races only.
+- The live site needs the two Cloudflare secrets before online play works.
+- Some phone networks may add lag; it only affects how smoothly the other runner moves, never anyone's time.
+
+**Next:** Phase 11b – online field events and reconnect.
 

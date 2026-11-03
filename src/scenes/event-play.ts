@@ -9,6 +9,25 @@ import type { Session } from '../game/session';
 import { ANIMATION } from '../game/tuning';
 import { PauseScene } from './pause';
 import { ResultsScene } from './results';
+import { Rng } from '../core/rng';
+import type { NetLink } from '../events/event';
+import type { OnlineMatch } from '../game/session';
+
+/** Each event in an online match gets its own seed: base seed + index x this. */
+const ONLINE_SEED_STEP = 7919;
+
+/** An input with nothing pressed (used while the online pause menu is open). */
+const NO_INPUT: InputSnapshot = { isDown: () => false, justPressed: () => false, justReleased: () => false };
+
+/** Hand an event the link to the other player. */
+function netLink(online: OnlineMatch): NetLink {
+  return {
+    localIndex: online.localIndex,
+    isHost: online.localIndex === 0,
+    send: (m) => online.conn.send(m),
+    take: (...kinds) => online.conn.take(...kinds),
+  };
+}
 
 /** Plays one event, then moves on to its results. Esc pauses. */
 export class EventPlayScene implements Scene {
@@ -26,10 +45,13 @@ export class EventPlayScene implements Scene {
   }
 
   enter(): void {
+    const online = this.session.online;
     this.event.init({
       players: this.session.activePlayers(),
       difficulty: this.session.difficulty,
-      rng: this.game.rng,
+      // Online, both games use the same seed for this event, so CPUs and timing match.
+      rng: online ? new Rng(online.seed + (this.session.series?.index ?? 0) * ONLINE_SEED_STEP) : this.game.rng,
+      net: online ? netLink(online) : undefined,
       practice: this.session.mode !== 'championship', // only championships have qualifying marks
       sound: this.game.sound,
       effects: this.game.effects,
@@ -44,10 +66,11 @@ export class EventPlayScene implements Scene {
 
   update(dt: number, input: InputSnapshot): void {
     if (input.justPressed('BACK')) {
-      this.game.scenes.push(new PauseScene(this.game, this));
+      this.game.scenes.push(new PauseScene(this.game, this, !!this.session.online));
       return;
     }
-    if (this.game.debug.visible && input.justPressed('DEBUG_SKIP') && this.session.series) {
+    // (No debug skip online: the other game would be left behind.)
+    if (this.game.debug.visible && input.justPressed('DEBUG_SKIP') && this.session.series && !this.session.online) {
       this.skipWithQualifyingMark();
       return;
     }
@@ -80,7 +103,13 @@ export class EventPlayScene implements Scene {
   }
 
   onFocusLost(): void {
-    if (!this.event.isFinished()) this.game.scenes.push(new PauseScene(this.game, this));
+    // Online the match can't stop for one player, so there's no auto-pause.
+    if (!this.event.isFinished() && !this.session.online) this.game.scenes.push(new PauseScene(this.game, this));
+  }
+
+  /** Online pause menu: the event keeps running underneath (with no keys pressed). */
+  tickUnderPause(dt: number): void {
+    this.update(dt, NO_INPUT);
   }
 
   crowdLevel(): number {

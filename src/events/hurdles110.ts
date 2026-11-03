@@ -4,6 +4,7 @@ import { PALETTE } from '../gfx/palette';
 import type { Pose } from '../gfx/sprites/athlete';
 import { drawHurdle } from '../gfx/sprites/props';
 import { RaceEvent, type Lane } from './race-event';
+import type { RunnerState } from '../net/protocol';
 
 /** Where each hurdle stands, in m from the start. */
 export const HURDLE_POSITIONS: readonly number[] = Array.from(
@@ -117,6 +118,32 @@ export class Hurdles110Event extends RaceEvent<HurdleLane> {
     const loss = outcome === 'crash' ? HURDLES.CRASH_SPEED_LOSS : HURDLES.HIT_SPEED_LOSS;
     lane.runner.speed *= 1 - loss;
     if (outcome === 'crash') lane.stumbleTime = HURDLES.STUMBLE_TIME;
+  }
+
+  // ---------------------------------------------------------------- online
+
+  /** Our jump, knocked hurdles (as bits) and stumble, for the other player's screen. */
+  protected stateExtra(lane: HurdleLane): Partial<RunnerState> {
+    let knocked = 0;
+    lane.knocked.forEach((k, i) => {
+      if (k) knocked |= 1 << i;
+    });
+    return { jump: lane.jumpTime ?? -1, knocked, stumble: lane.stumbleTime };
+  }
+
+  protected applyStateExtra(lane: HurdleLane, s: RunnerState): void {
+    lane.jumpTime = s.jump !== undefined && s.jump >= 0 ? s.jump : null;
+    const bits = s.knocked ?? 0;
+    lane.knocked = HURDLE_POSITIONS.map((_, i) => (bits & (1 << i)) !== 0);
+    lane.hits = lane.knocked.filter(Boolean).length;
+    lane.stumbleTime = s.stumble ?? 0;
+  }
+
+  /** Keep the other player's jump arc moving between messages. */
+  protected advanceRemote(lane: HurdleLane, dt: number): void {
+    if (lane.jumpTime === null) return;
+    lane.jumpTime += dt;
+    if (lane.jumpTime >= HURDLES.JUMP_TIME) lane.jumpTime = null;
   }
 
   debugLines(): string[] {

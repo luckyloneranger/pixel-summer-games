@@ -1,6 +1,9 @@
-# Builds the game and publishes it to GitHub Pages on every push to main.
-# One-time setup: repo Settings > Pages > Source: "GitHub Actions".
-name: Deploy to GitHub Pages
+# On every push to main:
+#  1. deploys the online room server to Cloudflare (only if the CLOUDFLARE_API_TOKEN
+#     and CLOUDFLARE_ACCOUNT_ID repository secrets exist), then
+#  2. builds the game (pointing online play at that server) and publishes it to GitHub Pages.
+# One-time setup: Settings > Pages > Source: "GitHub Actions"; for online play, add the two secrets.
+name: Deploy
 
 on:
   push:
@@ -17,7 +20,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  server:
+    runs-on: ubuntu-latest
+    env:
+      HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    outputs:
+      rooms_url: ${{ steps.url.outputs.rooms_url }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.HAS_TOKEN == 'true'
+      - uses: actions/setup-node@v4
+        if: env.HAS_TOKEN == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: env.HAS_TOKEN == 'true'
+      - run: npm run typecheck:server
+        if: env.HAS_TOKEN == 'true'
+      - id: deploy
+        if: env.HAS_TOKEN == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config server/wrangler.jsonc
+      - id: url
+        if: env.HAS_TOKEN == 'true'
+        # The game talks to the server over secure WebSockets (wss://).
+        run: echo "rooms_url=$(echo '${{ steps.deploy.outputs.deployment-url }}' | sed 's#^https://#wss://#')" >> "$GITHUB_OUTPUT"
+      - if: env.HAS_TOKEN != 'true'
+        run: echo "No Cloudflare secrets yet - skipping the room server (online play will be unavailable)."
+
   build:
+    needs: server
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +64,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+        env:
+          VITE_ROOMS_URL: ${{ needs.server.outputs.rooms_url || vars.ROOMS_URL }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -22,8 +22,11 @@ interface PendingEntry {
 export function finishSeries(game: Game, session: Session): void {
   const table: ScoreTable = session.mode === 'versus' ? 'versus' : 'championship';
   const scores = game.store.data.highScores[table];
+  const local = session.online?.localIndex;
+  session.online?.conn.close(); // the match is over
   const queue: PendingEntry[] = session.players
     .map((p, i) => ({ initials: p.initials, score: session.series?.playerTotal(i) ?? 0, playerNumber: i + 1 }))
+    .filter((e) => local === undefined || e.playerNumber - 1 === local) // online: only your own score
     .filter((e) => makesHighScores(scores, e.score))
     .sort((a, b) => b.score - a.score);
   game.session = null;

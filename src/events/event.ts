@@ -2,6 +2,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import type { TeamKit } from '../gfx/sprites/athlete';
+import type { GameMessage } from '../net/protocol';
 
 export type EventId = 'dash100' | 'longJump' | 'highJump' | 'javelin' | 'hurdles110';
 export type Difficulty = 'easy' | 'normal' | 'hard';
@@ -24,6 +25,19 @@ export interface SoundSink {
 /** A sink that ignores everything (tests, and before audio is ready). */
 export const SILENT: SoundSink = { play: () => {} };
 
+/**
+ * Online play: the link to the other player's game (see src/net). The host
+ * runs anything that must be decided once (like the race start); the guest
+ * follows. Each device runs its own player's athlete.
+ */
+export interface NetLink {
+  /** Player index of the human on this device. */
+  localIndex: number;
+  isHost: boolean;
+  send(m: GameMessage): void;
+  take<K extends GameMessage['k']>(...kinds: K[]): Extract<GameMessage, { k: K }>[];
+}
+
 /** Screen effects an event can ask for (the game may skip them, e.g. reduce shake). */
 export interface EffectsSink {
   shake(pixels: number): void;
@@ -44,6 +58,8 @@ export interface EventContext {
   sound?: SoundSink;
   /** Where screen effects go (none if not given). */
   effects?: EffectsSink;
+  /** Online play: the link to the other player (local play if not given). */
+  net?: NetLink;
 }
 
 /** One player's outcome of an event. */

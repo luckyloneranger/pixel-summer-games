@@ -58,16 +58,21 @@ export function drawMenu(r: Renderer, items: readonly MenuItem[], selected: numb
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 /**
- * Arcade-style 3-letter initials: up/down change the letter, left/right move,
- * Enter goes to the next letter (and finishes on the last), Esc goes back.
+ * Arcade-style letter entry (3-letter initials, or a 4-letter room code):
+ * up/down change the letter, left/right move, Enter goes to the next letter
+ * (and finishes on the last), Esc goes back.
  */
 export class InitialsEntry {
   readonly letters: string[];
   position = 0;
   done = false;
 
-  constructor(initial = 'AAA') {
-    this.letters = initial.padEnd(3, 'A').slice(0, 3).toUpperCase().split('');
+  constructor(
+    initial = 'AAA',
+    private readonly length = 3,
+    private readonly alphabet = LETTERS,
+  ) {
+    this.letters = initial.padEnd(length, alphabet[0]).slice(0, length).toUpperCase().split('');
   }
 
   get value(): string {
@@ -76,13 +81,15 @@ export class InitialsEntry {
 
   update(input: InputSnapshot): void {
     if (this.done) return;
-    const i = Math.max(0, LETTERS.indexOf(this.letters[this.position]));
-    if (input.justPressed('MENU_UP')) this.letters[this.position] = LETTERS[(i + 1) % LETTERS.length];
-    if (input.justPressed('MENU_DOWN')) this.letters[this.position] = LETTERS[(i + LETTERS.length - 1) % LETTERS.length];
+    const abc = this.alphabet;
+    const last = this.length - 1;
+    const i = Math.max(0, abc.indexOf(this.letters[this.position]));
+    if (input.justPressed('MENU_UP')) this.letters[this.position] = abc[(i + 1) % abc.length];
+    if (input.justPressed('MENU_DOWN')) this.letters[this.position] = abc[(i + abc.length - 1) % abc.length];
     const step = leftRight(input);
-    if (step !== 0) this.position = Math.min(2, Math.max(0, this.position + step));
+    if (step !== 0) this.position = Math.min(last, Math.max(0, this.position + step));
     if (input.justPressed('CONFIRM')) {
-      if (this.position < 2) this.position++;
+      if (this.position < last) this.position++;
       else this.done = true;
     } else if (input.justPressed('BACK') && this.position > 0) {
       this.position--;
@@ -92,8 +99,9 @@ export class InitialsEntry {
   /** Big letters centred at cx, with the current one blinking/underlined. */
   render(r: Renderer, cx: number, y: number, time: number, active = true, steady = false): void {
     const size = 16;
-    const left = cx - (size * 3 + 8) / 2;
-    for (let i = 0; i < 3; i++) {
+    const n = this.length;
+    const left = cx - (size * n + 4 * (n - 1)) / 2;
+    for (let i = 0; i < n; i++) {
       const x = left + i * (size + 4);
       const current = active && i === this.position;
       const show = !current || blink(time, 0.5, steady);

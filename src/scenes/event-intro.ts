@@ -16,6 +16,9 @@ export class EventIntroScene implements Scene {
   readonly isMenu = true;
   readonly music = 'menu' as const;
   private time = 0;
+  /** Online: I've pressed Enter / the other player has. */
+  private iAmReady = false;
+  private peerReady = false;
 
   constructor(
     private readonly game: Game,
@@ -26,11 +29,49 @@ export class EventIntroScene implements Scene {
   update(dt: number, input: InputSnapshot): void {
     this.time += dt;
     const g = this.game;
+    if (this.session.online) {
+      this.updateOnline(input);
+      return;
+    }
     if (input.justPressed('CONFIRM')) {
       g.scenes.replace(new EventPlayScene(g, this.session, this.eventId));
     } else if (input.justPressed('BACK')) {
       if (this.session.mode === 'practice') g.scenes.pop();
       else g.scenes.popTo('MENU');
+    }
+  }
+
+  /**
+   * Online: both players press Enter; the host then says "begin" and both
+   * start together. Leftover messages from the last event are cleared first.
+   */
+  private updateOnline(input: InputSnapshot): void {
+    const g = this.game;
+    const online = this.session.online!;
+    const conn = online.conn;
+    const index = this.session.series?.index ?? 0;
+    if (input.justPressed('BACK')) {
+      conn.close();
+      g.session = null;
+      g.scenes.popTo('MENU');
+      return;
+    }
+    if (input.justPressed('CONFIRM') && !this.iAmReady) {
+      this.iAmReady = true;
+      conn.send({ k: 'ready', event: index });
+    }
+    if (conn.take('ready').some((m) => m.event === index)) this.peerReady = true;
+    const start = () => {
+      conn.take('state', 'phase', 'early'); // anything left over from the previous event
+      g.scenes.replace(new EventPlayScene(g, this.session, this.eventId));
+    };
+    if (online.localIndex === 0) {
+      if (this.iAmReady && this.peerReady) {
+        conn.send({ k: 'begin', event: index });
+        start();
+      }
+    } else if (conn.take('begin').some((m) => m.event === index)) {
+      start();
     }
   }
 
@@ -67,6 +108,11 @@ export class EventIntroScene implements Scene {
     const twoPlayers = this.session.activePlayers().length > 1;
     r.text(EVENT_HINTS[this.eventId], cx, 114, PALETTE.CYAN, 'center');
     if (twoPlayers) r.text('P1: A D W     P2: LEFT RIGHT UP', cx, 126, PALETTE.CYAN, 'center');
-    if (blink(this.time, 1, this.game.steady)) r.text('PRESS ENTER', cx, 144, PALETTE.WHITE, 'center');
+    if (this.iAmReady) {
+      const other = this.session.players[1 - (this.session.online?.localIndex ?? 0)];
+      r.text(`WAITING FOR ${other?.initials ?? 'FRIEND'}...`, cx, 144, PALETTE.CYAN, 'center');
+    } else if (blink(this.time, 1, this.game.steady)) {
+      r.text('PRESS ENTER', cx, 144, PALETTE.WHITE, 'center');
+    }
   }
 }

@@ -4,7 +4,7 @@ A retro 8-bit track-and-field game for the browser. Hammer two keys to sprint, t
 
 **Play:** https://luckyloneranger.github.io/pixel-summer-games/ (once GitHub Pages is switched on, see [Deploying](#deploying)).
 
-Everything (pixel art, font, music and sound effects) is original and generated in code. There are no image or audio files, no accounts, no tracking and no server.
+Everything (pixel art, font, music and sound effects) is original and generated in code. There are no image or audio files, no accounts and no tracking. Only Online mode uses the network: a tiny relay server (in `server/`) that passes messages between the two players in a room and stores nothing.
 
 ## Events
 
@@ -21,6 +21,7 @@ Everything (pixel art, font, music and sound effects) is original and generated 
 - **Championship**, 1 or 2 players: all five events in order (100 m, long jump, high jump, javelin, hurdles). Miss a qualifying mark and you're out (Options → Casual mode lets you carry on with 0 points). Ends on the podium and the high-score table.
 - **Practice**: any event, with your personal best shown.
 - **Versus**, 2 players: all five events or just one; the higher total wins.
+- **Online**, 2 players on different devices: one creates a room and shares its 4-letter code, the other joins. Races so far (100 m and hurdles); field events are coming.
 - **How to Play**: a short guide to each event.
 
 ## Controls
@@ -59,6 +60,15 @@ npm run dev      # local server; open the http://localhost:5173 link it prints
 | `npm run build` | Builds the static site into `dist/` |
 | `npm run preview` | Serves the built `dist/` locally |
 
+### Online play locally
+
+```bash
+npm run server:dev   # starts the room server on http://127.0.0.1:8787 (Cloudflare's local runtime)
+npm run dev          # in a second terminal; open the game in two browser windows
+```
+
+In one window choose ONLINE → CREATE ROOM, in the other ONLINE → JOIN ROOM and type the code.
+
 ### Debug tools
 
 - `?debug=1` in the URL, or the ` (backtick) key: overlay with FPS, state, speed, tap rate and positions.
@@ -87,7 +97,14 @@ The design and rules are in [`SPEC.md`](SPEC.md); progress per phase is in [`PRO
 
 ## Deploying
 
-The game is a static site. GitHub Actions builds it and publishes it to GitHub Pages on every push to `main` (`.github/workflows/deploy.yml`). One-time setup: **Settings → Pages → Source: GitHub Actions**. A second workflow (`.github/workflows/test.yml`) runs the unit tests and the smoke test in Chromium, Firefox and WebKit.
+The game is a static site. GitHub Actions builds it and publishes it to GitHub Pages on every push to `main` (`.github/workflows/deploy.yml`). One-time setup: **Settings → Pages → Source: GitHub Actions**.
+
+For online play the same workflow first deploys the room server to Cloudflare, once two repository secrets exist (**Settings → Secrets and variables → Actions**):
+
+- `CLOUDFLARE_API_TOKEN`: a Cloudflare API token made from the "Edit Cloudflare Workers" template.
+- `CLOUDFLARE_ACCOUNT_ID`: your Cloudflare account ID (shown on the Workers & Pages overview).
+
+The built game is pointed at the deployed server automatically. Without the secrets the server step is skipped and Online shows "could not reach the game server". A second workflow (`.github/workflows/test.yml`) runs the unit tests and the smoke test in Chromium, Firefox and WebKit.
 
 ## Originality
 

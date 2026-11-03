@@ -49,7 +49,7 @@ Version 1 has four events, three modes, keyboard and touch controls, and high sc
 | Saving | High scores, personal bests and settings in the browser (localStorage) | Online leaderboard (would need a server) |
 | Customisation | Player initials and team colour | Athlete looks, kit designs |
 
-**Not in v1:** online multiplayer (planned for Phase 11, after v1), accounts, a backend server, payments or ads, 3D graphics, real athletes, licensed music.
+**Not in v1:** online multiplayer (added from Phase 11, after v1, with a small relay server), accounts, a backend server, payments or ads, 3D graphics, real athletes, licensed music.
 
 ## 4. Controls and core mechanics
 
@@ -369,13 +369,18 @@ Build in this order. Get the feel of the running right with plain boxes before a
 
 - Add backlog events from section 3, one per phase, each following the same shape as Phases 3 to 5.
 
-**Phase 11 – Online multiplayer (after v1)**
+**Phase 11 – Online multiplayer (after v1)** (built in two halves, like Phase 8)
 
-- Goal: two players on different devices can play Versus (and possibly a 2-player championship) together over the internet. Local play stays fully offline and unchanged.
-- Likely shape: a player creates a room and shares a short room code; the other joins. No accounts or logins. The game logic already runs in fixed steps with a seeded random-number generator, so both devices can run the same race from the same seed and exchange inputs or positions.
-- Open decisions, settled when this phase is planned: peer-to-peer (WebRTC, with a tiny signalling service only to connect players) or a small relay server (WebSocket); where to host it and what it costs; how to handle lag and disconnects; privacy (room codes only, no personal data).
-- Rules to revisit then, with the user's approval: section 3 "Not in v1: a backend server", and working rule 6 "No network requests while the game runs" (would allow network use for online mode only).
-- Done when (draft): two people on two devices can finish a Versus event together, and a dropped connection is handled cleanly.
+- Goal: two players on different devices play Versus together over the internet. Local play stays fully offline and unchanged.
+- Decisions (made with the user when Phase 11 was planned):
+  - **A small relay server on Cloudflare** (Workers + one Durable Object per room, in `server/`), chosen over peer-to-peer WebRTC (which fails on some networks without a paid relay) and over Vercel (whose WebSocket functions don't keep both players of a room on one instance and cut connections after about 5 minutes). Free tier; the server stores nothing and only relays messages between the two players in a room.
+  - **Rooms by 4-letter code** (no I or O); no accounts; only initials and team colour are shared during a match.
+  - **Each device runs its own player's athlete** and sends its state about 20 times a second; the other screen draws it. The host runs the race start (marks, set, the random wait, GO) and rules on false starts; CPU runners use a shared seed, so they're identical on both screens. Each player is timed on their own device, so lag never changes a result; both devices end with the same results table.
+  - Online is **Versus only** for now. No auto-pause or debug skip online; the pause menu offers Resume or Leave match while the race carries on.
+  - Working rule 6 allows network use in Online mode only. The claude.ai preview can't play online (its security rules block connections); the GitHub Pages site can.
+- **11a:** the relay server, the Online menu, create/join by code, the lobby, a ready-up on each event card, online 100 m and hurdles, the winner screen, and "your friend left" handling.
+- **11b:** online long jump, high jump and javelin (taking turns, watching the other player's attempt live), all five events, reconnect after a short drop.
+- Done when: two people on two devices can finish a Versus match together, and a dropped connection is handled cleanly.
 
 ## 10. Testing, quality and definition of done
 
@@ -420,7 +425,7 @@ Work one phase at a time, plan before coding, and stop for the user after every 
 3. Build the smallest playable version first. Plain boxes before art.
 4. Put every tunable number in `src/game/tuning.ts`, with units in a comment. No unexplained numbers in event code.
 5. Keep game logic (`update`) separate from drawing (`render`) so the logic can be unit-tested.
-6. Ask before adding any npm package. No network requests while the game runs. No analytics or tracking.
+6. Ask before adding any npm package. No network requests while the game runs, except in Online mode after the player chooses it (Phase 11, approved by the user); offline modes stay fully offline. No analytics or tracking.
 7. Original assets only. Don't copy sprites, music, sounds or names from existing games. Don't use "Olympic" or "Olympics" or the ring symbol. Fonts only under open licences such as the SIL Open Font License.
 8. At the end of each phase, meet the definition of done in section 10, then stop and wait.
 9. When the user reports a feel problem ("running feels sluggish"), suggest specific tuning changes with before and after values before rewriting any system.

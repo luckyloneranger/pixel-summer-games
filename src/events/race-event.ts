@@ -11,6 +11,9 @@ import { CpuTapper, cpuLineup, playerLook } from './cpu';
 import { SILENT, type AthleticsEvent, type EventContext, type EventId, type EventResult, type SoundSink } from './event';
 import { Footsteps, runningCrowd } from './footsteps';
 import { keysFor, type PlayerKeys } from './player-input';
+import type { NetLink } from './event';
+import type { RunnerState, StartPhase } from '../net/protocol';
+import { NET } from '../game/tuning';
 import { DustPuffs, DustTrail } from '../gfx/effects';
 import { EFFECTS } from '../game/tuning';
 import { AUDIO } from '../game/tuning';
@@ -29,6 +32,7 @@ export interface Lane {
   playerIndex: number; // -1 for CPUs
   disqualified: boolean;
   falseStarts: number; // this athlete's false starts so far
+  remote: boolean; // online: the other player's runner, driven by their messages
   finishTime: number | null; // s after GO
   dnf: boolean; // stopped before the line: did not finish
   stoppedFor: number; // s standing still after everyone else finished
@@ -78,6 +82,10 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   clock = 0;
 
   protected ctx!: EventContext;
+  /** Online link, or null for local play. */
+  protected net: NetLink | null = null;
+  private sendTimer = 0; // s since we last sent our runner's state
+  private sentEarly = false; // guest: already told the host about an early press this start
   protected sound: SoundSink = SILENT;
   private readonly footsteps = new Map<Lane, Footsteps>();
   protected rng!: Rng;
@@ -112,6 +120,14 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   protected liftFor(_lane: L): number {
     return 0;
   }
+  /** Online: extra state to send for our runner (hurdles: jumps, knocked hurdles). */
+  protected stateExtra(_lane: L): Partial<RunnerState> {
+    return {};
+  }
+  /** Online: apply the other player's extra state to their lane. */
+  protected applyStateExtra(_lane: L, _s: RunnerState): void {}
+  /** Online: keep the other player's lane moving between messages. */
+  protected advanceRemote(_lane: L, _dt: number): void {}
   /** The control hint shown under ON YOUR MARKS. */
   protected startHint = 'ALTERNATE A + D TO RUN';
   protected startHint2P = 'P1: A + D    P2: LEFT + RIGHT';
@@ -122,6 +138,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     this.ctx = ctx;
     this.rng = ctx.rng;
     this.sound = ctx.sound ?? SILENT;
+    this.net = ctx.net ?? null;
     this.clock = 0;
     this.falseStarter = null;
     // Player 1 in lane 2, player 2 (if any) in lane 3, CPUs in the rest.
@@ -140,6 +157,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
         playerIndex: human ? (human.index ?? slot) : -1,
         disqualified: false,
         falseStarts: 0,
+        remote: !!human && !!ctx.net && (human.index ?? slot) !== ctx.net.localIndex,
         finishTime: null,
         dnf: false,
         stoppedFor: 0,
@@ -195,6 +213,9 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       this.resetLane(lane);
     }
     this.raceTime = 0;
+    this.sentEarly = false;
+    this.lastLocalFinish = null;
+    this.lastLocalDnf = false;
     this.photoFinish = 0;
     this.photoShown = false;
     this.dust.clear();
@@ -208,6 +229,87 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     if (phase === 'set') this.setWait = this.rng.range(RACE_START.SET_WAIT_MIN, RACE_START.SET_WAIT_MAX);
     if (phase === 'running') this.sound.play('pistol');
     if (phase === 'falseStart' || phase === 'disqualified') this.sound.play('buzzer');
+    // Online host: tell the guest, whose start sequence follows ours.
+    if (this.net?.isHost && phase !== 'finished') {
+      this.net.send({ k: 'phase', phase, who: this.falseStarter?.playerIndex });
+    }
+  }
+
+  /** Does this device decide the start sequence? (Always, except an online guest.) */
+  private get runsStart(): boolean {
+    return !this.net || this.net.isHost;
+  }
+
+  /** Online: read the other player's messages (their runner, and the host's start calls). */
+  private receiveNet(): void {
+    const net = this.net;
+    if (!net) return;
+    const remote = this.lanes.find((l) => l.remote);
+    for (const m of net.take('state')) if (remote) this.applyRemote(remote, m.s);
+    if (net.isHost) {
+      const early = net.take('early').length > 0;
+      const starting = this.phase === 'marks' || this.phase === 'set';
+      if (early && starting && remote && !remote.disqualified) this.falseStart(remote);
+    } else {
+      for (const m of net.take('phase')) this.followPhase(m.phase, m.who);
+    }
+  }
+
+  /** Online guest: copy a start-sequence step the host made. */
+  private followPhase(phase: StartPhase, who: number | undefined): void {
+    switch (phase) {
+      case 'marks':
+        if (this.phase === 'falseStart' || this.phase === 'disqualified') this.restartStart();
+        break;
+      case 'set':
+        if (this.phase === 'marks') this.enterPhase('set');
+        break;
+      case 'running':
+        if (this.phase === 'marks' || this.phase === 'set') this.enterPhase('running');
+        break;
+      case 'falseStart':
+      case 'disqualified': {
+        const lane = this.humanList.find((l) => l.playerIndex === who);
+        if (lane) this.falseStart(lane);
+        break;
+      }
+    }
+  }
+
+  /** Online: set the other player's runner from their latest message. */
+  private applyRemote(lane: L, s: RunnerState): void {
+    const r = lane.runner;
+    r.position = s.pos;
+    r.speed = s.speed;
+    r.taps = s.taps;
+    if (s.fin !== null) lane.finishTime = s.fin;
+    lane.reactionTime = s.react;
+    lane.dnf = s.dnf;
+    this.applyStateExtra(lane, s);
+  }
+
+  /** Online: send our runner's state every so often (and the moment it finishes). */
+  private sendState(dt: number, force = false): void {
+    const net = this.net;
+    if (!net) return;
+    this.sendTimer += dt;
+    if (!force && this.sendTimer < NET.SNAPSHOT_EVERY) return;
+    this.sendTimer = 0;
+    const lane = this.humanList.find((l) => !l.remote);
+    if (!lane) return;
+    const r = lane.runner;
+    net.send({
+      k: 'state',
+      s: {
+        pos: r.position,
+        speed: r.speed,
+        taps: r.taps,
+        fin: lane.finishTime,
+        react: lane.reactionTime,
+        dnf: lane.dnf,
+        ...this.stateExtra(lane),
+      },
+    });
   }
 
   /** Lanes still in the race (not disqualified). */
@@ -215,15 +317,17 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     return this.racerList;
   }
 
-  /** Each human's keys this step (both key sets for a lone human). */
+  /** Each human's keys this step (both key sets for a lone human, or the player on this device online). */
   private keysOf(input: InputSnapshot, lane: L): PlayerKeys {
-    return keysFor(input, lane.playerIndex, this.humans.length === 1);
+    if (lane.remote) return NO_KEYS;
+    return keysFor(input, lane.playerIndex, this.humans.length === 1 || this.net !== null);
   }
 
   update(dt: number, input: InputSnapshot): void {
     this.clock += dt;
     this.phaseTimer += dt;
     this.dust.update(dt);
+    this.receiveNet();
     // Photo finish: everything freezes on the line for a moment.
     if (this.photoFinish > 0) {
       this.photoFinish = Math.max(0, this.photoFinish - dt);
@@ -234,37 +338,68 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       case 'marks':
       case 'set':
         for (const lane of this.humans) {
-          if (lane.disqualified) continue;
+          if (lane.disqualified || lane.remote) continue;
           const k = this.keysOf(input, lane);
-          if (k.left || k.right) {
+          if (!k.left && !k.right) continue;
+          if (this.runsStart) {
             this.falseStart(lane);
             return;
           }
+          // Online guest: the host rules on false starts.
+          if (!this.sentEarly) this.net!.send({ k: 'early' });
+          this.sentEarly = true;
         }
+        if (!this.runsStart) return; // the guest waits for the host's calls
         if (this.phase === 'marks' && this.phaseTimer >= RACE_START.MARKS_TIME) this.enterPhase('set');
         else if (this.phase === 'set' && this.phaseTimer >= this.setWait) this.enterPhase('running');
         return;
 
       case 'running':
         for (const lane of this.racers) {
+          if (lane.remote) {
+            this.coastRemote(lane, dt);
+            continue;
+          }
           const k: PlayerKeys = lane.cpu ? NO_KEYS : this.keysOf(input, lane);
           this.updateRacer(lane, dt, k);
         }
         this.raceTime += dt;
         this.checkDidNotFinish(dt);
-        this.checkPhotoFinish();
+        if (!this.net) this.checkPhotoFinish(); // no freeze online: the two screens would drift apart
+        this.sendState(dt, this.justFinishedLocally());
         if (this.racers.every((l) => l.finishTime !== null || l.dnf)) this.enterPhase('finished');
         return;
 
       case 'finished':
-        for (const lane of this.lanes) lane.runner.update(dt); // coast to a stop
+        for (const lane of this.lanes) if (!lane.remote) lane.runner.update(dt); // coast to a stop
+        this.sendState(dt);
         return;
 
       case 'falseStart':
       case 'disqualified':
-        if (this.phaseTimer >= RACE_START.FALSE_START_TEXT_TIME) this.restartStart();
+        if (this.runsStart && this.phaseTimer >= RACE_START.FALSE_START_TEXT_TIME) this.restartStart();
         return;
     }
+  }
+
+  /** Online: keep the other player's runner moving smoothly between their messages. */
+  private coastRemote(lane: L, dt: number): void {
+    const r = lane.runner;
+    if (lane.finishTime === null) r.position += r.speed * dt;
+    this.advanceRemote(lane, dt);
+    if (this.trails.get(lane)?.due(r.position, r.speedFraction)) this.dust.add(r.position - 0.4, laneFootY(lane.laneNumber));
+  }
+
+  /** Did our own runner just finish (or drop out)? Then send that straight away. */
+  private lastLocalFinish: number | null = null;
+  private lastLocalDnf = false;
+  private justFinishedLocally(): boolean {
+    const lane = this.humanList.find((l) => !l.remote);
+    if (!lane) return false;
+    const changed = lane.finishTime !== this.lastLocalFinish || lane.dnf !== this.lastLocalDnf;
+    this.lastLocalFinish = lane.finishTime;
+    this.lastLocalDnf = lane.dnf;
+    return changed;
   }
 
   private updateRacer(lane: L, dt: number, keys: PlayerKeys): void {
@@ -303,7 +438,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
    */
   private checkDidNotFinish(dt: number): void {
     for (const lane of this.humanList) {
-      if (lane.disqualified || lane.finishTime !== null || lane.dnf) continue;
+      if (lane.remote || lane.disqualified || lane.finishTime !== null || lane.dnf) continue;
       const othersDone = this.racerList.every((l) => l === lane || l.finishTime !== null || l.dnf);
       lane.stoppedFor = othersDone && lane.runner.speed === 0 ? lane.stoppedFor + dt : 0;
       if (lane.stoppedFor >= EFFECTS.DNF_STOP_TIME) lane.dnf = true;
@@ -415,7 +550,13 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     // Follow the leading human; if both are out (or it's a demo), follow the race leader.
     let followed: L | null = null;
     for (const l of this.humanList) {
-      if (!l.disqualified && (!followed || l.runner.position > followed.runner.position)) followed = l;
+      if (l.disqualified) continue;
+      // Online the camera stays on your own runner; locally it follows whoever leads.
+      if (this.net) {
+        if (!l.remote) followed = l;
+      } else if (!followed || l.runner.position > followed.runner.position) {
+        followed = l;
+      }
     }
     followed ??= this.leader();
     this.winnerNow = this.phase === 'finished' ? this.standings()[0] : null;
