@@ -6,17 +6,18 @@ import type { Difficulty, EventId } from '../events/event';
 import { RoomConnection, helloMessage } from '../net/connection';
 import { PROTOCOL_VERSION, makeRoomCode } from '../net/protocol';
 import { EVENT_NAMES } from '../game/scoring';
+import { CHAMPIONSHIP_EVENTS } from '../game/championship';
 import { Session, type SessionPlayer } from '../game/session';
 import { PALETTE } from '../gfx/palette';
 import { TEAM_KITS, type TeamKit } from '../gfx/sprites/athlete';
 import { cycle, drawHeader, leftRight, moveSelection } from '../ui/widgets';
 import { EventIntroScene } from './event-intro';
 
-/** Online events available so far (field events come in Phase 11b). */
+/** What the host can pick: every event, both races, or any one event. */
 const EVENT_CHOICES: { label: string; events: EventId[] }[] = [
+  { label: 'ALL FIVE', events: [...CHAMPIONSHIP_EVENTS] },
   { label: 'BOTH RACES', events: ['dash100', 'hurdles110'] },
-  { label: EVENT_NAMES.dash100, events: ['dash100'] },
-  { label: EVENT_NAMES.hurdles110, events: ['hurdles110'] },
+  ...CHAMPIONSHIP_EVENTS.map((id) => ({ label: EVENT_NAMES[id], events: [id] })),
 ];
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
 const TEAMS = Object.keys(TEAM_KITS) as TeamKit[];
@@ -65,7 +66,7 @@ export class LobbyScene implements Scene {
     }
     if (this.error) return;
     const c = this.conn;
-    if (c.state === 'failed' || c.state === 'closed') return this.fail('COULD NOT REACH THE GAME SERVER');
+    if (c.state === 'failed' || c.state === 'closed' || c.state === 'lost') return this.fail('COULD NOT REACH THE GAME SERVER');
     if (c.state === 'full') return this.fail('THAT ROOM IS FULL');
     if (c.state !== 'open') return;
 

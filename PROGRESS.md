@@ -18,7 +18,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 10 – High jump | ✅ Approved |
 | 10+ – More events | – |
 | 11a – Online: server, lobby, races | ✅ Approved (room server live on Cloudflare) |
-| 11b – Online: field events, reconnect | – |
+| 11b – Online: field events, reconnect | 🔍 Ready for review |
 
 ## Phase 0 – Setup and skeleton
 
@@ -255,3 +255,21 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 
 **Next:** Phase 11b – online field events and reconnect.
 
+
+## Phase 11b – Online: field events and reconnect
+
+**Done**
+- Online long jump, high jump and javelin. Turn order is worked out the same way on both devices. The player who's up runs their attempt on their own device and sends the run-up 20 times a second, then the take-off (spot, speed, angle); the other screen replays the identical flight and lands it with the mark the jumper's device measured. A screen that's behind skips ahead.
+- Lobby: ALL FIVE, BOTH RACES, or any single event.
+- Reliable delivery: important messages are numbered, confirmed by the other side, kept until confirmed and resent after a reconnect; repeats are ignored. Position updates aren't numbered (a newer one is always coming). Message format version 2.
+- Reconnect: after a drop the game reconnects to the same seat by itself (every second, for up to 10 s) and the match carries on meanwhile. Banners: "RECONNECTING… n" on the dropped screen, "WAITING FOR XXX TO RECONNECT n" on the other. After 10 s the match ends; choosing Leave match ends it at once for both.
+- Server: a returning player reclaims their seat (replacing their old socket if the server hasn't noticed the drop yet); someone new joining resets message numbering.
+- Fixed (from Phase 10): in a two-player high jump, once one player was out the turn order could keep picking them and the event never ended. Players who are out are now skipped.
+- Housekeeping: GitHub Actions updated to their latest major versions; a new browser test (`tests/e2e/online.spec.ts`) starts the room server locally and plays a 100 m and a long jump between two browsers, cutting and restoring the guest's connection in each, and checks both screens show identical results. It runs locally and in CI.
+- 247 unit tests (adds message numbering, confirmations, resending, repeats, reconnect within and past the window, the banners, a new friend joining; linked long jump, javelin and high jump games with 0, 100 and 680 ms of lag giving identical attempts; turn taking; the high-jump turn fix).
+
+**Known issues / notes**
+- If a whole attempt's run-up happens while you're disconnected, you'll see the jump replayed from the take-off when you're back, not the run-up.
+- Reloading the page mid-match counts as leaving: the reconnect only covers network drops.
+
+**Next:** waiting for approval.

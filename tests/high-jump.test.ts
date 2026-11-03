@@ -175,6 +175,24 @@ describe('high jump event', () => {
     expect(order).toEqual([0, 1, 0, 1]);
   });
 
+  it('once one player is out, the other keeps jumping until they are out too', () => {
+    const e = newJump([
+      { initials: 'ANN', index: 0 },
+      { initials: 'BOB', index: 1 },
+    ] as never);
+    const order: number[] = [];
+    for (let i = 0; i < 12 && !e.isFinished(); i++) {
+      const p = e.current.playerIndex;
+      order.push(p);
+      // ANN misses every jump; BOB clears 1.85 then misses.
+      const clear = p === 1 && i === 1;
+      jump(e, 10, clear ? 65 : 25, 0.2, p === 0 ? 'P1' : 'P2');
+      finishResult(e);
+    }
+    expect(order).toEqual([0, 1, 0, 1, 0, 1, 1]); // ANN out after 3 misses; BOB has 2 more
+    expect(e.isFinished()).toBe(true);
+  });
+
   it('CPU bests stay in the difficulty range', () => {
     for (let seed = 1; seed <= 30; seed++) {
       const e = newJump(undefined, seed);

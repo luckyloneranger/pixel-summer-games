@@ -6,6 +6,7 @@ import { Rng, seedFromQuery } from './rng';
 import { SceneManager } from './scene-manager';
 import { TitleScene } from '../scenes/title';
 import { DisconnectedScene } from '../scenes/disconnected';
+import { onlineStatus } from '../net/status';
 import { DEBUG } from '../game/tuning';
 import { Session } from '../game/session';
 import { SaveStore } from './storage';
@@ -37,6 +38,8 @@ export class Game {
   private shakePixels = 0;
   private toastText = '';
   private toastTime = 0;
+  /** Online: what to say while a connection is being waited for (null = nothing). */
+  private onlineBanner: string | null = null;
   private readonly clock = new FixedStepClock();
   private lastRenderMs = -1;
   private timeScaleIndex = DEBUG.TIME_SCALES.indexOf(1);
@@ -116,14 +119,14 @@ export class Game {
 
   /** Online match: if the other player leaves (or the connection drops), say so. */
   private watchOnline(): void {
+    this.onlineBanner = null;
     const online = this.session?.online;
     if (!online || this.scenes.has('DISCONNECTED')) return;
     if (this.session?.series?.state !== 'playing') return; // match finished: leaving is fine
-    const c = online.conn;
-    if (c.peerLeft) this.scenes.push(new DisconnectedScene(this, 'YOUR FRIEND LEFT'));
-    else if (c.state === 'failed' || (c.state === 'closed' && this.session)) {
-      this.scenes.push(new DisconnectedScene(this, 'CONNECTION LOST'));
-    }
+    const peer = this.session.players[1 - online.localIndex]?.initials ?? 'YOUR FRIEND';
+    const status = onlineStatus(online.conn, peer);
+    if (status.over) this.scenes.push(new DisconnectedScene(this, status.over));
+    else this.onlineBanner = status.banner;
   }
 
   /** Blips for menu screens, based on the keys pressed this step. */
@@ -175,6 +178,7 @@ export class Game {
     this.scenes.render(this.renderer);
     this.touch.setLayout(this.scenes.top?.name === 'EVENT' ? 'event' : 'menu');
     this.touch.render(this.renderer);
+    if (this.onlineBanner) this.drawBanner(this.onlineBanner);
     if (this.portrait) drawRotateNotice(this.renderer);
     if (this.toastTime > 0) {
       const w = this.toastText.length * 8 + 8;
@@ -191,6 +195,13 @@ export class Game {
       sy = Math.round((Math.random() * 2 - 1) * amount);
     }
     this.renderer.present(sx, sy);
+  }
+
+  /** A strip across the top of the screen (online connection trouble). */
+  private drawBanner(text: string): void {
+    const r = this.renderer;
+    r.rect(0, 2, r.width, 12, PALETTE.INK);
+    r.text(text, r.width / 2, 4, PALETTE.YELLOW, 'center');
   }
 
   /** Debug text is rebuilt every frame, but only while the overlay is open. */

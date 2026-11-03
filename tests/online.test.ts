@@ -209,49 +209,294 @@ function fakeSocket(): SocketLike & { sent: string[]; serverSays(m: object): voi
   return s;
 }
 
+/** A fake clock, timers and sockets for RoomConnection. */
+function fakeEnv() {
+  const sockets: ReturnType<typeof fakeSocket>[] = [];
+  const urls: string[] = [];
+  let clock = 0;
+  let timers: { at: number; fn: () => void }[] = [];
+  const env = {
+    makeSocket: (url: string) => {
+      urls.push(url);
+      const s = fakeSocket();
+      sockets.push(s);
+      return s;
+    },
+    now: () => clock,
+    later: (fn: () => void, ms: number) => void timers.push({ at: clock + ms, fn }),
+  };
+  return {
+    env,
+    sockets,
+    urls,
+    get sock() {
+      return sockets[sockets.length - 1];
+    },
+    /** Move the clock on, running any timers that come due. */
+    wait(ms: number) {
+      clock += ms;
+      const due = timers.filter((t) => t.at <= clock);
+      timers = timers.filter((t) => t.at > clock);
+      due.forEach((t) => t.fn());
+    },
+  };
+}
+
+const relayed = (s: { sent: string[] }) => s.sent.map((x) => JSON.parse(x));
+
 describe('RoomConnection', () => {
   it('tracks the room: welcome, the other player arriving and leaving', () => {
-    const sock = fakeSocket();
-    const c = new RoomConnection('ABCD', 'ws://x', () => sock);
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
     expect(c.state).toBe('connecting');
-    sock.serverSays({ t: 'welcome', slot: 0, others: 0 });
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 0 });
     expect(c.state).toBe('open');
     expect(c.slot).toBe(0);
     expect(c.peerHere).toBe(false);
-    sock.serverSays({ t: 'joined' });
+    f.sock.serverSays({ t: 'joined' });
     expect(c.peerHere).toBe(true);
-    sock.serverSays({ t: 'left' });
+    f.sock.serverSays({ t: 'left' });
     expect(c.peerLeft).toBe(true);
+    f.wait(3000);
+    expect(c.peerAwayFor()).toBeCloseTo(3);
+    f.sock.serverSays({ t: 'joined' });
+    expect(c.peerLeft).toBe(false);
+    expect(c.peerAwayFor()).toBe(0);
   });
 
   it('queues the other player’s messages until the game takes them, by kind', () => {
-    const sock = fakeSocket();
-    const c = new RoomConnection('ABCD', 'ws://x', () => sock);
-    sock.serverSays({ t: 'welcome', slot: 1, others: 1 });
-    sock.serverSays({ t: 'relay', data: { k: 'ready', event: 0 } });
-    sock.serverSays({ t: 'relay', data: { k: 'early' } });
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 1, others: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'ready', event: 0 }, seq: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 2 });
     expect(c.take('early')).toHaveLength(1);
     expect(c.take('early')).toHaveLength(0);
     expect(c.take('ready')).toEqual([{ k: 'ready', event: 0 }]);
   });
 
   it('reports a full room, and a server it could not reach', () => {
-    const full = fakeSocket();
-    const a = new RoomConnection('ABCD', 'ws://x', () => full);
-    full.serverSays({ t: 'full' });
+    const f = fakeEnv();
+    const a = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'full' });
     expect(a.state).toBe('full');
-    const dead = fakeSocket();
-    const b = new RoomConnection('ABCD', 'ws://x', () => dead);
-    dead.drop();
+    const b = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.drop();
     expect(b.state).toBe('failed');
   });
 
-  it('wraps outgoing messages for the relay', () => {
-    const sock = fakeSocket();
-    const c = new RoomConnection('ABCD', 'ws://x', () => sock);
-    c.send({ k: 'early' }); // not open yet: dropped
-    sock.serverSays({ t: 'welcome', slot: 0, others: 0 });
+  it('numbers important messages, but not position updates', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    c.send({ k: 'early' }); // not open yet: kept for later
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
     c.send({ k: 'early' });
-    expect(sock.sent).toEqual(['{"t":"relay","data":{"k":"early"}}']);
+    c.send({ k: 'field', n: 0, x: 1, speed: 2, angle: 0, phase: 'runup' });
+    expect(relayed(f.sock)).toEqual([
+      { t: 'relay', data: { k: 'early' }, seq: 1, ack: 0 },
+      { t: 'relay', data: { k: 'early' }, seq: 2, ack: 0 },
+      { t: 'relay', data: { k: 'field', n: 0, x: 1, speed: 2, angle: 0, phase: 'runup' }, ack: 0 },
+    ]);
+  });
+
+  it('confirms what it receives and drops repeats', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 1, others: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 1 }); // resent after a drop
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 3 }); // gap: 2 was lost, wait for it
+    expect(c.take('early')).toHaveLength(1);
+    const acks = relayed(f.sock).filter((m) => m.data.k === 'ack');
+    expect(acks.map((m) => m.ack)).toEqual([1, 1]);
+  });
+
+  it('keeps sending unconfirmed messages until the other player has them', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
+    c.send({ k: 'early' });
+    c.send({ k: 'ready', event: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'ack' }, ack: 1 }); // they have #1
+    f.sock.sent.length = 0;
+    f.sock.serverSays({ t: 'left' });
+    f.sock.serverSays({ t: 'joined' }); // back after a drop: resend what they may have missed
+    expect(relayed(f.sock).map((m) => m.seq)).toEqual([2]);
+  });
+
+  it('reconnects to the same seat after a short drop, then resends', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 1, others: 1 });
+    f.sock.drop();
+    expect(c.state).toBe('reconnecting');
+    c.send({ k: 'early' }); // sent while away: kept
+    f.wait(1000);
+    expect(f.urls[1]).toBe('ws://x/room/ABCD?slot=1');
+    expect(c.reconnectSecondsLeft()).toBeCloseTo(9);
+    f.sock.serverSays({ t: 'welcome', slot: 1, others: 1 });
+    expect(c.state).toBe('open');
+    expect(relayed(f.sock)).toEqual([{ t: 'relay', data: { k: 'early' }, seq: 1, ack: 0 }]);
+  });
+
+  it('gives up when it cannot get back within the window', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
+    f.sock.drop();
+    for (let i = 0; i < 12; i++) {
+      f.wait(1000);
+      if (c.state === 'reconnecting') f.sock.drop(); // the server is still unreachable
+    }
+    expect(c.state).toBe('lost');
+  });
+
+  it('notices the other player leaving on purpose', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'bye' }, seq: 1 });
+    expect(c.peerSaidBye).toBe(true);
+  });
+});
+
+// ------------------------------------------------------------ field events
+
+import { LongJumpEvent } from '../src/events/long-jump';
+import { JavelinEvent } from '../src/events/javelin';
+import { HighJumpEvent } from '../src/events/high-jump';
+import type { RunUpFieldEvent } from '../src/events/run-up-event';
+
+/**
+ * One device's player: taps up the runway, then holds Action for a while and
+ * lets go. Every third attempt they run through the line instead (a foul).
+ */
+function fieldPlayer(g: RunUpFieldEvent, releaseAt: number, hold: number) {
+  let held = 0;
+  let left = true;
+  return (i: number) => {
+    if (!g.localTurn) return NOTHING;
+    const n = g.attemptNo;
+    if (g.phase === 'ready' || g.phase === 'runup') {
+      held = 0;
+      if (g.athleteX < releaseAt || g.record.marks.length === 1) {
+        if (i % 5 !== 0) return NOTHING;
+        left = !left;
+        return pressed(left ? 'P1_LEFT' : 'P1_RIGHT');
+      }
+      return pressed('P1_ACTION');
+    }
+    if (g.phase === 'hold') {
+      held++;
+      return held < hold + (n % 3) * 2 ? pressed('P1_ACTION') : NOTHING;
+    }
+    return NOTHING;
+  };
+}
+
+function playField(make: () => RunUpFieldEvent, lag: number, releaseAt: number, hold: number) {
+  const link = linkedPair(lag);
+  const host = make();
+  const guest = make();
+  host.init({ players: PLAYERS, difficulty: 'normal', rng: new Rng(3), net: link.host });
+  guest.init({ players: PLAYERS, difficulty: 'normal', rng: new Rng(3), net: link.guest });
+  const drive = [fieldPlayer(host, releaseAt, hold), fieldPlayer(guest, releaseAt, hold)];
+  for (let i = 0; i < 60 * 300 && !(host.isFinished() && guest.isFinished()); i++) {
+    host.update(STEP, drive[0](i));
+    guest.update(STEP, drive[1](i));
+    link.tick();
+  }
+  return { host, guest };
+}
+
+const fieldSummary = (results: EventResult[]) => results.map((r) => `${r.name}:${r.mark}:${(r.attempts ?? []).join(',')}`);
+
+describe('online field events stay in sync', () => {
+  // [name, event, where to start holding (m from the line), steps to hold]
+  const events: [string, () => RunUpFieldEvent, number, number][] = [
+    ['long jump', () => new LongJumpEvent(), -6, 16],
+    ['javelin', () => new JavelinEvent(), -8, 26],
+    ['high jump', () => new HighJumpEvent(), -7.4, 32],
+  ];
+  for (const [name, make, releaseAt, hold] of events) {
+    for (const lag of [0, 6, 40]) {
+      it(`${name} with ${lag * 17} ms of lag: both games agree on every attempt`, () => {
+        const { host, guest } = playField(make, lag, releaseAt, hold);
+        expect(host.isFinished()).toBe(true);
+        expect(guest.isFinished()).toBe(true);
+        expect(fieldSummary(guest.getResults())).toEqual(fieldSummary(host.getResults()));
+        const ann = host.getResults().find((r) => r.name === 'ANN')!;
+        expect(ann.attempts!.some((m) => m !== null)).toBe(true);
+        if (name !== 'high jump') expect(ann.attempts![1]).toBeNull(); // the planned foul
+      });
+    }
+  }
+
+  it('takes turns: player 1, player 2, player 1…', () => {
+    const link = linkedPair(0);
+    const host = new LongJumpEvent();
+    host.init({ players: PLAYERS, difficulty: 'normal', rng: new Rng(3), net: link.host });
+    expect(host.current.name).toBe('ANN');
+    expect(host.localTurn).toBe(true);
+    // ANN fouls; then it's BOB's turn, run by the other device.
+    for (let i = 0; i < 60 * 20 && host.attemptNo === 0; i++) {
+      host.update(STEP, i % 5 === 0 ? pressed(i % 10 ? 'P1_LEFT' : 'P1_RIGHT') : NOTHING);
+    }
+    expect(host.current.name).toBe('BOB');
+    expect(host.localTurn).toBe(false);
+    // Our keys do nothing during their turn.
+    host.update(STEP, pressed('P1_LEFT'));
+    host.update(STEP, pressed('P1_RIGHT'));
+    expect(host.runner.speed).toBe(0);
+  });
+});
+
+import { onlineStatus } from '../src/net/status';
+import { NET } from '../src/game/tuning';
+
+describe('online status banner', () => {
+  it('waits for a dropped friend, then ends the match', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
+    expect(onlineStatus(c, 'BOB')).toEqual({ banner: null, over: null });
+    f.sock.serverSays({ t: 'left' });
+    f.wait(2500);
+    expect(onlineStatus(c, 'BOB').banner).toBe('WAITING FOR BOB TO RECONNECT 8');
+    f.sock.serverSays({ t: 'joined' });
+    expect(onlineStatus(c, 'BOB').banner).toBeNull();
+    f.sock.serverSays({ t: 'left' });
+    f.wait(NET.RECONNECT_WINDOW * 1000 + 1);
+    expect(onlineStatus(c, 'BOB').over).toBe('YOUR FRIEND LEFT');
+  });
+
+  it('shows our own reconnect countdown, and ends at once if the friend says bye', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
+    f.sock.drop();
+    expect(onlineStatus(c, 'BOB').banner).toBe('RECONNECTING... 10');
+    f.wait(1000);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'bye' }, seq: 1 });
+    expect(onlineStatus(c, 'BOB').over).toBe('YOUR FRIEND LEFT');
+  });
+});
+
+describe('RoomConnection with a new friend', () => {
+  it('starts numbering afresh when someone new joins (not after a reconnect)', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 0 });
+    f.sock.serverSays({ t: 'joined', fresh: true });
+    c.send({ k: 'ready', event: 0 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 1 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 2 });
+    f.sock.serverSays({ t: 'left' });
+    f.sock.serverSays({ t: 'joined', fresh: true });
+    f.sock.sent.length = 0;
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 1 }); // the new friend's first message
+    expect(c.take('early')).toHaveLength(3);
+    expect(relayed(f.sock).some((m) => m.data.k === 'ready')).toBe(false); // not resent to them
   });
 });

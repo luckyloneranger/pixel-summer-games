@@ -21,7 +21,7 @@ Everything (pixel art, font, music and sound effects) is original and generated 
 - **Championship**, 1 or 2 players: all five events in order (100 m, long jump, high jump, javelin, hurdles). Miss a qualifying mark and you're out (Options → Casual mode lets you carry on with 0 points). Ends on the podium and the high-score table.
 - **Practice**: any event, with your personal best shown.
 - **Versus**, 2 players: all five events or just one; the higher total wins.
-- **Online**, 2 players on different devices: one creates a room and shares its 4-letter code, the other joins. Races so far (100 m and hurdles); field events are coming.
+- **Online**, 2 players on different devices: one creates a room and shares its 4-letter code, the other joins. Any event or all five; field events take turns and you watch your friend's attempts live. A short drop (up to 10 s) reconnects by itself.
 - **How to Play**: a short guide to each event.
 
 ## Controls
@@ -56,7 +56,7 @@ npm run dev      # local server; open the http://localhost:5173 link it prints
 | Command | What it does |
 | --- | --- |
 | `npm test` | Unit tests (Vitest) |
-| `npm run test:e2e` | Browser smoke test (Playwright): title → 100 m → results |
+| `npm run test:e2e` | Browser tests (Playwright): title → 100 m → results, and an online match between two browsers through a local room server (with a dropped connection) |
 | `npm run build` | Builds the static site into `dist/` |
 | `npm run preview` | Serves the built `dist/` locally |
 
@@ -104,7 +104,7 @@ For online play the same workflow first deploys the room server to Cloudflare, o
 - `CLOUDFLARE_API_TOKEN`: a Cloudflare API token made from the "Edit Cloudflare Workers" template.
 - `CLOUDFLARE_ACCOUNT_ID`: your Cloudflare account ID (shown on the Workers & Pages overview).
 
-The built game is pointed at the deployed server automatically. Without the secrets the server step is skipped and Online shows "could not reach the game server". A second workflow (`.github/workflows/test.yml`) runs the unit tests and the smoke test in Chromium, Firefox and WebKit.
+The built game is pointed at the deployed server automatically. Without the secrets the server step is skipped and Online shows "could not reach the game server". A second workflow (`.github/workflows/test.yml`) runs the unit tests and the browser tests in Chromium, Firefox and WebKit.
 
 ## Originality
 

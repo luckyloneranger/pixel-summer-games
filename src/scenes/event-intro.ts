@@ -62,7 +62,7 @@ export class EventIntroScene implements Scene {
     }
     if (conn.take('ready').some((m) => m.event === index)) this.peerReady = true;
     const start = () => {
-      conn.take('state', 'phase', 'early'); // anything left over from the previous event
+      conn.take('state', 'phase', 'early', 'field'); // anything left over from the previous event
       g.scenes.replace(new EventPlayScene(g, this.session, this.eventId));
     };
     if (online.localIndex === 0) {

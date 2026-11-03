@@ -16,4 +16,8 @@ game.start();
   get lines() {
     return game.scenes.top?.debugLines?.() ?? [];
   },
+  /** Online connection state ('' when not online). */
+  get net() {
+    return game.session?.online?.conn.state ?? '';
+  },
 };

@@ -19,6 +19,12 @@ import { DustPuffs, DustTrail } from '../gfx/effects';
 import { EFFECTS } from '../game/tuning';
 import { NO_EFFECTS, type EffectsSink } from './event';
 import type { Look } from '../gfx/sprite';
+import type { NetLink } from './event';
+import { NET } from '../game/tuning';
+import type { GameMessage } from '../net/protocol';
+
+/** Field-event messages from the other player's game. */
+type FieldMessage = Extract<GameMessage, { k: 'field' | 'release' | 'landed' | 'foul' }>;
 
 /** A human taking part: their attempts and how they look. */
 export interface FieldCompetitor {
@@ -84,6 +90,16 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected abstract readonly releaseCue: SoundCue;
   protected abstract readonly landCue: SoundCue;
 
+  // Online: the device whose player is up runs the attempt and reports it;
+  // the other device replays it. Attempts are numbered across all players.
+  private net: NetLink | null = null;
+  /** Number of the attempt in progress (0 = first of the event). */
+  attemptNo = 0;
+  private readonly netQueue: FieldMessage[] = [];
+  private sendTimer = 0; // s since the last run-up update was sent
+  /** Official mark for the remote attempt, if it arrived before our replay landed. */
+  private pendingMark: { mark: number | null } | null = null;
+
   constructor(
     protected readonly cfg: RunUpConfig,
     private readonly cpuRanges: Record<Difficulty, readonly number[]>,
@@ -107,6 +123,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.assist = ctx.assist ?? false;
     this.effects = ctx.effects ?? NO_EFFECTS;
     this.dust.clear();
+    this.net = ctx.net ?? null;
+    this.netQueue.length = 0;
     this.competitors = ctx.players.map((p, i) => ({
       playerIndex: p.index ?? i,
       name: p.initials,
@@ -126,12 +144,17 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   }
 
   protected startAttempt(): void {
-    // Take turns: whoever has had the fewest attempts goes next (player 1 first).
-    let next = 0;
+    // Take turns: whoever (still in) has had the fewest attempts goes next,
+    // player 1 first. Both online games work this out the same way.
+    let next = -1;
     this.competitors.forEach((c, i) => {
-      if (c.record.marks.length < this.competitors[next].record.marks.length) next = i;
+      if (c.record.done) return;
+      if (next < 0 || c.record.marks.length < this.competitors[next].record.marks.length) next = i;
     });
-    this.turn = next;
+    this.turn = Math.max(0, next);
+    this.attemptNo = this.competitors.reduce((n, c) => n + c.record.marks.length, 0);
+    this.sendTimer = NET.SNAPSHOT_EVERY; // send the first update straight away
+    this.pendingMark = null;
     this.runner.reset();
     this.meter.reset();
     this.footsteps.reset();
@@ -183,12 +206,28 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   // ------------------------------------------------ rules
 
+  /** Is the attempt in progress run by this device? (Always, offline.) */
+  get localTurn(): boolean {
+    return !this.net || this.current.playerIndex === this.net.localIndex;
+  }
+
   update(dt: number, input: InputSnapshot): void {
     this.clock += dt;
     this.phaseTimer += dt;
     this.dust.update(dt);
-    // Only the athlete whose turn it is reads keys (both sets for a lone player).
-    const keys = keysFor(input, this.current.playerIndex, this.competitors.length === 1);
+    if (this.net) this.receiveNet();
+    if (!this.localTurn) {
+      this.spectate(dt);
+      return;
+    }
+    this.play(dt, input);
+    if (this.net) this.sendRunUp(dt);
+  }
+
+  /** The attempt in progress is ours: read the keys. */
+  private play(dt: number, input: InputSnapshot): void {
+    // Only the athlete whose turn it is reads keys (both sets for a lone or online player).
+    const keys = keysFor(input, this.current.playerIndex, this.competitors.length === 1 || this.net !== null);
     const { left, right } = keys;
     const actionPressed = keys.action;
     const actionHeld = keys.actionHeld;
@@ -242,6 +281,109 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     }
   }
 
+  // ------------------------------------------------ online
+
+  /** Send our run-up a few times a second (only the latest matters). */
+  private sendRunUp(dt: number): void {
+    const p = this.phase;
+    if (p !== 'ready' && p !== 'runup' && p !== 'hold') return;
+    this.sendTimer += dt;
+    if (this.sendTimer < NET.SNAPSHOT_EVERY) return;
+    this.sendTimer = 0;
+    this.net!.send({ k: 'field', n: this.attemptNo, x: this.athleteX, speed: this.runner.speed, angle: this.meter.angle, phase: p });
+  }
+
+  /** Work through the other game's messages, in order. */
+  private receiveNet(): void {
+    this.netQueue.push(...this.net!.take('field', 'release', 'landed', 'foul'));
+    while (this.netQueue.length) {
+      const m = this.netQueue[0];
+      if (m.n < this.attemptNo) {
+        this.netQueue.shift(); // old news
+        continue;
+      }
+      if (m.n > this.attemptNo) {
+        // They've moved on to the next attempt: catch up if we can.
+        if (!this.catchUp()) {
+          if (m.k === 'field') this.netQueue.shift();
+          else break; // wait for this attempt's result first
+        }
+        continue;
+      }
+      this.netQueue.shift();
+      if (!this.localTurn) this.applyRemote(m);
+    }
+  }
+
+  /** Finish the current attempt now so the next one can start. False if its result isn't known yet. */
+  private catchUp(): boolean {
+    if (this.phase === 'flight' && this.pendingMark) this.land(this.pendingMark.mark);
+    if (this.phase !== 'landed' && this.phase !== 'foul') return false;
+    if (this.competitors.every((c) => c.record.done)) return false;
+    this.startAttempt();
+    return true;
+  }
+
+  /** Mirror the other player's attempt. */
+  private applyRemote(m: FieldMessage): void {
+    const before = this.phase === 'ready' || this.phase === 'runup' || this.phase === 'hold';
+    switch (m.k) {
+      case 'field':
+        if (!before) return;
+        this.runner.position = m.x + this.cfg.RUNWAY;
+        this.runner.speed = m.speed;
+        this.meter.angle = m.angle;
+        if (m.phase !== this.phase) this.phase = m.phase;
+        return;
+      case 'release':
+        if (!before) return;
+        this.runner.position = m.x + this.cfg.RUNWAY;
+        this.meter.angle = m.angle;
+        this.takeoffX = m.x;
+        this.launch(m.speed, m.angle);
+        return;
+      case 'landed':
+        if (this.phase === 'flight' && this.flight.landed) this.land(m.mark);
+        else this.pendingMark = { mark: m.mark };
+        return;
+      case 'foul':
+        if (this.phase !== 'landed' && this.phase !== 'foul') this.foul(m.reason);
+        return;
+    }
+  }
+
+  /** Watch the other player's attempt (no keys). */
+  private spectate(dt: number): void {
+    switch (this.phase) {
+      case 'ready':
+      case 'runup':
+      case 'hold':
+        // Carry on at their last speed until the next update; never past the
+        // line (a foul is theirs to call).
+        this.runner.position = Math.min(this.runner.position + this.runner.speed * dt, this.cfg.RUNWAY);
+        this.footsteps.update(this.runner, this.sound);
+        if (this.trail.due(this.runner.position, this.runner.speedFraction)) {
+          this.dust.add(this.athleteX - 0.4, this.dustGroundY());
+        }
+        return;
+      case 'flight':
+        this.flight.update(dt);
+        this.afterRelease(dt);
+        // Land with the official mark from their game.
+        if (this.flight.landed && this.pendingMark) this.land(this.pendingMark.mark);
+        return;
+      case 'landed':
+        this.afterRelease(dt);
+        this.waitForNext();
+        return;
+      case 'foul':
+        this.waitForNext();
+        return;
+      case 'finished':
+        return;
+    }
+  }
+
   private waitForNext(): void {
     if (this.phaseTimer < this.cfg.RESULT_TIME) return;
     if (this.competitors.every((c) => c.record.done)) this.enterPhase('finished');
@@ -266,14 +408,23 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
       return;
     }
     const speed = this.runner.speed * this.cfg.LAUNCH_EFFICIENCY;
+    this.net?.send({ k: 'release', n: this.attemptNo, x: this.takeoffX, speed, angle });
+    this.launch(speed, angle);
+  }
+
+  /** Take off from `takeoffX` (both for our own jump and a replayed one). */
+  private launch(speed: number, angle: number): void {
     this.flight.launch(this.takeoffX, this.launchHeight(), speed, angle);
     this.onRelease();
     this.sound.play(this.releaseCue);
     this.enterPhase('flight');
   }
 
-  private land(): void {
-    this.lastMark = this.markFor(this.flight.x);
+  /** Record the landing. `official` is the other game's mark for a replayed attempt. */
+  private land(official?: number | null): void {
+    this.lastMark = official !== undefined ? official : this.markFor(this.flight.x);
+    if (official === undefined) this.net?.send({ k: 'landed', n: this.attemptNo, mark: this.lastMark });
+    this.pendingMark = null;
     this.record.record(this.lastMark);
     this.sound.play(this.landCue);
     this.effects.shake(EFFECTS.SHAKE_LAND);
@@ -282,6 +433,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   }
 
   private foul(reason: string): void {
+    if (this.localTurn) this.net?.send({ k: 'foul', n: this.attemptNo, reason });
     this.foulReason = reason;
     this.record.record(null);
     this.sound.play('buzzer');
@@ -320,6 +472,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
       `ANGLE ${this.meter.angle.toFixed(1)}`,
       `X     ${this.athleteX.toFixed(2)}`,
       `FLIGHT ${this.flight.x.toFixed(1)} / ${this.flight.y.toFixed(1)}`,
+      ...(this.net ? [`ATTEMPT# ${this.attemptNo}`, this.localTurn ? 'MY TURN' : 'THEIR TURN'] : []),
     ];
   }
 

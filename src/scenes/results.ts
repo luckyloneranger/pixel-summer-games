@@ -88,6 +88,11 @@ export class ResultsScene implements Scene {
     } else g.scenes.replace(new EventIntroScene(g, this.session, series.currentEvent));
   }
 
+  /** The table as text (debug overlay; the online test compares both screens). */
+  debugLines(): string[] {
+    return this.results.map((res) => `${res.name} ${fmt(res.mark)} ${(res.attempts ?? []).map((m) => fmt(m)).join(' ')}`);
+  }
+
   render(r: Renderer): void {
     r.clear(PALETTE.NIGHT);
     drawHeader(r, EVENT_NAMES[this.eventId]);

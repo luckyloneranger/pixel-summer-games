@@ -27,9 +27,9 @@ jobs:
     outputs:
       rooms_url: ${{ steps.url.outputs.rooms_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.HAS_TOKEN == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: env.HAS_TOKEN == 'true'
         with:
           node-version: 22
@@ -40,7 +40,7 @@ jobs:
         if: env.HAS_TOKEN == 'true'
       - id: deploy
         if: env.HAS_TOKEN == 'true'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -56,8 +56,8 @@ jobs:
     needs: server
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -66,8 +66,8 @@ jobs:
       - run: npm run build
         env:
           VITE_ROOMS_URL: ${{ needs.server.outputs.rooms_url || vars.ROOMS_URL }}
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -79,4 +79,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

@@ -240,4 +240,6 @@ export const HIGH_JUMP = {
 /** Online play. */
 export const NET = {
   SNAPSHOT_EVERY: 0.05, // s between sending your runner's state (20 per second)
+  RECONNECT_WINDOW: 10, // s a dropped player has to come back before the match ends
+  RECONNECT_DELAY: 1, // s between reconnect tries
 };

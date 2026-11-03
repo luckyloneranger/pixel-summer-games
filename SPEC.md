@@ -380,6 +380,11 @@ Build in this order. Get the feel of the running right with plain boxes before a
   - Working rule 6 allows network use in Online mode only. The claude.ai preview can't play online (its security rules block connections); the GitHub Pages site can.
 - **11a:** the relay server, the Online menu, create/join by code, the lobby, a ready-up on each event card, online 100 m and hurdles, the winner screen, and "your friend left" handling.
 - **11b:** online long jump, high jump and javelin (taking turns, watching the other player's attempt live), all five events, reconnect after a short drop.
+  - Field events: players take turns in the same order on both devices. The device whose player is up runs the attempt and sends the run-up about 20 times a second, then the release point, speed and angle; the other screen replays the same flight and shows the mark the jumper's device measured. A screen that falls behind skips ahead to the next attempt.
+  - Lobby choices: ALL FIVE (decathlon order), BOTH RACES, or any single event.
+  - Reliable messages: everything except position updates is numbered, confirmed and resent after a reconnect; repeats are ignored.
+  - Reconnect: a dropped player reconnects to the same seat by themselves for up to 10 seconds (`NET.RECONNECT_WINDOW`) while the match carries on. Their screen shows "RECONNECTING… n"; the other shows "WAITING FOR XXX TO RECONNECT n". After that the match ends ("CONNECTION LOST" / "YOUR FRIEND LEFT"). Leaving on purpose ends it at once.
+  - An automated test (`tests/e2e/online.spec.ts`) runs the room server locally and plays a race and a long jump between two browsers, cutting and restoring one connection in each.
 - Done when: two people on two devices can finish a Versus match together, and a dropped connection is handled cleanly.
 
 ## 10. Testing, quality and definition of done
