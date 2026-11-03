@@ -1,5 +1,5 @@
 import type { Rng } from '../core/rng';
-import { CPU } from '../game/tuning';
+import { CPU, CPU_FIELD } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import { makeLook } from '../gfx/sprites/athlete';
 import type { Look } from '../gfx/sprite';
@@ -44,3 +44,21 @@ export const CPU_ATHLETES: { name: string; look: Look }[] = [
   { name: 'JET', look: makeLook('green', 'dark', PALETTE.INK) },
   { name: 'KAI', look: makeLook('yellow', 'light', PALETTE.BROWN) },
 ];
+
+/**
+ * A CPU's marks for a field event: each attempt is a foul (null) or a
+ * distance drawn from the difficulty's range. No run-up is simulated.
+ */
+export function cpuFieldMarks(
+  range: readonly number[],
+  attempts: number,
+  rng: Rng,
+): (number | null)[] {
+  const marks: (number | null)[] = [];
+  for (let i = 0; i < attempts; i++) {
+    const foul = rng.next() < CPU_FIELD.FOUL_CHANCE;
+    const mark = Math.floor(rng.range(range[0], range[1]) * 100) / 100;
+    marks.push(foul ? null : mark);
+  }
+  return marks;
+}

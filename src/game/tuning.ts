@@ -66,3 +66,33 @@ export const ANIMATION = {
   WAVE_FRAME_TIME: 0.25, // s per frame of the crowd wave
   RESULTS_DELAY: 2.0, // s after the race ends before the results screen
 };
+
+/** Hold-and-release angle meter (long jump, javelin). */
+export const ANGLE_METER = {
+  RATE: 90, // degrees per second while Action is held
+  MAX: 80, // degrees, the meter stops here
+};
+
+/** Long jump. */
+export const LONG_JUMP = {
+  RUNWAY: 40, // m from the start of the runway to the foul line
+  ATTEMPTS: 3, // jumps; the best one counts
+  LAUNCH_EFFICIENCY: 0.795, // launch speed = run speed x this (45° at top speed ≈ 8.5 m)
+  GRAVITY: 9.81, // m/s²
+  PERFECT_ZONE: 0.2, // m before the foul line that counts as a perfect take-off
+  PERFECT_BONUS: 0.05, // fraction added to the distance for a perfect take-off
+  QUALIFY: 7.0, // m, qualifying mark on Normal
+  PIT_START: 1.0, // m past the foul line where the sand starts
+  PIT_END: 10.0, // m past the foul line where the sand ends
+  RESULT_TIME: 2.5, // s the mark (or FOUL) stays up before the next attempt
+  TAPE_TIME: 1.0, // s for the tape measure to run out
+  PUFF_TIME: 0.5, // s the sand puff lasts
+  PIXELS_PER_METER: 14, // px per m when drawing
+  CAMERA_LEAD: 110, // px, athlete's distance from the left edge of the screen
+};
+
+/** CPU field-event marks, drawn from a range per difficulty (no run-up simulated). */
+export const CPU_FIELD = {
+  FOUL_CHANCE: 0.15, // chance any one CPU attempt is a foul
+  LONG_JUMP: { easy: [6.0, 7.2], normal: [6.8, 8.0], hard: [7.5, 8.6] }, // m, [min, max]
+};

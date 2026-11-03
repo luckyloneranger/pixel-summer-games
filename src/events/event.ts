@@ -29,6 +29,8 @@ export interface EventResult {
   disqualified: boolean;
   /** Filled in by scoring in Phase 6; 0 until then. */
   points: number;
+  /** Field events only: each attempt's mark in m, null = foul. */
+  attempts?: (number | null)[];
   /** Races only: seconds from GO to the first valid tap. */
   reactionTime?: number;
 }

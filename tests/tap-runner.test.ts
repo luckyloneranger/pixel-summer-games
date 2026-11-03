@@ -44,11 +44,15 @@ describe('TapRunner', () => {
     expect(r.position).toBe(pos);
   });
 
-  it('no speed is gained while canAccelerate is off (angle meter)', () => {
+  it('no speed is gained or lost while canAccelerate is off (angle meter)', () => {
     const r = new TapRunner();
     r.canAccelerate = false;
     r.tap('left');
     expect(r.speed).toBe(0);
+    r.speed = 8;
+    for (let i = 0; i < 60; i++) r.update(STEP);
+    expect(r.speed).toBe(8);
+    expect(r.position).toBeCloseTo(8);
   });
 
   it('measures taps per second', () => {

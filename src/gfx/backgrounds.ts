@@ -59,6 +59,16 @@ export class Stadium {
 
   /** Crowd, front wall with boards, grass and the 4-lane track. */
   drawBackground(r: Renderer, cameraPx: number, crowdParallax: number, waveFrame: number): void {
+    this.drawStands(r, cameraPx, crowdParallax, waveFrame);
+    r.rect(0, LAYOUT.TRACK_TOP, r.width, TRACK_BOTTOM - LAYOUT.TRACK_TOP, PALETTE.ORANGE);
+    r.rect(0, TRACK_BOTTOM + 1, r.width, 1, PALETTE.GREEN_DARK);
+    for (let i = 0; i <= LAYOUT.LANES; i++) {
+      r.rect(0, LAYOUT.TRACK_TOP + i * LAYOUT.LANE_HEIGHT, r.width, 1, PALETTE.WHITE);
+    }
+  }
+
+  /** Crowd stand, front wall and grass everywhere below it. Events add their own track. */
+  drawStands(r: Renderer, cameraPx: number, crowdParallax: number, waveFrame: number): void {
     r.clear(PALETTE.NIGHT);
     // Crowd stand, scrolling slower than the track.
     const frames = this.crowd();
@@ -75,13 +85,8 @@ export class Stadium {
       r.text('SUMMER GAMES', x + 76, LAYOUT.WALL_TOP + 1, PALETTE.YELLOW, 'center');
     }
 
-    r.rect(0, LAYOUT.WALL_TOP + LAYOUT.WALL_HEIGHT, r.width, LAYOUT.TRACK_TOP, PALETTE.GREEN);
-    r.rect(0, LAYOUT.TRACK_TOP, r.width, TRACK_BOTTOM - LAYOUT.TRACK_TOP, PALETTE.ORANGE);
-    r.rect(0, TRACK_BOTTOM, r.width, r.height - TRACK_BOTTOM, PALETTE.GREEN);
-    r.rect(0, TRACK_BOTTOM + 1, r.width, 1, PALETTE.GREEN_DARK);
-    for (let i = 0; i <= LAYOUT.LANES; i++) {
-      r.rect(0, LAYOUT.TRACK_TOP + i * LAYOUT.LANE_HEIGHT, r.width, 1, PALETTE.WHITE);
-    }
+    const grassTop = LAYOUT.WALL_TOP + LAYOUT.WALL_HEIGHT;
+    r.rect(0, grassTop, r.width, r.height - grassTop, PALETTE.GREEN);
   }
 
   private crowd(): HTMLCanvasElement[] {

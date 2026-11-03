@@ -12,7 +12,10 @@ export class TapRunner {
   position = 0; // m
   /** Number of valid taps so far (drives the stride animation). */
   taps = 0;
-  /** False during the angle meter: the athlete keeps moving but can't speed up. */
+  /**
+   * False during the angle meter: taps add nothing and the speed is held
+   * steady (no drain), so the athlete keeps moving at their current speed.
+   */
   canAccelerate = true;
   private lastKey: RunKey | null = null;
   private time = 0; // s, the runner's own clock for the tap-rate window
@@ -52,7 +55,9 @@ export class TapRunner {
   /** Advance one logic step: drain speed, then move. */
   update(dt: number): void {
     this.time += dt;
-    this.speed = Math.min(Math.max(0, this.speed - this.cfg.DRAG * dt), this.cfg.MAX_SPEED);
+    if (this.canAccelerate) {
+      this.speed = Math.min(Math.max(0, this.speed - this.cfg.DRAG * dt), this.cfg.MAX_SPEED);
+    }
     this.position += this.speed * dt;
     // Forget taps older than the measuring window.
     const cutoff = this.time - this.cfg.TAP_RATE_WINDOW;

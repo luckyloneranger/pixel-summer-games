@@ -14,6 +14,7 @@ export function drawScoreboard(
   markText: string,
   speedFraction: number,
   note = '',
+  noteColour: string = PALETTE.RED,
 ): void {
   r.rect(0, 0, r.width, HUD_HEIGHT, PALETTE.INK);
   r.rect(0, HUD_HEIGHT - 1, r.width, 1, PALETTE.GREY_DARK);
@@ -29,5 +30,5 @@ export function drawScoreboard(
     const colour = i >= lit ? PALETTE.GREY_DARK : i < 10 ? PALETTE.GREEN : i < 14 ? PALETTE.YELLOW : PALETTE.RED;
     r.rect(x, 14, SEG_W, 7, colour);
   }
-  if (note) r.text(note, r.width - 4, 14, PALETTE.RED, 'right');
+  if (note) r.text(note, r.width - 4, 14, noteColour, 'right');
 }

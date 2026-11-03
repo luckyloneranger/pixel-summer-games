@@ -6,9 +6,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | --- | --- |
 | 0 – Setup and skeleton | ✅ Approved |
 | 1 – 100 m with plain boxes | ✅ Approved |
-| 2 – 100 m art and CPU runners | ✅ Done, awaiting play-test |
-| 3 – Long jump | ⏳ Next |
-| 4 – Javelin | – |
+| 2 – 100 m art and CPU runners | ✅ Approved |
+| 3 – Long jump | ✅ Done, awaiting play-test |
+| 4 – Javelin | ⏳ Next |
 | 5 – 110 m hurdles | – |
 | 6 – Game flow | – |
 | 7 – Audio | – |
@@ -69,4 +69,23 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - Jump, throw and stumble frames come with Phases 3–5. Photo finish and dust puffs are Phase 9 polish.
 - Your initials are fixed as "P1" until player setup (Phase 6).
 
-**Next:** Phase 3 – Long jump.
+## Phase 3 – Long jump
+
+**Done**
+- Shared field-event pieces, ready for the javelin: `projectile.ts` (exact flight maths, independent of frame rate), `angle-meter.ts` (hold to raise at 90°/s, capped at 80°, locks on release), `field-attempts.ts` (3 attempts, best mark, fouls).
+- Long jump (`src/events/long-jump.ts`): 40 m runway, take-off board, foul line, sand pit with metre marks. Hold W/Space to raise the angle (arc indicator); release to take off. Launch speed = run speed × 0.795.
+- While the meter is held, speed is frozen (no gain and no drain), as SPEC section 4 says.
+- Fouls: releasing past the line, or running over it without jumping. A foul uses up the attempt.
+- PERFECT TAKE-OFF (release within 0.20 m of the line) adds 5%. Distances are rounded down to the centimetre and measured from the foul line.
+- Sand puff, tape measure, crowd wave for jumps of 7.00 m or more.
+- Jump and landing sprite frames; ° added to the font.
+- CPU marks drawn from a range per difficulty (Easy 6.0–7.2, Normal 6.8–8.0, Hard 7.5–8.6 m, 15% foul chance).
+- Results screen has a field layout: attempts 1–3 (X = foul) and best.
+- 91 unit tests (adds projectile range vs formula, 45° ≈ 8.5 m at top speed, angle meter, fouls, perfect bonus, attempts, CPU marks).
+
+**Known issues / notes**
+- Reaching the 7.00 m qualifying mark needs about 8 taps/s plus a good release. At 7 taps/s the best possible is about 6.3 m. Raise `LONG_JUMP.LAUNCH_EFFICIENCY` if this is too hard.
+- The Action key only starts the meter once you're moving.
+- CPUs don't appear on the runway; their marks show in the results.
+
+**Next:** Phase 4 – Javelin.
