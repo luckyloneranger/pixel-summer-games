@@ -18,7 +18,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 10 – High jump | ✅ Approved |
 | 10+ – More events | – |
 | 11a – Online: server, lobby, races | ✅ Approved (room server live on Cloudflare) |
-| 11b – Online: field events, reconnect | 🔍 Ready for review |
+| 11b – Online: field events, reconnect | ✅ Approved |
 
 ## Phase 0 – Setup and skeleton
 
@@ -272,4 +272,4 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 - If a whole attempt's run-up happens while you're disconnected, you'll see the jump replayed from the take-off when you're back, not the run-up.
 - Reloading the page mid-match counts as leaving: the reconnect only covers network drops.
 
-**Next:** waiting for approval.
+**Next:** a more fun title screen (plan given, waiting for the OK).
