@@ -13,6 +13,17 @@ import { AUDIO } from '../game/tuning';
 import { FieldAttempts } from './field-attempts';
 import { Projectile } from './projectile';
 import { TapRunner, applyRunPresses } from './tap-runner';
+import { keysFor } from './player-input';
+import type { Look } from '../gfx/sprite';
+
+/** A human taking part: their attempts and how they look. */
+export interface FieldCompetitor {
+  playerIndex: number;
+  name: string;
+  look: Look;
+  record: FieldAttempts;
+  sprites: AthleteSprites | null;
+}
 
 /** Where the current attempt is up to. */
 export type FieldPhase = 'ready' | 'runup' | 'hold' | 'flight' | 'landed' | 'foul' | 'finished';
@@ -42,14 +53,15 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   readonly runner = new TapRunner(RUNNER);
   readonly meter = new AngleMeter();
   readonly flight: Projectile;
-  record: FieldAttempts;
+  /** The human(s) taking part, in turn order. */
+  competitors: FieldCompetitor[] = [];
+  /** Whose turn it is (index into competitors). */
+  turn = 0;
   /** Release point (m from the line) of the current attempt. */
   takeoffX = 0;
   lastMark: number | null = null;
   foulReason = '';
 
-  protected playerName = 'P1';
-  private look = playerLook();
   /** Qualifying mark for this difficulty (m). The crowd cheers marks that reach it. */
   protected qualifyMark = 0;
   /** Practice mode doesn't show the qualifying mark. */
@@ -63,7 +75,6 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   /** Sounds for letting go and for landing (set by each event). */
   protected abstract readonly releaseCue: SoundCue;
   protected abstract readonly landCue: SoundCue;
-  private sprites: AthleteSprites | null = null;
 
   constructor(
     protected readonly cfg: RunUpConfig,
@@ -71,18 +82,31 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   ) {
     this.attempts = cfg.ATTEMPTS;
     this.flight = new Projectile(cfg.GRAVITY);
-    this.record = new FieldAttempts(cfg.ATTEMPTS);
+  }
+
+  /** The competitor whose turn it is. */
+  get current(): FieldCompetitor {
+    return this.competitors[this.turn];
+  }
+
+  /** The current competitor's attempts. */
+  get record(): FieldAttempts {
+    return this.current.record;
   }
 
   init(ctx: EventContext): void {
-    this.playerName = ctx.players[0].initials;
     this.sound = ctx.sound ?? SILENT;
-    this.look = playerLook(ctx.players[0].team);
-    this.sprites = null;
+    this.competitors = ctx.players.map((p, i) => ({
+      playerIndex: p.index ?? i,
+      name: p.initials,
+      look: playerLook(p.team),
+      record: new FieldAttempts(this.cfg.ATTEMPTS),
+      sprites: null,
+    }));
+    this.turn = 0;
     this.qualifyMark = qualifyingMark(this.id, ctx.difficulty);
     this.showQualify = !ctx.practice;
-    this.record = new FieldAttempts(this.cfg.ATTEMPTS);
-    this.cpus = cpuLineup(ctx.players[0].team).map((a) => ({
+    this.cpus = cpuLineup(ctx.players.map((p) => p.team)).map((a) => ({
       name: a.name,
       marks: cpuFieldMarks(this.cpuRanges[ctx.difficulty], this.cfg.ATTEMPTS, ctx.rng),
     }));
@@ -91,6 +115,12 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   }
 
   protected startAttempt(): void {
+    // Take turns: whoever has had the fewest attempts goes next (player 1 first).
+    let next = 0;
+    this.competitors.forEach((c, i) => {
+      if (c.record.marks.length < this.competitors[next].record.marks.length) next = i;
+    });
+    this.turn = next;
     this.runner.reset();
     this.meter.reset();
     this.footsteps.reset();
@@ -128,10 +158,11 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   update(dt: number, input: InputSnapshot): void {
     this.clock += dt;
     this.phaseTimer += dt;
-    const left = input.justPressed('P1_LEFT') || input.justPressed('P2_LEFT');
-    const right = input.justPressed('P1_RIGHT') || input.justPressed('P2_RIGHT');
-    const actionPressed = input.justPressed('P1_ACTION') || input.justPressed('P2_ACTION');
-    const actionHeld = input.isDown('P1_ACTION') || input.isDown('P2_ACTION');
+    // Only the athlete whose turn it is reads keys (both sets for a lone player).
+    const keys = keysFor(input, this.current.playerIndex, this.competitors.length === 1);
+    const { left, right } = keys;
+    const actionPressed = keys.action;
+    const actionHeld = keys.actionHeld;
 
     switch (this.phase) {
       case 'ready':
@@ -183,7 +214,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   private waitForNext(): void {
     if (this.phaseTimer < this.cfg.RESULT_TIME) return;
-    if (this.record.done) this.enterPhase('finished');
+    if (this.competitors.every((c) => c.record.done)) this.enterPhase('finished');
     else this.startAttempt();
   }
 
@@ -229,7 +260,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   getResults(): EventResult[] {
     const all: EventResult[] = [
-      resultFor(0, this.playerName, this.record.marks),
+      ...this.competitors.map((c) => resultFor(c.playerIndex, c.name, c.record.marks)),
       ...this.cpus.map((c) => resultFor(-1, c.name, c.marks)),
     ];
     // Best mark first; anyone with no valid attempt goes last.
@@ -262,6 +293,12 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   abstract render(r: Renderer): void;
 
+  /** Scoreboard note: "ATTEMPT 2/3", or "DAA 2/3" with two players. */
+  protected attemptNote(): string {
+    const n = `${this.record.current}/${this.cfg.ATTEMPTS}`;
+    return this.competitors.length > 1 ? `${this.current.name} ${n}` : `ATTEMPT ${n}`;
+  }
+
   /** True when the crowd should wave (a qualifying mark is on the board). */
   protected get crowdWaves(): boolean {
     return this.phase === 'landed' && (this.lastMark ?? 0) >= this.qualifyMark;
@@ -276,8 +313,9 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   }
 
   protected athleteSprites(): AthleteSprites {
-    this.sprites ??= new AthleteSprites(this.look);
-    return this.sprites;
+    const c = this.current;
+    c.sprites ??= new AthleteSprites(c.look);
+    return c.sprites;
   }
 
   /** Quarter-circle guide with the current angle as a bright line. */
@@ -302,7 +340,9 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     switch (this.phase) {
       case 'ready':
         band();
-        r.text(`ATTEMPT ${this.record.current} OF ${this.cfg.ATTEMPTS}`, cx, y, PALETTE.WHITE, 'center', 2);
+        // With two players, say whose turn it is.
+        const who = this.competitors.length > 1 ? `${this.current.name} ` : '';
+        r.text(`${who}ATTEMPT ${this.record.current} OF ${this.cfg.ATTEMPTS}`, cx, y, PALETTE.WHITE, 'center', 2);
         const target = this.showQualify ? `QUALIFY ${this.qualifyMark.toFixed(2)} M  ` : '';
         r.text(`${target}${hint}`, cx, y + 20, PALETTE.YELLOW, 'center');
         break;

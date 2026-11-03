@@ -3,7 +3,6 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import type { EventId } from '../events/event';
-import { CHAMPIONSHIP_EVENTS } from '../game/championship';
 import { EVENT_HINTS } from '../game/events';
 import { EVENT_NAMES, formatMark, qualifyingMark } from '../game/scoring';
 import type { Session } from '../game/session';
@@ -42,19 +41,31 @@ export class EventIntroScene implements Scene {
     r.rect(16, 16, r.width - 32, 2, PALETTE.YELLOW);
     r.rect(16, r.height - 18, r.width - 32, 2, PALETTE.YELLOW);
 
-    const champ = s.championship;
-    const header = champ ? `EVENT ${champ.index + 1} OF ${CHAMPIONSHIP_EVENTS.length}` : 'PRACTICE';
+    const series = s.series;
+    const mode = s.mode === 'versus' ? 'VERSUS - ' : '';
+    const header = series ? `${mode}EVENT ${series.index + 1} OF ${series.events.length}` : 'PRACTICE';
     r.text(header, cx, 28, PALETTE.GREY_LIGHT, 'center');
-    r.text(EVENT_NAMES[this.eventId], cx, 46, PALETTE.YELLOW, 'center', 2);
+    r.text(EVENT_NAMES[this.eventId], cx, 44, PALETTE.YELLOW, 'center', 2);
 
-    if (champ) {
-      r.text(`QUALIFY  ${formatMark(this.eventId, qualifyingMark(this.eventId, s.difficulty))}`, cx, 78, PALETTE.WHITE, 'center');
-      r.text(`TOTAL    ${champ.playerTotal}`, cx, 90, PALETTE.WHITE, 'center');
+    let y = 70;
+    if (series?.qualifying) {
+      r.text(`QUALIFY  ${formatMark(this.eventId, qualifyingMark(this.eventId, s.difficulty))}`, cx, y, PALETTE.WHITE, 'center');
+      y += 12;
+    }
+    if (series) {
+      // Totals so far; a knocked-out player is shown as OUT.
+      const line = s.players
+        .map((p, i) => `${p.initials} ${series.eliminated.has(i) ? 'OUT' : series.playerTotal(i)}`)
+        .join('   ');
+      r.text(`TOTAL  ${line}`, cx, y, PALETTE.WHITE, 'center');
+      y += 12;
     }
     const best = this.game.store.data.personalBests[this.eventId];
-    r.text(`YOUR BEST ${best === undefined ? '-' : formatMark(this.eventId, best)}`, cx, champ ? 102 : 84, PALETTE.GREY_LIGHT, 'center');
+    r.text(`BEST ${best === undefined ? '-' : formatMark(this.eventId, best)}`, cx, y, PALETTE.GREY_LIGHT, 'center');
 
-    r.text(EVENT_HINTS[this.eventId], cx, 124, PALETTE.CYAN, 'center');
+    const twoPlayers = this.session.activePlayers().length > 1;
+    r.text(EVENT_HINTS[this.eventId], cx, 114, PALETTE.CYAN, 'center');
+    if (twoPlayers) r.text('P1: A D W     P2: LEFT RIGHT UP', cx, 126, PALETTE.CYAN, 'center');
     if (Math.floor(this.time * 2) % 2 === 0) r.text('PRESS ENTER', cx, 144, PALETTE.WHITE, 'center');
   }
 }

@@ -12,7 +12,7 @@ import { PlayerSetupScene } from './player-setup';
 const ITEMS: MenuItem[] = [
   { label: 'CHAMPIONSHIP' },
   { label: 'PRACTICE' },
-  { label: 'VERSUS', enabled: false, note: 'PHASE 8' },
+  { label: 'VERSUS' },
   { label: 'HIGH SCORES' },
   { label: 'HOW TO PLAY', enabled: false, note: 'PHASE 9' },
   { label: 'OPTIONS' },
@@ -38,6 +38,9 @@ export class MenuScene implements Scene {
     switch (ITEMS[this.selected].label) {
       case 'CHAMPIONSHIP':
         g.scenes.push(new PlayerSetupScene(g));
+        break;
+      case 'VERSUS':
+        g.scenes.push(new PlayerSetupScene(g, 'versus'));
         break;
       case 'PRACTICE':
         g.scenes.push(new EventSelectScene(g));

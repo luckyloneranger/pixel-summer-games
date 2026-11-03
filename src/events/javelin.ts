@@ -99,7 +99,7 @@ export class JavelinEvent extends RunUpFieldEvent {
       this.name,
       best === null ? '-' : `${best.toFixed(2)} M`,
       this.runner.speedFraction,
-      `ATTEMPT ${this.record.current}/${this.cfg.ATTEMPTS}`,
+      this.attemptNote(),
       PALETTE.GREY_LIGHT,
     );
     this.drawMessages(r, 'RUN A+D  HOLD W', this.phaseTimer >= MARK_DELAY);

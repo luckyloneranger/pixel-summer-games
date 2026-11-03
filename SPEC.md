@@ -33,7 +33,7 @@ Claude Code builds the game in 10 short phases. Each phase ends with something y
 2. **The running has to feel physical.** Your tap rate shows up straight away in the runner's speed, the stride animation, the footstep sounds and the crowd noise.
 3. **Short sessions.** One event takes under 60 seconds. A full championship takes 5 to 8 minutes.
 4. **Authentic retro look and sound.** Low-resolution pixel art, a limited colour palette and chiptune audio. All of it is original.
-5. **Runs anywhere.** It works in any modern desktop browser and on phones and tablets with on-screen buttons. No install, no login, no server.
+5. **Runs anywhere.** It works in any modern desktop browser and on phones and tablets with on-screen buttons. No install, no login, no server. (Optional online play is planned for Phase 11, after v1; it would add a small server just for connecting players.)
 
 **Original work only.** All characters, art, music, sound effects and names are new. Nothing is copied from existing games such as Konami's *Track & Field* or Nintendo titles. Don't use the words "Olympic" or "Olympics" or the five-ring symbol, because they are protected trademarks. Use "Summer Games" and "Championship" instead.
 
@@ -44,12 +44,12 @@ Version 1 has four events, three modes, keyboard and touch controls, and high sc
 | Area | In v1 | Later (backlog, rough priority order) |
 | --- | --- | --- |
 | Events | 100 m dash, long jump, javelin throw, 110 m hurdles | High jump, triple jump, 100 m freestyle swim, archery, weightlifting, skeet shooting, hammer throw, pole vault |
-| Modes | Championship (arcade), Practice (any single event), Versus (2 players on one keyboard) | Ghost runner of your best run, achievements |
+| Modes | Championship (arcade), Practice (any single event), Versus (2 players on one keyboard) | Online multiplayer (Phase 11), ghost runner of your best run, achievements |
 | Controls | Keyboard on desktop, on-screen touch buttons on mobile | Gamepad (browser Gamepad API) |
 | Saving | High scores, personal bests and settings in the browser (localStorage) | Online leaderboard (would need a server) |
 | Customisation | Player initials and team colour | Athlete looks, kit designs |
 
-**Not in v1:** online multiplayer, accounts, a backend server, payments or ads, 3D graphics, real athletes, licensed music.
+**Not in v1:** online multiplayer (planned for Phase 11, after v1), accounts, a backend server, payments or ads, 3D graphics, real athletes, licensed music.
 
 ## 4. Controls and core mechanics
 
@@ -61,7 +61,7 @@ Every event uses the same two systems: alternate-tap running and a hold-and-rele
 | --- | --- | --- | --- |
 | Run (alternate the two keys) | A then D | ← then → | Left and right run pads |
 | Action (jump, throw, set angle) | W or Space | ↑ | Large action button |
-| Menus | Arrow keys or W/S, Enter to confirm | – | Tap |
+| Menus | Arrow keys or W/S, Enter to confirm | – | On-screen arrow, OK and BACK buttons (decided in Phase 8, instead of tapping items) |
 | Back / pause | Esc or P | – | Pause icon |
 | Mute | M | – | Speaker icon |
 
@@ -145,9 +145,9 @@ Championship mode chains the four events. You must hit each qualifying mark to c
 
 ### Modes
 
-- **Championship (1 or 2 players).** Events run in this order: 100 m, long jump, javelin, 110 m hurdles. Missing a qualifying mark ends the run, as in classic arcade games. A "Casual" setting in Options lets you carry on with 0 points instead. With 2 players, they share races side by side and take turns on field-event attempts.
+- **Championship (1 or 2 players).** Events run in this order: 100 m, long jump, javelin, 110 m hurdles. Missing a qualifying mark ends the run, as in classic arcade games. A "Casual" setting in Options lets you carry on with 0 points instead. With 2 players, they share races side by side and take turns on field-event attempts. A player who misses a qualifying mark is out and sits out the remaining events; the run ends only when both players are out. Each player can enter a high score.
 - **Practice.** Pick any event. No qualifying marks, unlimited retries, and your personal best is shown.
-- **Versus (2 players).** A single head-to-head event, or all four. Highest points total wins.
+- **Versus (2 players).** A single head-to-head event, or all four. Highest points total wins. No qualifying marks. CPU runners still fill the empty lanes but don't count towards the winner. Versus has its own top-10 table.
 
 ### Difficulty and CPU opponents
 
@@ -344,10 +344,10 @@ Build in this order. Get the feel of the running right with plain boxes before a
 - Build: synthesiser, all sound effects, 3 music loops, volume and mute options.
 - Done when: every action has a sound, nothing plays before the first input, and mute is remembered.
 
-**Phase 8 – Two players, touch and options**
+**Phase 8 – Two players, touch and options** (built in two halves, each play-tested)
 
-- Build: Versus mode, 2-player championship, touch controls (shown automatically on touch devices), key remapping, "assist run" option (hold a key to run at 80% speed, for players who can't tap fast), reduce shake and flashing option.
-- Done when: two people can play on one keyboard, and the full game plays on a phone held sideways.
+- **8a – Two players.** Build: Versus mode, 2-player championship (side-by-side races, turns on field events, per-player false starts and qualifying). Done when: two people can play on one keyboard.
+- **8b – Touch and options.** Build: touch controls (shown automatically on touch devices; on-screen arrow/OK/BACK buttons in menus), key remapping, "assist run" option (hold a key to run at 80% speed, for players who can't tap fast), reduce shake and flashing option. Done when: the full game plays on a phone held sideways.
 
 **Phase 9 – Polish and launch**
 
@@ -357,6 +357,14 @@ Build in this order. Get the feel of the running right with plain boxes before a
 **Phase 10 and on – More events**
 
 - Add backlog events from section 3, one per phase, each following the same shape as Phases 3 to 5.
+
+**Phase 11 – Online multiplayer (after v1)**
+
+- Goal: two players on different devices can play Versus (and possibly a 2-player championship) together over the internet. Local play stays fully offline and unchanged.
+- Likely shape: a player creates a room and shares a short room code; the other joins. No accounts or logins. The game logic already runs in fixed steps with a seeded random-number generator, so both devices can run the same race from the same seed and exchange inputs or positions.
+- Open decisions, settled when this phase is planned: peer-to-peer (WebRTC, with a tiny signalling service only to connect players) or a small relay server (WebSocket); where to host it and what it costs; how to handle lag and disconnects; privacy (room codes only, no personal data).
+- Rules to revisit then, with the user's approval: section 3 "Not in v1: a backend server", and working rule 6 "No network requests while the game runs" (would allow network use for online mode only).
+- Done when (draft): two people on two devices can finish a Versus event together, and a dropped connection is handled cleanly.
 
 ## 10. Testing, quality and definition of done
 
@@ -420,6 +428,7 @@ Every decision below has a default, so Claude Code can start right away. Change 
 | v1 events | 100 m, long jump, javelin, 110 m hurdles | Swap any for high jump or swimming |
 | Missing a qualifying mark | Game over, with a Casual option | Always continue with 0 points |
 | Mobile | Supported from Phase 8 | Desktop only for v1 |
+| Online play | Phase 11, after v1 (approach decided then) | Peer-to-peer (WebRTC) or relay server (WebSocket) |
 | Hosting | GitHub Pages | Netlify, Vercel |
 
 ### Starter prompt

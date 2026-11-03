@@ -9,6 +9,8 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
 export interface PlayerInfo {
   initials: string;
   team?: TeamKit; // kit colour, red if not given
+  /** 0 for player 1, 1 for player 2 (defaults to the position in the list). */
+  index?: number;
 }
 
 /** Sounds an event can ask for. The event only names them; audio plays them. */
@@ -27,7 +29,7 @@ export interface EventContext {
   players: PlayerInfo[];
   difficulty: Difficulty;
   rng: Rng;
-  /** Practice mode: no qualifying mark is shown. */
+  /** Practice or Versus: no qualifying mark is shown. */
   practice?: boolean;
   /** Where sound cues go (silent if not given). */
   sound?: SoundSink;

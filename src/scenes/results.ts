@@ -3,6 +3,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import type { EventId, EventResult } from '../events/event';
+import type { EventOutcome } from '../game/championship';
 import { updatePersonalBest } from '../game/records';
 import { EVENT_KIND, EVENT_NAMES, scoreResults } from '../game/scoring';
 import type { Session } from '../game/session';
@@ -12,24 +13,25 @@ import { drawHeader } from '../ui/widgets';
 import { EventIntroScene } from './event-intro';
 import { GameOverScene } from './game-over';
 import { PodiumScene } from './podium';
+import { VersusResultScene } from './versus-result';
 
-const PLACES = ['1ST', '2ND', '3RD', '4TH'];
+const PLACES = ['1ST', '2ND', '3RD', '4TH', '5TH'];
 export const MEDAL_COLOURS = [PALETTE.YELLOW, PALETTE.GREY_LIGHT, PALETTE.ORANGE];
 const MEDAL_NAMES = ['GOLD MEDAL!', 'SILVER MEDAL!', 'BRONZE MEDAL!'];
 const HEADER_Y = 36;
 const ROW_H = 12;
 
 /**
- * Event results: marks, points, your medal, and (in a championship) whether
- * you qualified. Scoring, the championship totals and personal bests are
- * all updated once, when this screen is created.
+ * Event results: marks, points, medals and (in a championship) who qualified.
+ * Scoring, the series totals and personal bests are all updated once, when
+ * this screen is created.
  */
 export class ResultsScene implements Scene {
   readonly name = 'RESULTS';
   readonly isMenu = true;
   readonly music = 'menu' as const;
   private readonly results: EventResult[];
-  private readonly qualified: boolean;
+  private readonly outcome: EventOutcome | null;
   private readonly newRecord: boolean;
   private time = 0;
 
@@ -39,39 +41,51 @@ export class ResultsScene implements Scene {
     private readonly eventId: EventId,
     raw: EventResult[],
   ) {
-    const champ = session.championship;
-    if (champ) {
-      const outcome = champ.record(raw);
-      this.results = outcome.results;
-      this.qualified = outcome.qualified;
-    } else {
-      this.results = scoreResults(eventId, raw);
-      this.qualified = true;
+    const series = session.series;
+    this.outcome = series ? series.record(raw) : null;
+    this.results = this.outcome ? this.outcome.results : scoreResults(eventId, raw);
+
+    // Personal bests are kept per browser: any human's mark can set one.
+    let improved = false;
+    for (const r of this.humans) {
+      const mark = r.disqualified ? null : r.mark;
+      if (updatePersonalBest(game.store.data.personalBests, eventId, mark)) improved = true;
     }
-    const mine = this.results.find((r) => r.playerIndex === 0);
-    const mark = mine && !mine.disqualified ? mine.mark : null;
-    this.newRecord = updatePersonalBest(game.store.data.personalBests, eventId, mark);
-    if (this.newRecord) game.store.save();
+    this.newRecord = improved;
+    if (improved) game.store.save();
+
     // A jingle for a new record, otherwise a fanfare for a medal.
-    const place = this.results.findIndex((r) => r.playerIndex === 0);
+    const medalled = this.humans.some((r) => this.medalPlace(r) >= 0);
     if (this.newRecord) game.sfx('newRecord');
-    else if (mark !== null && place >= 0 && place < 3) game.sfx('medal');
+    else if (medalled) game.sfx('medal');
+  }
+
+  private get humans(): EventResult[] {
+    return this.results.filter((r) => r.playerIndex >= 0);
+  }
+
+  /** 0-2 for a medal, -1 for none. */
+  private medalPlace(res: EventResult): number {
+    const place = this.results.indexOf(res);
+    return !res.disqualified && res.mark !== null && place < 3 ? place : -1;
   }
 
   update(dt: number, input: InputSnapshot): void {
     this.time += dt;
     const g = this.game;
-    const champ = this.session.championship;
-    if (!champ) {
+    const series = this.session.series;
+    if (!series) {
       // Practice: try again, or back to the event list.
       if (input.justPressed('CONFIRM')) g.scenes.replace(new EventIntroScene(g, this.session, this.eventId));
       else if (input.justPressed('BACK')) g.scenes.pop();
       return;
     }
     if (!input.justPressed('CONFIRM')) return;
-    if (champ.state === 'complete') g.scenes.replace(new PodiumScene(g, this.session));
-    else if (champ.state === 'gameOver') g.scenes.replace(new GameOverScene(g, this.session));
-    else g.scenes.replace(new EventIntroScene(g, this.session, champ.currentEvent));
+    if (series.state === 'gameOver') g.scenes.replace(new GameOverScene(g, this.session));
+    else if (series.state === 'complete') {
+      if (this.session.mode === 'versus') g.scenes.replace(new VersusResultScene(g, this.session));
+      else g.scenes.replace(new PodiumScene(g, this.session));
+    } else g.scenes.replace(new EventIntroScene(g, this.session, series.currentEvent));
   }
 
   render(r: Renderer): void {
@@ -131,24 +145,38 @@ export class ResultsScene implements Scene {
 
   private drawFooter(r: Renderer): void {
     const cx = r.width / 2;
-    const place = this.results.findIndex((res) => res.playerIndex === 0);
-    const mine = this.results[place];
-    const medalled = mine && !mine.disqualified && mine.mark !== null && place < 3;
-    if (medalled) r.text(MEDAL_NAMES[place], cx, 102, MEDAL_COLOURS[place], 'center');
-    const blink = Math.floor(this.time / RECORDS.NEW_RECORD_FLASH) % 2 === 0;
-    if (this.newRecord && blink) r.text('NEW RECORD!', cx, 114, PALETTE.CYAN, 'center');
+    const top = HEADER_Y + 15 + this.results.length * ROW_H + 4;
+    const humans = this.humans;
+    const blink = this.game.store.data.settings.reduceFlashing || Math.floor(this.time / RECORDS.NEW_RECORD_FLASH) % 2 === 0;
 
-    const champ = this.session.championship;
-    if (!champ) {
-      r.text('ENTER: TRY AGAIN  ESC: BACK', cx, 164, PALETTE.GREY_LIGHT, 'center');
+    if (humans.length === 1) {
+      const m = this.medalPlace(humans[0]);
+      if (m >= 0) r.text(MEDAL_NAMES[m], cx, top, MEDAL_COLOURS[m], 'center');
+    }
+    if (this.newRecord && blink) r.text('NEW RECORD!', cx, top + 12, PALETTE.CYAN, 'center');
+
+    const series = this.session.series;
+    if (!series || !this.outcome) {
+      r.text('ENTER: TRY AGAIN  ESC: BACK', cx, 166, PALETTE.GREY_LIGHT, 'center');
       return;
     }
-    if (this.qualified) r.text('QUALIFIED!', cx, 128, PALETTE.GREEN, 'center', 1);
-    else if (champ.casual) r.text('NOT QUALIFIED - 0 POINTS', cx, 128, PALETTE.RED, 'center');
-    else r.text('NOT QUALIFIED', cx, 128, PALETTE.RED, 'center');
-    r.text(`TOTAL ${champ.playerTotal}`, cx, 142, PALETTE.WHITE, 'center');
-    const next = champ.state === 'playing' ? 'ENTER: NEXT EVENT' : 'ENTER: CONTINUE';
-    r.text(next, cx, 164, PALETTE.GREY_LIGHT, 'center');
+    // One line per human: qualified (championship) and running total.
+    humans.forEach((res, i) => {
+      const y = top + 26 + i * 11;
+      const total = series.playerTotal(res.playerIndex);
+      let status = '';
+      let colour: string = PALETTE.WHITE;
+      if (series.qualifying) {
+        const ok = this.outcome!.qualifiedPlayers[res.playerIndex];
+        status = ok ? 'QUALIFIED' : series.casual ? 'MISSED - 0 PTS' : 'OUT';
+        colour = ok ? PALETTE.GREEN : PALETTE.RED;
+      }
+      const label = humans.length > 1 || status ? `${res.name} ` : '';
+      r.text(`${label}${status}`, cx - 8, y, colour, 'right');
+      r.text(`TOTAL ${total}`, cx + 8, y, PALETTE.WHITE);
+    });
+    const next = series.state === 'playing' ? 'ENTER: NEXT EVENT' : 'ENTER: CONTINUE';
+    r.text(next, cx, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }
 

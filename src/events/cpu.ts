@@ -51,15 +51,23 @@ const CPU_DEFS: { name: string; kit: TeamKit; skin: SkinTone; hair: string }[] =
   { name: 'KAI', kit: 'yellow', skin: 'light', hair: PALETTE.BROWN },
 ];
 
+const ALL_KITS: TeamKit[] = ['red', 'blue', 'green', 'yellow', 'purple'];
+
 /**
  * The made-up CPU athletes who fill the empty lanes. A CPU whose kit matches
- * the player's team wears red instead, so you never race your own colour.
+ * a player's team switches to a free colour, so you never race your own kit.
  */
-export function cpuLineup(playerTeam: TeamKit = 'red'): { name: string; look: Look }[] {
-  return CPU_DEFS.map((d) => ({
-    name: d.name,
-    look: makeLook(d.kit === playerTeam ? 'red' : d.kit, d.skin, d.hair),
-  }));
+export function cpuLineup(playerTeams: TeamKit | (TeamKit | undefined)[] = 'red'): { name: string; look: Look }[] {
+  const taken = new Set<TeamKit>((Array.isArray(playerTeams) ? playerTeams : [playerTeams]).map((t) => t ?? 'red'));
+  const cpuKits = CPU_DEFS.map((d) => d.kit);
+  return CPU_DEFS.map((d) => {
+    let kit = d.kit;
+    if (taken.has(kit)) {
+      kit = ALL_KITS.find((k) => !taken.has(k) && !cpuKits.includes(k))!;
+      taken.add(kit);
+    }
+    return { name: d.name, look: makeLook(kit, d.skin, d.hair) };
+  });
 }
 
 /** The player's look for a team colour. */

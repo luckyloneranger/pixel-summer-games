@@ -6,17 +6,29 @@ import { insertHighScore, makesHighScores } from '../game/records';
 import type { Session } from '../game/session';
 import { PALETTE } from '../gfx/palette';
 import { InitialsEntry, drawHeader } from '../ui/widgets';
-import { HighScoresScene } from './high-scores';
+import { HighScoresScene, type ScoreTable } from './high-scores';
 
-/** After a championship ends: enter initials if the score made the top 10. */
-export function finishChampionship(game: Game, session: Session): void {
-  const score = session.championship?.playerTotal ?? 0;
+/** One player waiting to enter a high score. */
+interface PendingEntry {
+  initials: string;
+  score: number;
+  playerNumber: number; // 1 or 2, for the "PLAYER 2" label
+}
+
+/**
+ * After a championship or Versus ends: each human whose total makes the
+ * top 10 enters their initials (one after the other), then the table shows.
+ */
+export function finishSeries(game: Game, session: Session): void {
+  const table: ScoreTable = session.mode === 'versus' ? 'versus' : 'championship';
+  const scores = game.store.data.highScores[table];
+  const queue: PendingEntry[] = session.players
+    .map((p, i) => ({ initials: p.initials, score: session.series?.playerTotal(i) ?? 0, playerNumber: i + 1 }))
+    .filter((e) => makesHighScores(scores, e.score))
+    .sort((a, b) => b.score - a.score);
   game.session = null;
-  if (makesHighScores(game.store.data.highScores.championship, score)) {
-    game.scenes.replace(new HighScoreEntryScene(game, session, score));
-  } else {
-    game.scenes.replace(new HighScoresScene(game, { toTitle: true }));
-  }
+  if (queue.length) game.scenes.replace(new HighScoreEntryScene(game, session, table, queue, []));
+  else game.scenes.replace(new HighScoresScene(game, { toTitle: true, table }));
 }
 
 /** Arcade-style initials entry for a new high score. */
@@ -30,9 +42,16 @@ export class HighScoreEntryScene implements Scene {
   constructor(
     private readonly game: Game,
     private readonly session: Session,
-    private readonly score: number,
+    private readonly table: ScoreTable,
+    private readonly queue: PendingEntry[],
+    /** Table rows added so far this time, to highlight. */
+    private readonly added: number[],
   ) {
-    this.entry = new InitialsEntry(session.initials);
+    this.entry = new InitialsEntry(queue[0].initials);
+  }
+
+  private get current(): PendingEntry {
+    return this.queue[0];
   }
 
   update(dt: number, input: InputSnapshot): void {
@@ -40,21 +59,27 @@ export class HighScoreEntryScene implements Scene {
     this.entry.update(input);
     if (!this.entry.done) return;
     const store = this.game.store;
-    const { table, position } = insertHighScore(store.data.highScores.championship, {
+    const { table, position } = insertHighScore(store.data.highScores[this.table], {
       initials: this.entry.value,
-      score: this.score,
+      score: this.current.score,
       difficulty: this.session.difficulty,
     });
-    store.data.highScores.championship = table;
+    store.data.highScores[this.table] = table;
     store.save();
-    this.game.scenes.replace(new HighScoresScene(this.game, { toTitle: true, highlight: position }));
+    // An earlier entry at or below this position moves down one row.
+    const added = [...this.added.map((p) => (p >= position ? p + 1 : p)), position];
+    const rest = this.queue.slice(1);
+    const g = this.game;
+    if (rest.length) g.scenes.replace(new HighScoreEntryScene(g, this.session, this.table, rest, added));
+    else g.scenes.replace(new HighScoresScene(g, { toTitle: true, table: this.table, highlight: added }));
   }
 
   render(r: Renderer): void {
     const cx = r.width / 2;
     r.clear(PALETTE.NIGHT);
     drawHeader(r, 'NEW HIGH SCORE');
-    r.text(String(this.score), cx, 44, PALETTE.YELLOW, 'center', 2);
+    if (this.session.players.length > 1) r.text(`PLAYER ${this.current.playerNumber}`, cx, 32, PALETTE.CYAN, 'center');
+    r.text(String(this.current.score), cx, 46, PALETTE.YELLOW, 'center', 2);
     r.text('ENTER YOUR INITIALS', cx, 76, PALETTE.WHITE, 'center');
     this.entry.render(r, cx, 96, this.time);
     r.text('UP/DOWN LETTER  L/R MOVE  ENTER OK', cx, 150, PALETTE.GREY_LIGHT, 'center');

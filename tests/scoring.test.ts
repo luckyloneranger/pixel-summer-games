@@ -84,7 +84,7 @@ describe('championship', () => {
     expect(c.state).toBe('playing');
     c.record(results(14, [14.5, 15, 15.2]));
     expect(c.state).toBe('complete');
-    expect(c.playerTotal).toBe(pointsFor('dash100', 11) + pointsFor('longJump', 7.5) + pointsFor('javelin', 80) + pointsFor('hurdles110', 14));
+    expect(c.playerTotal()).toBe(pointsFor('dash100', 11) + pointsFor('longJump', 7.5) + pointsFor('javelin', 80) + pointsFor('hurdles110', 14));
   });
 
   it('missing a qualifying mark ends the run', () => {
@@ -99,7 +99,7 @@ describe('championship', () => {
     const outcome = c.record(results(12.5, [11, 11, 11]));
     expect(outcome.qualified).toBe(false);
     expect(c.state).toBe('playing');
-    expect(c.playerTotal).toBe(0);
+    expect(c.playerTotal()).toBe(0);
     expect(c.currentEvent).toBe('longJump');
   });
 

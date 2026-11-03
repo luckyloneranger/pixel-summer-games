@@ -10,6 +10,7 @@ import { drawScoreboard } from '../ui/hud';
 import { CpuTapper, cpuLineup, playerLook } from './cpu';
 import { SILENT, type AthleticsEvent, type EventContext, type EventId, type EventResult, type SoundSink } from './event';
 import { Footsteps, runningCrowd } from './footsteps';
+import { keysFor, type PlayerKeys } from './player-input';
 import { AUDIO } from '../game/tuning';
 import { TapRunner, applyRunPresses } from './tap-runner';
 
@@ -25,6 +26,7 @@ export interface Lane {
   cpu: CpuTapper | null; // null = human player
   playerIndex: number; // -1 for CPUs
   disqualified: boolean;
+  falseStarts: number; // this athlete's false starts so far
   finishTime: number | null; // s after GO
   reactionTime: number | null; // s after GO
 }
@@ -36,7 +38,8 @@ export interface RaceConfig {
   CAMERA_LEAD: number; // px
 }
 
-export const PLAYER_LANE = 2; // the human runs in lane 2
+export const PLAYER_LANE = 2; // player 1 runs in lane 2
+export const PLAYER2_LANE = 3; // player 2 runs in lane 3
 const MESSAGE_Y = 36; // px, big messages under the scoreboard
 const MARKER_EVERY = 10; // m between distance markers
 const LANE_LABELS = ['', '1', '2', '3', '4'];
@@ -55,7 +58,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
 
   phase: RacePhase = 'marks';
   lanes: L[] = [];
-  falseStarts = 0;
+  /** The athlete whose false start is on screen. */
+  falseStarter: L | null = null;
   /** Seconds since GO. */
   raceTime = 0;
   /** Seconds since the event started (drives animations). */
@@ -63,7 +67,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
 
   protected ctx!: EventContext;
   protected sound: SoundSink = SILENT;
-  private readonly footsteps = new Footsteps();
+  private readonly footsteps = new Map<Lane, Footsteps>();
   protected rng!: Rng;
   protected phaseTimer = 0; // s spent in the current phase
   private setWait = 0; // s, random gap between SET and GO for this start
@@ -98,6 +102,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   }
   /** The control hint shown under ON YOUR MARKS. */
   protected startHint = 'ALTERNATE A + D TO RUN';
+  protected startHint2P = 'P1: A + D    P2: LEFT + RIGHT';
 
   // ------------------------------------------------ rules
 
@@ -105,32 +110,47 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     this.ctx = ctx;
     this.rng = ctx.rng;
     this.sound = ctx.sound ?? SILENT;
-    this.falseStarts = 0;
     this.clock = 0;
-    const team = ctx.players[0].team;
-    const cpus = cpuLineup(team);
+    this.falseStarter = null;
+    // Player 1 in lane 2, player 2 (if any) in lane 3, CPUs in the rest.
+    const humanLanes = [PLAYER_LANE, PLAYER2_LANE];
+    const cpus = cpuLineup(ctx.players.map((p) => p.team));
     this.lanes = [1, 2, 3, 4].map((laneNumber) => {
-      const human = laneNumber === PLAYER_LANE;
+      const slot = humanLanes.indexOf(laneNumber);
+      const human = slot >= 0 ? ctx.players[slot] : undefined;
       const cpu = human ? null : cpus.shift()!;
       return this.createLane({
         laneNumber,
-        name: human ? ctx.players[0].initials : cpu!.name,
-        look: human ? playerLook(team) : cpu!.look,
+        name: human ? human.initials : cpu!.name,
+        look: human ? playerLook(human.team) : cpu!.look,
         runner: new TapRunner(RUNNER),
         cpu: null,
-        playerIndex: human ? 0 : -1,
+        playerIndex: human ? (human.index ?? slot) : -1,
         disqualified: false,
+        falseStarts: 0,
         finishTime: null,
         reactionTime: null,
       });
     });
+    this.footsteps.clear();
+    for (const lane of this.humans) this.footsteps.set(lane, new Footsteps());
     this.sprites.clear();
     this.restartStart();
   }
 
-  /** The human player's lane. */
+  /** The human lanes (one or two). */
+  get humans(): L[] {
+    return this.lanes.filter((l) => l.playerIndex >= 0);
+  }
+
+  /** The first human's lane (player 1 in a 1-player game). */
   get player(): L {
-    return this.lanes.find((l) => l.playerIndex === 0)!;
+    return this.humans[0];
+  }
+
+  /** Player 1's false starts (handy for tests and the 1-player HUD). */
+  get falseStarts(): number {
+    return this.player.falseStarts;
   }
 
   /** The human player's runner (handy for HUD and tests). */
@@ -149,7 +169,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       this.resetLane(lane);
     }
     this.raceTime = 0;
-    this.footsteps.reset();
+    for (const f of this.footsteps.values()) f.reset();
     this.enterPhase('marks');
   }
 
@@ -166,28 +186,35 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     return this.lanes.filter((l) => !l.disqualified);
   }
 
+  /** Each human's keys this step (both key sets for a lone human). */
+  private keysOf(input: InputSnapshot, lane: L): PlayerKeys {
+    return keysFor(input, lane.playerIndex, this.humans.length === 1);
+  }
+
   update(dt: number, input: InputSnapshot): void {
-    // In 1-player games both key sets work.
-    const left = input.justPressed('P1_LEFT') || input.justPressed('P2_LEFT');
-    const right = input.justPressed('P1_RIGHT') || input.justPressed('P2_RIGHT');
-    const action = input.justPressed('P1_ACTION') || input.justPressed('P2_ACTION');
     this.clock += dt;
     this.phaseTimer += dt;
-    const human = this.player;
 
     switch (this.phase) {
       case 'marks':
       case 'set':
-        if ((left || right) && !human.disqualified) {
-          this.falseStart(human);
-          return;
+        for (const lane of this.humans) {
+          if (lane.disqualified) continue;
+          const k = this.keysOf(input, lane);
+          if (k.left || k.right) {
+            this.falseStart(lane);
+            return;
+          }
         }
         if (this.phase === 'marks' && this.phaseTimer >= RACE_START.MARKS_TIME) this.enterPhase('set');
         else if (this.phase === 'set' && this.phaseTimer >= this.setWait) this.enterPhase('running');
         return;
 
       case 'running':
-        for (const lane of this.racers) this.updateRacer(lane, dt, left, right, action);
+        for (const lane of this.racers) {
+          const k: PlayerKeys = lane.cpu ? NO_KEYS : this.keysOf(input, lane);
+          this.updateRacer(lane, dt, k.left, k.right, k.action);
+        }
         this.raceTime += dt;
         if (this.racers.every((l) => l.finishTime !== null)) this.enterPhase('finished');
         return;
@@ -220,18 +247,19 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     const before = r.position;
     r.update(dt);
     if (racing) this.afterMove(lane, dt, before);
-    if (lane.playerIndex >= 0 && racing) this.footsteps.update(r, this.sound);
+    if (racing) this.footsteps.get(lane)?.update(r, this.sound);
     if (lane.finishTime === null && r.position >= this.cfg.DISTANCE) {
       // Work out the exact moment within this step that the line was crossed.
       const fraction = (this.cfg.DISTANCE - before) / (r.position - before);
       lane.finishTime = this.raceTime + fraction * dt;
-      if (lane.playerIndex >= 0) this.sound.play('cheer', this.playerWon ? 1 : 0.4);
+      if (lane.playerIndex >= 0) this.sound.play('cheer', this.won(lane) ? 1 : 0.4);
     }
   }
 
   private falseStart(lane: L): void {
-    this.falseStarts++;
-    if (this.falseStarts >= RACE_START.FALSE_STARTS_TO_DQ) {
+    lane.falseStarts++;
+    this.falseStarter = lane;
+    if (lane.falseStarts >= RACE_START.FALSE_STARTS_TO_DQ) {
       lane.disqualified = true;
       this.enterPhase('disqualified');
     } else {
@@ -261,11 +289,15 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     }));
   }
 
-  /** True once the human has crossed the line in first place. */
+  /** True once this lane has crossed the line ahead of everyone so far. */
+  private won(lane: L): boolean {
+    if (lane.finishTime === null) return false;
+    return this.racers.every((l) => l === lane || l.finishTime === null || l.finishTime > lane.finishTime!);
+  }
+
+  /** True once a human has crossed the line in first place. */
   get playerWon(): boolean {
-    const p = this.player;
-    if (p.finishTime === null) return false;
-    return this.racers.every((l) => l === p || l.finishTime === null || l.finishTime > p.finishTime!);
+    return this.humans.some((l) => this.won(l));
   }
 
   crowdLevel(): number {
@@ -274,7 +306,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       case 'set':
         return AUDIO.CROWD_HUSH; // the crowd goes quiet for the start
       case 'running':
-        return runningCrowd(this.runner.speedFraction);
+        return runningCrowd(Math.max(...this.humans.map((l) => l.runner.speedFraction)));
       default:
         return AUDIO.CROWD_IDLE;
     }
@@ -298,8 +330,11 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
 
   render(r: Renderer): void {
     const ppm = this.cfg.PIXELS_PER_METER;
-    // Follow the player; if they're out, follow the leader instead.
-    const followed = this.player.disqualified ? this.leader() : this.player;
+    // Follow the leading human; if both are out, follow the race leader.
+    const inRace = this.humans.filter((l) => !l.disqualified);
+    const followed = inRace.length
+      ? inRace.reduce((a, b) => (b.runner.position > a.runner.position ? b : a))
+      : this.leader();
     const cameraPx = followed.runner.position * ppm - this.cfg.CAMERA_LEAD;
     const toScreen = (metres: number) => metres * ppm - cameraPx;
 
@@ -312,14 +347,25 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       const footY = LAYOUT.TRACK_TOP + lane.laneNumber * LAYOUT.LANE_HEIGHT - 3;
       this.drawLaneProps(r, lane, toScreen, footY);
       const x = toScreen(lane.runner.position) - ATHLETE_W / 2;
+      if (x < -ATHLETE_W && lane.playerIndex >= 0 && !lane.disqualified) {
+        // A human left behind the camera: show where they are.
+        r.rect(0, footY - 18, lane.name.length * 8 + 12, 10, PALETTE.INK);
+        r.text(`<${lane.name}`, 2, footY - 17, PALETTE.YELLOW);
+        continue;
+      }
       if (x < -ATHLETE_W || x > r.width) continue;
       const y = footY - ATHLETE_H + 1 - this.liftFor(lane);
       r.image(this.spritesFor(lane).get(this.poseFor(lane)), x, y);
     }
 
     const shown = this.player.finishTime ?? (this.phase === 'running' ? this.raceTime : 0);
-    const note = this.falseStarts === 1 ? 'FALSE START 1' : '';
-    drawScoreboard(r, this.name, this.timeText(shown), this.runner.speedFraction, note);
+    const humans = this.humans;
+    if (humans.length === 1) {
+      const note = this.player.falseStarts === 1 ? 'FALSE START 1' : '';
+      drawScoreboard(r, this.name, this.timeText(shown), this.runner.speedFraction, note);
+    } else {
+      drawScoreboard(r, this.name, this.timeText(shown), humans.map((l) => ({ label: l.name, fraction: l.runner.speedFraction })));
+    }
     this.drawMessages(r);
   }
 
@@ -400,13 +446,14 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     const y = MESSAGE_Y;
     // Dark band so messages stay readable over the busy crowd.
     const hasMessage = this.phase !== 'running' || this.raceTime < RACE_START.GO_TEXT_TIME;
-    if (hasMessage && !(this.phase === 'finished' && this.player.disqualified)) {
+    const allOut = this.humans.every((l) => l.disqualified);
+    if (hasMessage && !(this.phase === 'finished' && allOut)) {
       r.rect(0, y - 4, r.width, 36, PALETTE.INK);
     }
     switch (this.phase) {
       case 'marks':
         r.text('ON YOUR MARKS', cx, y, PALETTE.WHITE, 'center', 2);
-        if (!this.player.disqualified) r.text(this.startHint, cx, y + 22, PALETTE.YELLOW, 'center');
+        if (!allOut) r.text(this.humans.length > 1 ? this.startHint2P : this.startHint, cx, y + 22, PALETTE.YELLOW, 'center');
         break;
       case 'set':
         r.text('SET', cx, y, PALETTE.YELLOW, 'center', 2);
@@ -414,20 +461,35 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       case 'running':
         if (this.raceTime < RACE_START.GO_TEXT_TIME) r.text('GO!', cx, y, PALETTE.GREEN, 'center', 2);
         break;
-      case 'falseStart':
+      case 'falseStart': {
+        const who = this.humans.length > 1 && this.falseStarter ? `${this.falseStarter.name}: ` : '';
         r.text('FALSE START', cx, y, PALETTE.RED, 'center', 2);
-        r.text('ONE MORE AND YOU ARE OUT', cx, y + 22, PALETTE.WHITE, 'center');
+        r.text(`${who}ONE MORE AND YOU ARE OUT`, cx, y + 22, PALETTE.WHITE, 'center');
         break;
-      case 'disqualified':
+      }
+      case 'disqualified': {
+        const who = this.humans.length > 1 && this.falseStarter ? `${this.falseStarter.name}: ` : '';
         r.text('DISQUALIFIED', cx, y, PALETTE.RED, 'center', 2);
-        r.text('TWO FALSE STARTS', cx, y + 22, PALETTE.WHITE, 'center');
+        r.text(`${who}TWO FALSE STARTS`, cx, y + 22, PALETTE.WHITE, 'center');
         break;
+      }
       case 'finished': {
-        const p = this.player;
-        if (p.disqualified) break;
-        const place = this.standings().indexOf(p);
-        r.text(PLACE_LABELS[place], cx, y, place === 0 ? PALETTE.YELLOW : PALETTE.WHITE, 'center', 2);
-        r.text(`TIME ${this.timeText(p.finishTime ?? 0)}`, cx, y + 22, PALETTE.WHITE, 'center');
+        const standings = this.standings();
+        const humans = this.humans.filter((l) => !l.disqualified);
+        if (humans.length === 1) {
+          const p = humans[0];
+          const place = standings.indexOf(p);
+          r.text(PLACE_LABELS[place], cx, y, place === 0 ? PALETTE.YELLOW : PALETTE.WHITE, 'center', 2);
+          r.text(`TIME ${this.timeText(p.finishTime ?? 0)}`, cx, y + 22, PALETTE.WHITE, 'center');
+        } else if (humans.length === 2) {
+          // Two players: each one's place, side by side.
+          humans.forEach((p, i) => {
+            const place = standings.indexOf(p);
+            const px = cx + (i === 0 ? -64 : 64);
+            r.text(p.name, px, y, PALETTE.WHITE, 'center');
+            r.text(PLACE_LABELS[place], px, y + 12, place === 0 ? PALETTE.YELLOW : PALETTE.WHITE, 'center', 2);
+          });
+        }
         break;
       }
     }
@@ -455,3 +517,6 @@ function sortKey(lane: Lane): number {
 export function roundHundredths(seconds: number): number {
   return Math.round(seconds * 100) / 100;
 }
+
+/** CPUs read no keys. */
+const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHeld: false };

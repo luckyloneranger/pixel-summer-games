@@ -6,23 +6,31 @@ import { CHAMPIONSHIP_EVENTS } from '../game/championship';
 import { EVENT_NAMES, formatMark } from '../game/scoring';
 import { RECORDS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { drawHeader } from '../ui/widgets';
+import { drawHeader, leftRight } from '../ui/widgets';
 
-/** Top 10 championship scores and your personal bests. */
+export type ScoreTable = 'championship' | 'versus';
+const TABLES: ScoreTable[] = ['championship', 'versus'];
+
+/** Top 10 scores (championship or versus, left/right to switch) and personal bests. */
 export class HighScoresScene implements Scene {
   readonly name = 'HIGH SCORES';
   readonly isMenu = true;
   readonly music = 'menu' as const;
   private time = 0;
+  private table: ScoreTable;
 
   constructor(
     private readonly game: Game,
-    /** toTitle: leaving goes back to the title (end of a run). highlight: row to flash. */
-    private readonly opts: { toTitle: boolean; highlight?: number },
-  ) {}
+    /** toTitle: leaving goes back to the title. highlight: new rows to flash. */
+    private readonly opts: { toTitle: boolean; table?: ScoreTable; highlight?: number[] },
+  ) {
+    this.table = opts.table ?? 'championship';
+  }
 
   update(dt: number, input: InputSnapshot): void {
     this.time += dt;
+    const step = leftRight(input);
+    if (step !== 0) this.table = TABLES[(TABLES.indexOf(this.table) + 1) % TABLES.length];
     if (!input.justPressed('CONFIRM') && !input.justPressed('BACK')) return;
     if (this.opts.toTitle) this.game.scenes.popTo('TITLE');
     else this.game.scenes.pop();
@@ -32,16 +40,17 @@ export class HighScoresScene implements Scene {
     r.clear(PALETTE.NIGHT);
     drawHeader(r, 'HIGH SCORES');
     const data = this.game.store.data;
-    const table = data.highScores.championship;
-    const blink = Math.floor(this.time / RECORDS.NEW_RECORD_FLASH) % 2 === 0;
+    const rows = data.highScores[this.table];
+    const flash = !data.settings.reduceFlashing && Math.floor(this.time / RECORDS.NEW_RECORD_FLASH) % 2 === 1;
+    const highlight = this.table === this.opts.table ? (this.opts.highlight ?? []) : [];
 
-    // Left: championship top 10.
-    r.text('CHAMPIONSHIP', 16, 30, PALETTE.GREY);
+    // Left: the chosen top-10 table.
+    r.text(`< ${this.table === 'versus' ? 'VERSUS' : 'CHAMPIONSHIP'} >`, 8, 30, PALETTE.GREY);
     for (let i = 0; i < RECORDS.HIGH_SCORES_KEPT; i++) {
       const y = 42 + i * 11;
-      const h = table[i];
-      const isNew = i === this.opts.highlight;
-      if (isNew && !blink) continue;
+      const h = rows[i];
+      const isNew = highlight.includes(i);
+      if (isNew && flash) continue;
       const colour = isNew ? PALETTE.YELLOW : PALETTE.WHITE;
       r.text(`${String(i + 1).padStart(2, ' ')}`, 16, y, PALETTE.GREY_LIGHT);
       r.text(h ? h.initials : '---', 40, y, colour);
@@ -58,6 +67,6 @@ export class HighScoresScene implements Scene {
     });
 
     if (!this.game.store.persistent) r.text('(SAVING IS OFF IN THIS BROWSER)', r.width / 2, 156, PALETTE.RED, 'center');
-    r.text('ENTER: OK', r.width / 2, 168, PALETTE.GREY_LIGHT, 'center');
+    r.text('LEFT/RIGHT: TABLE  ENTER: OK', r.width / 2, 168, PALETTE.GREY_LIGHT, 'center');
   }
 }

@@ -1,4 +1,4 @@
-import type { Difficulty } from '../events/event';
+import type { Difficulty, EventId } from '../events/event';
 import type { TeamKit } from '../gfx/sprites/athlete';
 import type { HighScore, PersonalBests } from '../game/records';
 import { AUDIO } from '../game/tuning';
@@ -9,14 +9,19 @@ export interface SaveData {
   settings: {
     initials: string;
     team: TeamKit;
+    players: number; // 1 or 2 for the championship
+    p2Initials: string;
+    p2Team: TeamKit;
+    versusEvent: EventId | 'all';
     difficulty: Difficulty;
     casual: boolean;
     master: number; // 0-10
     music: number; // 0-10
     sfx: number; // 0-10
     muted: boolean;
+    reduceFlashing: boolean;
   };
-  highScores: { championship: HighScore[] };
+  highScores: { championship: HighScore[]; versus: HighScore[] };
   personalBests: PersonalBests;
 }
 
@@ -29,14 +34,19 @@ export function defaultSave(): SaveData {
     settings: {
       initials: 'AAA',
       team: 'red',
+      players: 1,
+      p2Initials: 'BBB',
+      p2Team: 'blue',
+      versusEvent: 'all',
       difficulty: 'normal',
       casual: false,
       master: AUDIO.DEFAULT_MASTER,
       music: AUDIO.DEFAULT_MUSIC,
       sfx: AUDIO.DEFAULT_SFX,
       muted: false,
+      reduceFlashing: false,
     },
-    highScores: { championship: [] },
+    highScores: { championship: [], versus: [] },
     personalBests: {},
   };
 }
@@ -70,7 +80,10 @@ export class SaveStore {
       return {
         version: 1,
         settings: { ...fresh.settings, ...parsed.settings },
-        highScores: { championship: parsed.highScores?.championship ?? [] },
+        highScores: {
+          championship: parsed.highScores?.championship ?? [],
+          versus: parsed.highScores?.versus ?? [],
+        },
         personalBests: { ...parsed.personalBests },
       };
     } catch {

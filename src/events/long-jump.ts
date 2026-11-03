@@ -68,7 +68,7 @@ export class LongJumpEvent extends RunUpFieldEvent {
       this.name,
       best === null ? '-' : `${best.toFixed(2)} M`,
       this.runner.speedFraction,
-      `ATTEMPT ${this.record.current}/${this.cfg.ATTEMPTS}`,
+      this.attemptNote(),
       PALETTE.GREY_LIGHT,
     );
     const showMark = this.phaseTimer >= LONG_JUMP.TAPE_TIME;

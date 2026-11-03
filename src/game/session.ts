@@ -1,26 +1,48 @@
 import type { Difficulty, EventId, PlayerInfo } from '../events/event';
 import type { TeamKit } from '../gfx/sprites/athlete';
-import { Championship } from './championship';
+import { CHAMPIONSHIP_EVENTS, Championship } from './championship';
 
-export type Mode = 'championship' | 'practice';
+export type Mode = 'championship' | 'practice' | 'versus';
+
+/** A human in this session. */
+export interface SessionPlayer {
+  initials: string;
+  team: TeamKit;
+}
 
 /** One run through the game: who's playing, how hard, and which mode. */
 export class Session {
-  readonly championship: Championship | null;
+  /** The series of events with running totals (championship or versus); null in practice. */
+  readonly series: Championship | null;
 
   constructor(
     readonly mode: Mode,
-    readonly initials: string,
-    readonly team: TeamKit,
+    readonly players: SessionPlayer[],
     readonly difficulty: Difficulty,
     casual: boolean,
-    /** Practice only: the event being practised. */
-    readonly practiceEvent: EventId | null = null,
+    /** Practice: the event being practised. Versus: the events chosen. */
+    events: readonly EventId[] = CHAMPIONSHIP_EVENTS,
   ) {
-    this.championship = mode === 'championship' ? new Championship(difficulty, casual) : null;
+    if (mode === 'championship') {
+      this.series = new Championship(difficulty, casual, players.length);
+    } else if (mode === 'versus') {
+      this.series = new Championship(difficulty, false, players.length, events, false);
+    } else {
+      this.series = null;
+    }
+    this.practiceEvent = mode === 'practice' ? events[0] : null;
   }
 
-  get player(): PlayerInfo {
-    return { initials: this.initials, team: this.team };
+  readonly practiceEvent: EventId | null;
+
+  /** Player 1. */
+  get initials(): string {
+    return this.players[0].initials;
+  }
+
+  /** Humans taking part in the next event (knocked-out players sit out). */
+  activePlayers(): PlayerInfo[] {
+    const active = this.series ? this.series.activePlayers() : this.players.map((_, i) => i);
+    return active.map((i) => ({ initials: this.players[i].initials, team: this.players[i].team, index: i }));
   }
 }

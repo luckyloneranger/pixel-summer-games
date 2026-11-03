@@ -29,7 +29,7 @@ npm run preview  # serves the built dist/ folder locally
 | ↑ ↓ ← → (or W S A D) | Menus: move and change options; initials: change letter / move |
 | Esc or P | Back; pause during an event |
 | M | Sound on / off |
-| A then D (or ← then →) | Run: alternate the two keys |
+| A then D (or ← then →) | Run: alternate the two keys (2 players: P1 uses A/D/W, P2 uses ←/→/↑) |
 | W or Space (hold, release) | Long jump / javelin: hold to raise the angle, release to go |
 | W or Space (tap) | Hurdles: jump |
 | ` (backtick) | Toggle the debug overlay (or add `?debug=1` to the URL) |

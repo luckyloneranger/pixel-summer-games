@@ -38,7 +38,7 @@ export class EventSelectScene implements Scene {
     }
     if (input.justPressed('CONFIRM') && !isDifficultyRow) {
       const id = CHAMPIONSHIP_EVENTS[this.row];
-      const session = new Session('practice', settings.initials, settings.team, settings.difficulty, false, id);
+      const session = new Session('practice', [{ initials: settings.initials, team: settings.team }], settings.difficulty, false, [id]);
       g.session = session;
       g.scenes.push(new EventIntroScene(g, session, id));
     }

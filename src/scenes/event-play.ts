@@ -27,10 +27,10 @@ export class EventPlayScene implements Scene {
 
   enter(): void {
     this.event.init({
-      players: [this.session.player],
+      players: this.session.activePlayers(),
       difficulty: this.session.difficulty,
       rng: this.game.rng,
-      practice: this.session.mode === 'practice',
+      practice: this.session.mode !== 'championship', // only championships have qualifying marks
       sound: this.game.sound,
     });
   }
@@ -45,7 +45,7 @@ export class EventPlayScene implements Scene {
       this.game.scenes.push(new PauseScene(this.game, this));
       return;
     }
-    if (this.game.debug.visible && input.justPressed('DEBUG_SKIP') && this.session.championship) {
+    if (this.game.debug.visible && input.justPressed('DEBUG_SKIP') && this.session.series) {
       this.skipWithQualifyingMark();
       return;
     }
@@ -58,11 +58,11 @@ export class EventPlayScene implements Scene {
     }
   }
 
-  /** Debug key N: pretend you hit the qualifying mark exactly. */
+  /** Debug key N: pretend every human hit the qualifying mark exactly. */
   private skipWithQualifyingMark(): void {
     const mark = qualifyingMark(this.eventId, this.session.difficulty);
     const results = this.event.getResults().map((r) =>
-      r.playerIndex === 0 ? { ...r, mark, disqualified: false, foul: false } : r,
+      r.playerIndex >= 0 ? { ...r, mark, disqualified: false, foul: false } : r,
     );
     // Re-rank: best mark first, no mark last.
     const id = this.eventId;

@@ -11,9 +11,12 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 4 – Javelin | ✅ Approved |
 | 5 – 110 m hurdles | ✅ Approved |
 | 6 – Game flow | ✅ Approved |
-| 7 – Audio | ✅ Done, awaiting play-test |
-| 8 – Two players, touch and options | ⏳ Next |
+| 7 – Audio | ✅ Approved |
+| 8a – Two players | ✅ Done, awaiting play-test |
+| 8b – Touch and options | ⏳ Next |
 | 9 – Polish and launch | – |
+| 10+ – More events | – |
+| 11 – Online multiplayer (after v1) | – |
 
 ## Phase 0 – Setup and skeleton
 
@@ -156,4 +159,21 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - Sound balance is by ear: all levels are in `AUDIO` in tuning.ts and in `src/audio/sfx.ts`.
 - Footsteps play for your athlete only.
 
-**Next:** Phase 8 – Two players, touch and options.
+## Phase 8a – Two players
+
+**Done**
+- SPEC updated: Phase 8 split into 8a / 8b; touch menus use on-screen buttons; online multiplayer added as Phase 11 (after v1), with its open decisions listed.
+- Two players on one keyboard: P1 = A / D / W, P2 = ← / → / ↑ (a lone player still gets both sets) — `src/events/player-input.ts`.
+- Races: P1 in lane 2, P2 in lane 3, CPUs fill the rest. Each player has their own false starts (two disqualify only that player). Camera follows the leading human; a "<NAME" marker shows a player left behind. Two speed meters on the scoreboard.
+- Long jump and javelin: players take turns (P1, P2, P1, ...); the ready card and scoreboard say whose turn it is.
+- 2-player championship: missing a qualifying mark knocks that player out (they sit out the rest); game over only when both are out.
+- Versus: setup with both players and a choice of all four events or one; no qualifying; "P1 WINS!" screen with points per event.
+- High scores: each player enters initials if their total makes the top 10; separate Championship and Versus tables (left/right to switch).
+- CPUs never wear either player's colour.
+- 170 unit tests (adds key separation, per-player false starts, turn order, 2-player elimination, versus winner, kit colours).
+
+**Known issues / notes**
+- Some keyboards can't register many keys at once ("ghosting"), which can drop presses when both players tap together.
+- In a 2-player game, personal bests are shared (one per event per browser).
+
+**Next:** Phase 8b – Touch controls, key remapping, assist run, reduce shake and flashing.
