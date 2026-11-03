@@ -56,17 +56,21 @@ export class HighScoresScene implements Scene {
       r.text(h ? h.initials : '---', 40, y, colour);
       r.text(h ? String(h.score).padStart(5, ' ') : '    -', 72, y, colour);
       if (h) r.text(h.difficulty[0].toUpperCase(), 120, y, PALETTE.GREY);
+      if (h && this.table === 'championship' && h.events === undefined) r.text('*', 132, y, PALETTE.GREY);
+    }
+    if (this.table === 'championship' && rows.some((h) => h.events === undefined)) {
+      r.text('* 4-EVENT RUN', 16, 156, PALETTE.GREY);
     }
 
     // Right: personal bests per event.
     r.text('YOUR BESTS', 168, 30, PALETTE.GREY);
     CHAMPIONSHIP_EVENTS.forEach((id, i) => {
-      const y = 42 + i * 24;
+      const y = 42 + i * 21;
       r.text(EVENT_NAMES[id], 168, y, PALETTE.GREY_LIGHT);
       r.text(formatMark(id, data.personalBests[id] ?? null), 176, y + 10, PALETTE.YELLOW);
     });
 
-    if (!this.game.store.persistent) r.text('(SAVING IS OFF IN THIS BROWSER)', r.width / 2, 156, PALETTE.RED, 'center');
+    if (!this.game.store.persistent) r.text('(SAVING IS OFF)', 304, 156, PALETTE.RED, 'right');
     r.text('LEFT/RIGHT: TABLE  ENTER: OK', r.width / 2, 168, PALETTE.GREY_LIGHT, 'center');
   }
 }

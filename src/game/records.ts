@@ -6,6 +6,8 @@ export interface HighScore {
   initials: string;
   score: number;
   difficulty: Difficulty;
+  /** Events in the run (missing on scores saved before the high jump joined: 4). */
+  events?: number;
 }
 
 export type PersonalBests = Partial<Record<EventId, number>>;

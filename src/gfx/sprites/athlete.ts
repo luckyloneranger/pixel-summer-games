@@ -268,6 +268,26 @@ export const ATHLETE_FRAMES = {
     'bb...........bbb',
     ...blank(3),
   ],
+  // High jump: arched back over the bar, head leading, feet trailing.
+  flop: [
+    ...blank(10),
+    '................',
+    'bb..............',
+    '.KK.........hhh.',
+    '..KK.....SSkhhhh',
+    '...kkwwSSSSkkok.',
+    '....kwwSSSSSkk..',
+    '....kww.SSS.....',
+    ...blank(7),
+  ],
+  // Lying flat on the landing mat.
+  lie: [
+    ...blank(20),
+    '...........hhh..',
+    'bbKKKKwwwSSSkkh.',
+    'bbkkkkwwwSSSkkhh',
+    '................',
+  ],
   run0: [...UPPER_ARM_BACK, ...LEGS_NEAR_FORWARD],
   run1: [...UPPER_ARM_BACK, ...LEGS_NEAR_PLANTED],
   run2: [...UPPER_ARM_FORWARD, ...LEGS_FAR_FORWARD],

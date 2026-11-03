@@ -74,17 +74,21 @@ function results(playerMark: number | null, cpuMarks: number[]): EventResult[] {
 }
 
 describe('championship', () => {
-  it('runs the four events in order and completes', () => {
+  it('runs the five events in order and completes', () => {
     const c = new Championship('normal', false);
     expect(c.currentEvent).toBe('dash100');
     c.record(results(11.0, [11.5, 12, 12.5]));
     expect(c.currentEvent).toBe('longJump');
     c.record(results(7.5, [7, 7.2, 6.9]));
+    expect(c.currentEvent).toBe('highJump');
+    c.record(results(2.2, [2.0, 2.05, 2.1]));
     c.record(results(80, [70, 72, 75]));
     expect(c.state).toBe('playing');
     c.record(results(14, [14.5, 15, 15.2]));
     expect(c.state).toBe('complete');
-    expect(c.playerTotal()).toBe(pointsFor('dash100', 11) + pointsFor('longJump', 7.5) + pointsFor('javelin', 80) + pointsFor('hurdles110', 14));
+    expect(c.playerTotal()).toBe(
+      pointsFor('dash100', 11) + pointsFor('longJump', 7.5) + pointsFor('highJump', 2.2) + pointsFor('javelin', 80) + pointsFor('hurdles110', 14),
+    );
   });
 
   it('missing a qualifying mark ends the run', () => {

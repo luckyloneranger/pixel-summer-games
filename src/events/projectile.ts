@@ -42,6 +42,17 @@ export class Projectile {
     }
   }
 
+  /**
+   * Height (m) on this flight path when it passes `x` m along, or null if it
+   * lands before getting there. Exact, so it doesn't depend on frame timing.
+   */
+  heightAt(x: number): number | null {
+    if (this.vx <= 0) return null;
+    const t = (x - this.x0) / this.vx;
+    if (t < 0 || t > this.flightTime) return null;
+    return this.y0 + this.vy * t - 0.5 * this.gravity * t * t;
+  }
+
   /** Direction of travel right now, in degrees (for tilting a javelin). */
   get headingDegrees(): number {
     const vyNow = this.vy - this.gravity * this.t;

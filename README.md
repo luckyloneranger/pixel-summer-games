@@ -1,6 +1,6 @@
 # Pixel Summer Games
 
-A retro 8-bit track-and-field game for the browser. Hammer two keys to sprint, then time a third to jump, throw or clear a hurdle. Four events, a championship with qualifying marks, practice, two-player Versus, chiptune sound and on-screen controls for phones.
+A retro 8-bit track-and-field game for the browser. Hammer two keys to sprint, then time a third to jump, throw or clear a hurdle. Five events, a championship with qualifying marks, practice, two-player Versus, chiptune sound and on-screen controls for phones.
 
 **Play:** https://luckyloneranger.github.io/pixel-summer-games/ (once GitHub Pages is switched on, see [Deploying](#deploying)).
 
@@ -12,14 +12,15 @@ Everything (pixel art, font, music and sound effects) is original and generated 
 | --- | --- |
 | 100 m dash | Wait for GO, then alternate A and D as fast as you can. Two false starts and you're out. |
 | Long jump | Sprint, hold W to raise the angle, let go before the red line. About 45° is best; letting go on the white board is a perfect take-off. Three jumps, best counts. |
+| High jump | Run up, hold W to set a steep angle (about 60–70°), let go just before the line. Clear the bar to raise it; three misses in a row and you're out. |
 | Javelin | Same run-up and angle, but you throw. Three throws, best counts. |
 | 110 m hurdles | Run with A and D, tap W to jump each hurdle (about 1 m before it at full speed). Hitting one costs speed. |
 
 ## Modes
 
-- **Championship**, 1 or 2 players: all four events in order. Miss a qualifying mark and you're out (Options → Casual mode lets you carry on with 0 points). Ends on the podium and the high-score table.
+- **Championship**, 1 or 2 players: all five events in order (100 m, long jump, high jump, javelin, hurdles). Miss a qualifying mark and you're out (Options → Casual mode lets you carry on with 0 points). Ends on the podium and the high-score table.
 - **Practice**: any event, with your personal best shown.
-- **Versus**, 2 players: all four events or just one; the higher total wins.
+- **Versus**, 2 players: all five events or just one; the higher total wins.
 - **How to Play**: a short guide to each event.
 
 ## Controls

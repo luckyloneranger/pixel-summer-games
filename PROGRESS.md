@@ -15,6 +15,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 8a – Two players | ✅ Approved |
 | 8b – Touch and options | ✅ Approved |
 | 9 – Polish and launch | ✅ Approved – v1 launched |
+| 10 – High jump | ✅ Done, awaiting play-test |
 | 10+ – More events | – |
 | 11 – Online multiplayer (after v1) | – |
 
@@ -217,5 +218,21 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 
 All of Phases 0–9 are approved. The game is live at https://luckyloneranger.github.io/pixel-summer-games/ and redeploys automatically on every push to `main`.
 
-**Next:** Phase 10 – the first backlog event (SPEC section 3 order: high jump), or Phase 11 – online multiplayer.
+## Phase 10 – High jump
+
+**Done**
+- High jump (`src/events/high-jump.ts`): 20 m run-up, take-off line, bar 1.0 m past it, landing mat, uprights and a height board. Same tap / hold / release controls. Clear or knock is decided from the exact flight path (`Projectile.heightAt`), so it doesn't depend on frame timing.
+- Bar heights 1.85 → 2.40 m; up to 3 tries per height, three misses in a row ends it, best height counts (`src/events/height-attempts.ts`). Fouls count as misses.
+- Shared field-event base now takes any attempt tracker (3 attempts or rising heights); long jump and javelin unchanged, all their tests pass.
+- New athlete frames: the arched "flop" and lying on the mat. Knocked bar falls with a clank.
+- Scoring 1.50 m = 0, 2.30 m = 1,000; qualifying 2.00 m on Normal (Easy 1.80, Hard 2.12). CPU bests Easy 1.85–2.05, Normal 2.00–2.20, Hard 2.15–2.35 m.
+- Added everywhere: Practice, Versus "ALL" and the championship, now 5 events in decathlon order. High-score entries from 4-event runs are kept and marked "*".
+- Results table for heights (POS, NAME, BEST, MISSES, PTS); How to Play page; SPEC sections 3, 5 and 6 updated.
+- 216 unit tests (adds jump physics, height progression, misses, fouls, turns, CPU bests, scoring).
+
+**Known issues / notes**
+- Starting the hold is a real skill: at top speed you need to begin about 8 m before the line to reach 60° in time.
+- The landing is detected at ground level rather than the mat's top, so the CLEARED banner appears about 0.1 s late.
+
+**Next:** the next backlog event (triple jump), or Phase 11 – online multiplayer.
 

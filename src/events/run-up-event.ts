@@ -10,7 +10,8 @@ import { qualifyingMark } from '../game/scoring';
 import { SILENT, type AthleticsEvent, type Difficulty, type EventContext, type EventId, type EventResult, type SoundCue, type SoundSink } from './event';
 import { Footsteps, runningCrowd } from './footsteps';
 import { AUDIO } from '../game/tuning';
-import { FieldAttempts } from './field-attempts';
+import { FieldAttempts, type AttemptTracker } from './field-attempts';
+import type { Rng } from '../core/rng';
 import { Projectile } from './projectile';
 import { TapRunner, applyRunPresses } from './tap-runner';
 import { keysFor } from './player-input';
@@ -24,7 +25,7 @@ export interface FieldCompetitor {
   playerIndex: number;
   name: string;
   look: Look;
-  record: FieldAttempts;
+  record: AttemptTracker;
   sprites: AthleteSprites | null;
 }
 
@@ -97,7 +98,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   }
 
   /** The current competitor's attempts. */
-  get record(): FieldAttempts {
+  get record(): AttemptTracker {
     return this.current.record;
   }
 
@@ -110,7 +111,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
       playerIndex: p.index ?? i,
       name: p.initials,
       look: playerLook(p.team),
-      record: new FieldAttempts(this.cfg.ATTEMPTS),
+      record: this.createTracker(),
       sprites: null,
     }));
     this.turn = 0;
@@ -118,7 +119,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.showQualify = !ctx.practice;
     this.cpus = cpuLineup(ctx.players.map((p) => p.team)).map((a) => ({
       name: a.name,
-      marks: cpuFieldMarks(this.cpuRanges[ctx.difficulty], this.cfg.ATTEMPTS, ctx.rng),
+      marks: this.cpuMarks(this.cpuRanges[ctx.difficulty], ctx.rng),
     }));
     this.clock = 0;
     this.startAttempt();
@@ -165,8 +166,20 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected dustGroundY(): number {
     return 0;
   }
-  /** Turn the landing point (m from the line) into the recorded mark. */
-  protected abstract markFor(landX: number): number;
+  /** Turn the landing point (m from the line) into the recorded mark (null = no mark). */
+  protected abstract markFor(landX: number): number | null;
+  /** How each competitor's attempts are tracked (3 attempts unless overridden). */
+  protected createTracker(): AttemptTracker {
+    return new FieldAttempts(this.cfg.ATTEMPTS);
+  }
+  /** A CPU's marks for this event (drawn from the difficulty's range). */
+  protected cpuMarks(range: readonly number[], rng: Rng): (number | null)[] {
+    return cpuFieldMarks(range, this.cfg.ATTEMPTS, rng);
+  }
+  /** Big text on the ready card ("ATTEMPT 2 OF 3"). */
+  protected readyTitle(): string {
+    return `ATTEMPT ${this.record.current} OF ${this.cfg.ATTEMPTS}`;
+  }
 
   // ------------------------------------------------ rules
 
@@ -264,7 +277,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.record.record(this.lastMark);
     this.sound.play(this.landCue);
     this.effects.shake(EFFECTS.SHAKE_LAND);
-    if (this.lastMark >= this.qualifyMark) this.sound.play('cheer', 0.8);
+    if (this.lastMark !== null && this.lastMark >= this.qualifyMark) this.sound.play('cheer', 0.8);
     this.enterPhase('landed');
   }
 
@@ -363,7 +376,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
         band();
         // With two players, say whose turn it is.
         const who = this.competitors.length > 1 ? `${this.current.name} ` : '';
-        r.text(`${who}ATTEMPT ${this.record.current} OF ${this.cfg.ATTEMPTS}`, cx, y, PALETTE.WHITE, 'center', 2);
+        r.text(`${who}${this.readyTitle()}`, cx, y, PALETTE.WHITE, 'center', 2);
         const target = this.showQualify ? `QUALIFY ${this.qualifyMark.toFixed(2)} M  ` : '';
         r.text(`${target}${hint}`, cx, y + 20, PALETTE.YELLOW, 'center');
         break;

@@ -99,6 +99,7 @@ export const CPU_FIELD = {
   FOUL_CHANCE: 0.15, // chance any one CPU attempt is a foul
   LONG_JUMP: { easy: [6.0, 7.2], normal: [6.8, 8.0], hard: [7.5, 8.6] }, // m, [min, max]
   JAVELIN: { easy: [55, 72], normal: [65, 82], hard: [75, 92] }, // m, [min, max]
+  HIGH_JUMP: { easy: [1.85, 2.05], normal: [2.0, 2.2], hard: [2.15, 2.35] }, // m, best height [min, max]
 };
 
 /** Javelin throw. */
@@ -145,6 +146,7 @@ export const HURDLES = {
 export const SCORING = {
   dash100: { ZERO: 14.0, PAR: 9.8, QUALIFY: 12.0 }, // s
   longJump: { ZERO: 4.0, PAR: 8.5, QUALIFY: 7.0 }, // m
+  highJump: { ZERO: 1.5, PAR: 2.3, QUALIFY: 2.0 }, // m
   javelin: { ZERO: 30.0, PAR: 90.0, QUALIFY: 70.0 }, // m
   hurdles110: { ZERO: 20.0, PAR: 13.0, QUALIFY: 15.5 }, // s
   PAR_POINTS: 1000, // points at the PAR mark
@@ -216,4 +218,21 @@ export const EFFECTS = {
   PHOTO_FINISH_TIME: 1.5, // s the race freezes for the photo finish
   DNF_STOP_TIME: 3, // s stopped (after everyone else finished) before "DID NOT FINISH"
   ATTRACT_DELAY: 8, // s of no input on the title before the demo race starts
+};
+
+/** High jump. */
+export const HIGH_JUMP = {
+  RUNWAY: 20, // m from the start of the run-up to the take-off line
+  ATTEMPTS: 3, // tries at each bar height; three misses in a row and you're out
+  HEIGHTS: [1.85, 1.95, 2.05, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4], // m, the bar goes up through these
+  LAUNCH_EFFICIENCY: 0.58, // launch speed = run speed x this (10 m/s, ~65° clears ~2.45 m)
+  GRAVITY: 9.81, // m/s²
+  TAKEOFF_HEIGHT: 1.0, // m, height of the body's centre at take-off
+  BAR_X: 1.0, // m past the take-off line where the bar stands
+  MAT_START: 0.6, // m past the line where the landing mat starts
+  MAT_END: 4.5, // m past the line where it ends
+  RESULT_TIME: 2.0, // s the result stays up before the next jump
+  BAR_FALL_TIME: 0.5, // s for a knocked bar to fall onto the mat
+  PIXELS_PER_METER: 14, // px per m when drawing (same scale as the long jump)
+  CAMERA_LEAD: 150, // px, athlete's distance from the left edge of the screen
 };

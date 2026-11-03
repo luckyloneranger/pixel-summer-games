@@ -13,4 +13,7 @@ game.start();
   get state() {
     return game.scenes.top?.debugLines?.()[0] ?? '';
   },
+  get lines() {
+    return game.scenes.top?.debugLines?.() ?? [];
+  },
 };

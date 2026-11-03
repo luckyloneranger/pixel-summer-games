@@ -53,6 +53,19 @@ const PAGES: Page[] = [
     ],
   },
   {
+    title: 'HIGH JUMP',
+    pose: 'flop',
+    lines: [
+      'RUN UP, HOLD W TO RAISE THE',
+      'ANGLE AND LET GO JUST BEFORE',
+      'THE LINE. YOU MUST BE HIGHER',
+      'THAN THE BAR AS YOU PASS IT.',
+      'TIP: GO STEEP (ABOUT 60-70',
+      'DEGREES) AND KEEP YOUR SPEED.',
+      '3 MISSES IN A ROW AND YOU ARE OUT.',
+    ],
+  },
+  {
     title: 'JAVELIN',
     pose: 'throw',
     lines: [

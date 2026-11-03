@@ -5,6 +5,7 @@ import { DIFFICULTY_MARKS, SCORING } from './tuning';
 export const EVENT_KIND: Record<EventId, 'race' | 'field'> = {
   dash100: 'race',
   longJump: 'field',
+  highJump: 'field',
   javelin: 'field',
   hurdles110: 'race',
 };
@@ -12,6 +13,7 @@ export const EVENT_KIND: Record<EventId, 'race' | 'field'> = {
 export const EVENT_NAMES: Record<EventId, string> = {
   dash100: '100 M DASH',
   longJump: 'LONG JUMP',
+  highJump: 'HIGH JUMP',
   javelin: 'JAVELIN',
   hurdles110: '110 M HURDLES',
 };

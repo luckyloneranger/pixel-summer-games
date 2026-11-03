@@ -3,7 +3,7 @@ import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import type { TeamKit } from '../gfx/sprites/athlete';
 
-export type EventId = 'dash100' | 'longJump' | 'javelin' | 'hurdles110';
+export type EventId = 'dash100' | 'longJump' | 'highJump' | 'javelin' | 'hurdles110';
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface PlayerInfo {

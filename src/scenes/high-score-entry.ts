@@ -63,6 +63,7 @@ export class HighScoreEntryScene implements Scene {
       initials: this.entry.value,
       score: this.current.score,
       difficulty: this.session.difficulty,
+      events: this.session.series?.events.length,
     });
     store.data.highScores[this.table] = table;
     store.save();

@@ -1,8 +1,8 @@
 import type { Difficulty, EventId, EventResult } from '../events/event';
 import { qualifies, scoreResults } from './scoring';
 
-/** Championship order (SPEC section 6). */
-export const CHAMPIONSHIP_EVENTS: readonly EventId[] = ['dash100', 'longJump', 'javelin', 'hurdles110'];
+/** Championship order (SPEC section 6, decathlon order since the high jump joined in Phase 10). */
+export const CHAMPIONSHIP_EVENTS: readonly EventId[] = ['dash100', 'longJump', 'highJump', 'javelin', 'hurdles110'];
 
 export interface Standing {
   name: string;

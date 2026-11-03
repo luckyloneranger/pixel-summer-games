@@ -91,7 +91,8 @@ export class ResultsScene implements Scene {
   render(r: Renderer): void {
     r.clear(PALETTE.NIGHT);
     drawHeader(r, EVENT_NAMES[this.eventId]);
-    if (EVENT_KIND[this.eventId] === 'field') this.drawFieldTable(r);
+    if (this.eventId === 'highJump') this.drawHeightTable(r);
+    else if (EVENT_KIND[this.eventId] === 'field') this.drawFieldTable(r);
     else this.drawRaceTable(r);
     this.drawFooter(r);
   }
@@ -105,6 +106,21 @@ export class ResultsScene implements Scene {
       r.text(String(res.lane ?? '-'), cols[1] + 8, y, colour, 'center');
       r.text(res.name, cols[2], y, colour);
       r.text(res.disqualified ? 'DQ' : res.dnf ? 'DNF' : fmt(res.mark), cols[3], y, colour);
+      r.text(String(res.points), cols[4], y, colour);
+    });
+  }
+
+  /** High jump. Columns: place, name, best height cleared, misses, points. */
+  private drawHeightTable(r: Renderer): void {
+    const cols = [24, 72, 136, 200, 256];
+    this.header(r, cols, ['POS', 'NAME', 'BEST', 'MISSES', 'PTS']);
+    this.results.forEach((res, i) => {
+      const { y, colour } = this.row(r, res, i, cols[0]);
+      r.text(res.name, cols[1], y, colour);
+      r.text(fmt(res.mark), cols[2], y, colour);
+      // Misses are known for humans (their jump list); CPU marks are a single best.
+      const misses = res.playerIndex >= 0 ? String((res.attempts ?? []).filter((m) => m === null).length) : '-';
+      r.text(misses, cols[3] + 16, y, colour, 'center');
       r.text(String(res.points), cols[4], y, colour);
     });
   }

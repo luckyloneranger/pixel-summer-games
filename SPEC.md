@@ -43,7 +43,7 @@ Version 1 has four events, three modes, keyboard and touch controls, and high sc
 
 | Area | In v1 | Later (backlog, rough priority order) |
 | --- | --- | --- |
-| Events | 100 m dash, long jump, javelin throw, 110 m hurdles | High jump, triple jump, 100 m freestyle swim, archery, weightlifting, skeet shooting, hammer throw, pole vault |
+| Events | 100 m dash, long jump, javelin throw, 110 m hurdles (high jump added in Phase 10) | Triple jump, 100 m freestyle swim, archery, weightlifting, skeet shooting, hammer throw, pole vault |
 | Modes | Championship (arcade), Practice (any single event), Versus (2 players on one keyboard) | Online multiplayer (Phase 11), ghost runner of your best run, achievements |
 | Controls | Keyboard on desktop, on-screen touch buttons on mobile | Gamepad (browser Gamepad API) |
 | Saving | High scores, personal bests and settings in the browser (localStorage) | Online leaderboard (would need a server) |
@@ -107,6 +107,7 @@ Each event shows an intro card first: event name, qualifying mark and a one-line
 | --- | --- | --- | --- | --- | --- |
 | 100 m dash | 1 race | Alternate taps | Time, to 0.01 s | 12.00 s or faster | Under 10.00 s |
 | Long jump | 3 jumps, best counts | Taps, then hold and release Action | Distance, to 0.01 m | 7.00 m or more | Over 8.50 m |
+| High jump (Phase 10) | Up to 3 tries per bar height; 3 misses in a row ends it | Taps, then hold and release Action | Best height cleared, to 0.01 m | 2.00 m or more | Over 2.30 m |
 | Javelin throw | 3 throws, best counts | Taps, then hold and release Action | Distance, to 0.01 m | 70.00 m or more | Over 90.00 m |
 | 110 m hurdles | 1 race | Alternate taps, tap Action to clear each hurdle | Time, to 0.01 s | 15.50 s or faster | Under 13.50 s |
 
@@ -125,6 +126,14 @@ Each event shows an intro card first: event name, qualifying mark and a one-line
 - Tap to build speed, then hold and release Action (section 4). The take-off point is where you release.
 - Release within 0.20 m before the foul line for "PERFECT TAKE-OFF" and a 5% distance bonus.
 - Distance is measured from the foul line to the landing mark. Show a sand puff and a tape-measure animation.
+
+### High jump (added in Phase 10)
+
+- 20 m run-up to a take-off line, with the bar 1.0 m past the line and a landing mat behind it. Same tap, hold and release input as the long jump.
+- The jump is real projectile flight from a 1.0 m take-off height: you clear the bar if your height as you pass it is above the bar. Too flat isn't high enough, too steep lands on the bar, and taking off far too early falls short. About 60–70° at speed, released just before the line, works best.
+- The bar goes up through 1.85, 1.95, 2.05, 2.15, 2.20, 2.25, 2.30, 2.35 and 2.40 m. Up to 3 tries per height; clearing moves the bar up, three misses in a row ends your event. Releasing past the line is a foul and counts as a miss. Your mark is the highest height cleared.
+- Two players alternate jumps. CPU marks are one best height per CPU, drawn from a range per difficulty and snapped to the bar heights.
+- A knocked bar falls onto the mat with a clank; a clearance gets a cheer.
 
 ### Javelin throw
 
@@ -146,9 +155,9 @@ Championship mode chains the four events. You must hit each qualifying mark to c
 
 ### Modes
 
-- **Championship (1 or 2 players).** Events run in this order: 100 m, long jump, javelin, 110 m hurdles. Missing a qualifying mark ends the run, as in classic arcade games. A "Casual" setting in Options lets you carry on with 0 points instead. With 2 players, they share races side by side and take turns on field-event attempts. A player who misses a qualifying mark is out and sits out the remaining events; the run ends only when both players are out. Each player can enter a high score.
+- **Championship (1 or 2 players).** Events run in this order: 100 m, long jump, high jump, javelin, 110 m hurdles (decathlon order; the high jump joined in Phase 10). Missing a qualifying mark ends the run, as in classic arcade games. A "Casual" setting in Options lets you carry on with 0 points instead. With 2 players, they share races side by side and take turns on field-event attempts. A player who misses a qualifying mark is out and sits out the remaining events; the run ends only when both players are out. Each player can enter a high score.
 - **Practice.** Pick any event. No qualifying marks, unlimited retries, and your personal best is shown.
-- **Versus (2 players).** A single head-to-head event, or all four. Highest points total wins. No qualifying marks. CPU runners still fill the empty lanes but don't count towards the winner. Versus has its own top-10 table.
+- **Versus (2 players).** A single head-to-head event, or all five. Highest points total wins. No qualifying marks. CPU runners still fill the empty lanes but don't count towards the winner. Versus has its own top-10 table.
 
 ### Difficulty and CPU opponents
 
@@ -171,6 +180,7 @@ then:    points = clamp(round(points), 0, 1200)
 | --- | --- | --- |
 | 100 m dash | 14.00 s | 9.80 s |
 | Long jump | 4.00 m | 8.50 m |
+| High jump | 1.50 m | 2.30 m |
 | Javelin throw | 30.00 m | 90.00 m |
 | 110 m hurdles | 20.00 s | 13.00 s |
 

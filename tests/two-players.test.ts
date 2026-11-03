@@ -164,9 +164,9 @@ describe('versus', () => {
     expect(s.series!.playerTotal(1)).toBeGreaterThan(s.series!.playerTotal(0));
   });
 
-  it('can run all four events', () => {
+  it('can run all five events', () => {
     const s = new Session('versus', TWO, 'normal', false);
-    expect(s.series!.events).toHaveLength(4);
+    expect(s.series!.events).toHaveLength(5);
   });
 });
 

@@ -1,5 +1,19 @@
+/**
+ * What every field event's attempt tracking offers. Each entry in `marks` is
+ * a valid mark in m, or null for a foul / miss.
+ */
+export interface AttemptTracker {
+  readonly marks: (number | null)[];
+  record(mark: number | null): void;
+  /** Best valid mark so far, or null. */
+  readonly best: number | null;
+  /** 1-based number of the attempt in progress. */
+  readonly current: number;
+  readonly done: boolean;
+}
+
 /** Tracks a field event's attempts: each is a distance in m, or null for a foul. */
-export class FieldAttempts {
+export class FieldAttempts implements AttemptTracker {
   readonly marks: (number | null)[] = [];
 
   constructor(readonly total: number) {}
