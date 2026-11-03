@@ -152,19 +152,17 @@ test('online: a race and a long jump survive a dropped connection', async ({ bro
       await dropAndRecover(guest);
       dropped = true;
     }
-    // Whoever's turn it is: a tap or two, then a short hold of W to jump.
+    // Whoever's turn it is: two quick taps, then hold W briefly to jump, all
+    // in one go (reading the speed in between is too slow on some browsers).
     // press() holds each key for a few frames so no browser can miss it.
     for (const [p, s] of [[host.page, h], [guest.page, g]] as const) {
       if (s.scene !== 'EVENT' || !s.lines.includes('MY TURN')) continue;
       if (s.state === 'STATE ready' || s.state === 'STATE runup') {
-        const speed = Number(s.lines.find((l) => l.startsWith('SPEED'))?.slice(6) ?? 0);
-        if (speed < 1.5) await press(p, left ? 'KeyA' : 'KeyD'); // a short run-up keeps the test quick
-        else {
-          await p.keyboard.down('KeyW');
-          await frames(p, 12);
-          await p.keyboard.up('KeyW');
-        }
-        left = !left;
+        await press(p, 'KeyA');
+        await press(p, 'KeyD');
+        await p.keyboard.down('KeyW');
+        await frames(p, 12);
+        await p.keyboard.up('KeyW');
       }
     }
     await frames(host.page, 2);
