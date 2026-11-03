@@ -13,8 +13,8 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 6 – Game flow | ✅ Approved |
 | 7 – Audio | ✅ Approved |
 | 8a – Two players | ✅ Approved |
-| 8b – Touch and options | ✅ Done, awaiting play-test |
-| 9 – Polish and launch | ⏳ Next |
+| 8b – Touch and options | ✅ Approved |
+| 9 – Polish and launch | ✅ Done, awaiting play-test (launch needs two GitHub settings) |
 | 10+ – More events | – |
 | 11 – Online multiplayer (after v1) | – |
 
@@ -194,4 +194,19 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - Touch buttons are drawn as outlines over the game and can cover parts of the track or help text.
 - Real-phone feel (button size and position) still needs checking on a real device: see `TOUCH` in tuning.ts.
 
-**Next:** Phase 9 – Polish and launch.
+## Phase 9 – Polish and launch
+
+**Done**
+- Game feel: dust puffs behind fast runners (`src/gfx/effects.ts`, fixed pool, no garbage), screen shake on hurdle hits and small bumps on landings (skipped with Reduce flashing), photo-finish freeze when the top two are within 0.05 s.
+- Did not finish: a player standing still for 3 s after everyone else has finished gets DNF (fixes the "race never ends" issue). Recorded in SPEC section 5.
+- How to Play: five pages (basics + one per event) with a small athlete picture.
+- Attract mode: after 8 s idle on the title, four CPUs race the 100 m as a demo; any key returns.
+- iPhone Safari: audio also unlocks on touch release and click.
+- Performance: cached human/racer lists, no array spreads or sorting per frame while drawing.
+- Playwright smoke test (`tests/e2e/smoke.spec.ts`, `npm run test:e2e`): title → menu → practice → 100 m → taps → results, no console errors. Passes in Chromium locally.
+- GitHub Actions: `deploy.yml` builds and publishes to GitHub Pages on every push to main; `test.yml` runs unit tests and the smoke test in Chromium, Firefox and WebKit.
+- README rewritten (play link, events, modes, controls, development, tuning, layout, deploying, originality).
+- 200 unit tests (adds demo race, DNF, photo finish, dust timing, shake requests).
+
+**Known issues / notes**
+- The repository rename and the Pages source setting must be done in GitHub's settings (this session's GitHub access can't change repository settings).

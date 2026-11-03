@@ -116,7 +116,8 @@ Each event shows an intro card first: event name, qualifying mark and a one-line
 - Start sequence: "ON YOUR MARKS", then "SET", then a random wait of 1.0 to 2.5 s, then GO with a starting-pistol sound.
 - The camera follows the human player, looking slightly ahead.
 - The race ends when every runner crosses the line. Show each lane's time and the player's reaction time.
-- Nice to have: a photo-finish freeze frame when the top two are within 0.05 s.
+- Nice to have: a photo-finish freeze frame when the top two are within 0.05 s. (Built in Phase 9.)
+- If a player stops running after everyone else has finished, they get "DID NOT FINISH" (no mark) after 3 s, so the race can't hang. Decided in Phase 9.
 
 ### Long jump
 
