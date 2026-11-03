@@ -34,6 +34,6 @@ export class GameOverScene implements Scene {
     const totals = s.players.map((p, i) => `${two ? p.initials + ' ' : 'TOTAL '}${s.series?.playerTotal(i) ?? 0}`).join('   ');
     r.text(totals, cx, 104, PALETTE.YELLOW, 'center');
     r.text('TIP: CASUAL MODE IN OPTIONS', cx, 128, PALETTE.GREY, 'center');
-    if (blink(this.time, 1, this.game.steady)) r.text('PRESS ENTER', cx, 152, PALETTE.GREY_LIGHT, 'center');
+    if (blink(this.time, 1, this.game.steady)) r.text(this.game.prompts.pressOk(), cx, 152, PALETTE.GREY_LIGHT, 'center');
   }
 }

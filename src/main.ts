@@ -16,6 +16,10 @@ game.start();
   get lines() {
     return game.scenes.top?.debugLines?.() ?? [];
   },
+  /** Are the hints showing the on-screen buttons (phone) rather than keys? */
+  get touch() {
+    return game.prompts.touch;
+  },
   /** Online connection state ('' when not online). */
   get net() {
     return game.session?.online?.conn.state ?? '';

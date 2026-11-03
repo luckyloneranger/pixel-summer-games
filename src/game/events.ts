@@ -20,12 +20,3 @@ export function createEvent(id: EventId): AthleticsEvent {
       return new Hurdles110Event();
   }
 }
-
-/** One-line controls hint for each event's intro card. */
-export const EVENT_HINTS: Record<EventId, string> = {
-  dash100: 'ALTERNATE A + D TO RUN',
-  longJump: 'RUN A+D  HOLD W  RELEASE TO JUMP',
-  highJump: 'RUN A+D  HOLD W  RELEASE TO JUMP',
-  javelin: 'RUN A+D  HOLD W  RELEASE TO THROW',
-  hurdles110: 'RUN A+D  TAP W TO JUMP HURDLES',
-};

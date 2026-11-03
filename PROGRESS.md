@@ -20,6 +20,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 11a – Online: server, lobby, races | ✅ Approved (room server live on Cloudflare) |
 | 11b – Online: field events, reconnect | ✅ Approved |
 | 12 – A more fun title screen | 🔍 Ready for review |
+| 12b – Hints that match the device | 🔍 Ready for review |
 
 ## Phase 0 – Setup and skeleton
 
@@ -290,5 +291,31 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 
 **Known issues / notes**
 - Title music is unchanged, as agreed.
+
+**Next:** Phase 12b – hints that match the device.
+
+## Phase 12b – Hints that match the device
+
+**Done**
+- One place for the words on screen for each control (`src/ui/prompts.ts`). With a keyboard: your keys, including any you changed in Options ("RUN A+D  HOLD W", "PRESS ENTER", "ESC: BACK"). On a phone: the buttons ("RUN ← →  HOLD ACTION", "TAP OK", "TAP TO START"). The hints switch the moment you go from touching the screen to typing, or back.
+- Every screen uses them:
+  - the four event hints and the race start line;
+  - event intro cards;
+  - the main, Practice, Online and Options menus;
+  - results, podium, game over and the winner screen;
+  - initials entry, join room and lobby;
+  - all How to Play pages (rewritten for phones);
+  - the title ticker tip.
+- Title and demo on a phone: "TAP TO START", and a tap anywhere starts (the sound icon still works).
+- The phone menu buttons now sit in one bar along the bottom edge (← ↑ ↓ → on the left, BACK and OK on the right). The old arrow cross covered list rows on Practice, Options, Player Setup, High Scores and Online. Notes that sat near the bottom move above the bar on a phone.
+- "NEEDS A KEYBOARD" notes on a phone for Versus, two-player Championship and Options → Controls (which can't be opened without a keyboard).
+- Fixed: the touch buttons ignored taps for 1 s after every screen change, which swallowed the first tap on the title. The pause now only follows an event, as intended.
+- Fixed: two lines showed "?" because the font has no semicolon.
+- Tests:
+  - 265 unit tests. They check the keyboard and phone words, changed keys, the switch between devices, that no phone hint names a keyboard key, that every hint fits the screen, that every How to Play letter exists in the font, and the title's tap-anywhere area.
+  - A new phone browser test (`tests/e2e/phone.spec.ts`) goes from the title to a 100 m race and its results by tapping only (Chromium and WebKit; Firefox can't emulate a phone).
+
+**Known issues / notes**
+- In the lobby on a phone, the "BACK: CLOSE ROOM" line is under the control bar; the BACK button still closes the room.
 
 **Next:** waiting for approval.

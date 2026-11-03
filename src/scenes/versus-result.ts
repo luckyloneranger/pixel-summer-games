@@ -67,6 +67,6 @@ export class VersusResultScene implements Scene {
     r.text(msg, cx, 124, PALETTE.YELLOW, 'center', 2);
     if (w >= 0) r.image(this.sprites[w].get('celebrate'), cx - 8, 140);
     const show = blink(this.time, 1, this.game.steady);
-    if (show) r.text('PRESS ENTER', cx, 168, PALETTE.GREY_LIGHT, 'center');
+    if (show) r.text(this.game.prompts.pressOk(), cx, 168, PALETTE.GREY_LIGHT, 'center');
   }
 }

@@ -107,7 +107,7 @@ export class JavelinEvent extends RunUpFieldEvent {
       this.attemptNote(),
       PALETTE.GREY_LIGHT,
     );
-    this.drawMessages(r, 'RUN A+D  HOLD W', this.phaseTimer >= MARK_DELAY);
+    this.drawMessages(r, this.runHoldHint(), this.phaseTimer >= MARK_DELAY);
   }
 
   private drawField(r: Renderer, at: (x: number, h: number) => { sx: number; sy: number }, shift: number): void {

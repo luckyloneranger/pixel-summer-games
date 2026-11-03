@@ -86,6 +86,6 @@ export class HighScoreEntryScene implements Scene {
     r.text(String(this.current.score), cx, 46, PALETTE.YELLOW, 'center', 2);
     r.text('ENTER YOUR INITIALS', cx, 76, PALETTE.WHITE, 'center');
     this.entry.render(r, cx, 96, this.time, true, this.game.steady);
-    r.text('UP/DOWN LETTER  L/R MOVE  ENTER OK', cx, 150, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.letters(), cx, 150, PALETTE.GREY_LIGHT, 'center');
   }
 }

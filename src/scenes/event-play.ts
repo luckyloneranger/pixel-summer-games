@@ -52,6 +52,7 @@ export class EventPlayScene implements Scene {
       // Online, both games use the same seed for this event, so CPUs and timing match.
       rng: online ? new Rng(online.seed + (this.session.series?.index ?? 0) * ONLINE_SEED_STEP) : this.game.rng,
       net: online ? netLink(online) : undefined,
+      prompts: this.game.prompts,
       practice: this.session.mode !== 'championship', // only championships have qualifying marks
       sound: this.game.sound,
       effects: this.game.effects,

@@ -20,6 +20,7 @@ import { EFFECTS } from '../game/tuning';
 import { NO_EFFECTS, type EffectsSink } from './event';
 import type { Look } from '../gfx/sprite';
 import type { NetLink } from './event';
+import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
 import { NET } from '../game/tuning';
 import type { GameMessage } from '../net/protocol';
 
@@ -93,6 +94,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   // Online: the device whose player is up runs the attempt and reports it;
   // the other device replays it. Attempts are numbered across all players.
   private net: NetLink | null = null;
+  protected prompts: Prompts = KEYBOARD_PROMPTS;
   /** Number of the attempt in progress (0 = first of the event). */
   attemptNo = 0;
   private readonly netQueue: FieldMessage[] = [];
@@ -124,6 +126,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.effects = ctx.effects ?? NO_EFFECTS;
     this.dust.clear();
     this.net = ctx.net ?? null;
+    this.prompts = ctx.prompts ?? KEYBOARD_PROMPTS;
     this.netQueue.length = 0;
     this.competitors = ctx.players.map((p, i) => ({
       playerIndex: p.index ?? i,
@@ -479,6 +482,12 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   // ------------------------------------------------ shared drawing helpers
 
   abstract render(r: Renderer): void;
+
+  /** "RUN A+D  HOLD W" for whoever is up (keys or buttons). */
+  protected runHoldHint(): string {
+    const p = this.current.playerIndex;
+    return `RUN ${this.prompts.run(p)}  HOLD ${this.prompts.action(p)}`;
+  }
 
   /** Scoreboard note: "ATTEMPT 2/3", or "DAA 2/3" with two players. */
   protected attemptNote(): string {

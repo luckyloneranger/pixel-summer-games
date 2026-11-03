@@ -214,13 +214,14 @@ export const TOUCH = {
   PAD_H: 56, // run pad height
   ACTION_W: 96, // action button width
   ACTION_H: 40, // action button height
-  ARROW: 24, // menu arrow button size (square)
-  MENU_BTN_W: 40, // OK / BACK width
-  MENU_BTN_H: 26, // OK / BACK height
+  BAR_H: 26, // height of the menu control bar along the bottom edge
+  ARROW_W: 26, // menu arrow button width (in the bar)
+  MENU_BTN_W: 42, // OK / BACK width (in the bar)
+  BTN_H: 22, // height of every button in the menu bar
   ICON_W: 16, // pause / speaker icon width
   ICON_H: 11, // pause / speaker icon height
   HIT_SLOP: 4, // px of extra touch area around every button
-  SWITCH_GUARD: 1.0, // s after the buttons change (event <-> menu) when new touches are ignored
+  SWITCH_GUARD: 1.0, // s after leaving an event's buttons when new touches are ignored
 };
 
 /** Game-feel effects (screen shake is skipped when "reduce flashing" is on). */

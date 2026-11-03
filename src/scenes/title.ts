@@ -72,6 +72,7 @@ export class TitleScene implements Scene {
       confetti: this.confetti,
       ticker: tickerText(data.personalBests, data.highScores.championship[0]),
       flash: this.flashLeft > 0,
+      start: this.game.prompts.start(),
     });
   }
 

@@ -33,7 +33,7 @@ export class JoinRoomScene implements Scene {
     drawHeader(r, 'JOIN ROOM');
     r.text("ENTER YOUR FRIEND'S ROOM CODE", cx, 48, PALETTE.WHITE, 'center');
     this.entry.render(r, cx, 74, this.time, true, this.game.steady);
-    r.text('UP/DOWN LETTER  L/R MOVE  ENTER OK', cx, 134, PALETTE.GREY_LIGHT, 'center');
-    r.text('ESC: BACK', cx, 166, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.letters(), cx, 134, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.backTo(), cx, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }

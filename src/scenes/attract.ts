@@ -52,6 +52,6 @@ export class AttractScene implements Scene {
     this.race.render(r);
     r.rect(0, 150, r.width, 14, PALETTE.INK);
     r.text('DEMO', 8, 153, PALETTE.GREY_LIGHT);
-    if (blink(this.time, 1, this.game.steady)) r.text('PRESS START', r.width / 2, 153, PALETTE.YELLOW, 'center');
+    if (blink(this.time, 1, this.game.steady)) r.text(this.game.prompts.start(), r.width / 2, 153, PALETTE.YELLOW, 'center');
   }
 }

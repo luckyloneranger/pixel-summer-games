@@ -71,6 +71,6 @@ export class HighScoresScene implements Scene {
     });
 
     if (!this.game.store.persistent) r.text('(SAVING IS OFF)', 304, 156, PALETTE.RED, 'right');
-    r.text('LEFT/RIGHT: TABLE  ENTER: OK', r.width / 2, 168, PALETTE.GREY_LIGHT, 'center');
+    r.text(`${this.game.prompts.leftRight()}: TABLE  ${this.game.prompts.okTo('DONE')}`, r.width / 2, 168, PALETTE.GREY_LIGHT, 'center');
   }
 }

@@ -79,6 +79,6 @@ export class PodiumScene implements Scene {
       .filter(({ s, i }) => s.playerIndex >= 0 && i >= 3)
       .map(({ s, i }) => `${s.name} ${PLACES[i]}`);
     if (off.length) r.text(off.join('  '), cx, 32, PALETTE.WHITE, 'center');
-    if (blink(this.time, 1, this.game.steady)) r.text('PRESS ENTER', cx, 172, PALETTE.GREY_LIGHT, 'center');
+    if (blink(this.time, 1, this.game.steady)) r.text(this.game.prompts.pressOk(), cx, 172, PALETTE.GREY_LIGHT, 'center');
   }
 }

@@ -16,9 +16,10 @@ export interface TouchButton {
   w: number;
   h: number;
   big?: boolean; // draw the label at double size
+  hidden?: boolean; // works but isn't drawn (the title's tap-anywhere area)
 }
 
-export type TouchLayout = 'event' | 'menu';
+export type TouchLayout = 'event' | 'menu' | 'title';
 
 const W = DISPLAY.WIDTH;
 const H = DISPLAY.HEIGHT;
@@ -35,19 +36,35 @@ export function eventButtons(): TouchButton[] {
   ];
 }
 
-/** Buttons on menu screens: arrows on the left, OK and BACK on the right, sound icon. */
+/** Top of the menu control bar (game px); menu screens keep the space below it for the buttons. */
+export const MENU_BAR_TOP = H - TOUCH.BAR_H;
+
+/**
+ * Buttons on menu screens, in one bar along the bottom edge so they never
+ * cover the menu itself: arrows on the left, BACK and OK on the right.
+ */
 export function menuButtons(): TouchButton[] {
-  const a = TOUCH.ARROW;
-  const cx = M + a; // left edge of the middle column of the arrow cross
-  const bottom = H - M;
+  const y = MENU_BAR_TOP + (TOUCH.BAR_H - TOUCH.BTN_H) / 2;
+  const arrow = (code: string, label: string, i: number): TouchButton => ({
+    code, label, x: M + i * (TOUCH.ARROW_W + 2), y, w: TOUCH.ARROW_W, h: TOUCH.BTN_H,
+  });
+  const okX = W - M - TOUCH.MENU_BTN_W;
   return [
-    { code: 'TouchUp', label: '↑', x: cx, y: bottom - 3 * a, w: a, h: a },
-    { code: 'TouchLeft', label: '←', x: M, y: bottom - 2 * a, w: a, h: a },
-    { code: 'TouchRight', label: '→', x: cx + a, y: bottom - 2 * a, w: a, h: a },
-    { code: 'TouchDown', label: '↓', x: cx, y: bottom - a, w: a, h: a },
-    { code: 'TouchOk', label: 'OK', x: W - M - TOUCH.MENU_BTN_W, y: bottom - 2 * TOUCH.MENU_BTN_H - 4, w: TOUCH.MENU_BTN_W, h: TOUCH.MENU_BTN_H },
-    { code: 'TouchBack', label: 'BACK', x: W - M - TOUCH.MENU_BTN_W, y: bottom - TOUCH.MENU_BTN_H, w: TOUCH.MENU_BTN_W, h: TOUCH.MENU_BTN_H },
+    arrow('TouchLeft', '←', 0),
+    arrow('TouchUp', '↑', 1),
+    arrow('TouchDown', '↓', 2),
+    arrow('TouchRight', '→', 3),
+    { code: 'TouchBack', label: 'BACK', x: okX - TOUCH.MENU_BTN_W - 4, y, w: TOUCH.MENU_BTN_W, h: TOUCH.BTN_H },
+    { code: 'TouchOk', label: 'OK', x: okX, y, w: TOUCH.MENU_BTN_W, h: TOUCH.BTN_H },
     { code: 'TouchMute', label: 'M', x: 2, y: 2, w: TOUCH.ICON_W, h: TOUCH.ICON_H },
+  ];
+}
+
+/** The title and demo: tap anywhere to start (the sound icon still works). */
+export function titleButtons(): TouchButton[] {
+  return [
+    { code: 'TouchMute', label: 'M', x: 2, y: 2, w: TOUCH.ICON_W, h: TOUCH.ICON_H }, // first, so it wins
+    { code: 'TouchOk', label: '', x: 0, y: 0, w: W, h: H, hidden: true },
   ];
 }
 
@@ -111,10 +128,11 @@ export class TouchControls {
   setLayout(layout: TouchLayout): void {
     if (layout === this.layout) return;
     this.releaseAll();
+    // A finger still drumming on a run pad must not hit the menu button now in
+    // its place. Only needed after an event: elsewhere taps are single and slow.
+    if (this.layout === 'event') this.guardUntil = performance.now() + TOUCH.SWITCH_GUARD * 1000;
     this.layout = layout;
-    this.buttons = layout === 'event' ? eventButtons() : menuButtons();
-    // A finger still drumming on a run pad must not hit the menu button now in its place.
-    this.guardUntil = performance.now() + TOUCH.SWITCH_GUARD * 1000;
+    this.buttons = layout === 'event' ? eventButtons() : layout === 'title' ? titleButtons() : menuButtons();
   }
 
   private at(e: PointerEvent): TouchButton | null {
@@ -165,8 +183,14 @@ export class TouchControls {
   /** Outlined buttons (no fill, so the game shows through); pressed ones light up. */
   render(r: Renderer): void {
     if (!this.enabled) return;
+    if (this.layout === 'menu') {
+      // A solid bar, covering the keyboard hint lines (the buttons say it all).
+      r.rect(0, MENU_BAR_TOP, r.width, r.height - MENU_BAR_TOP, PALETTE.INK);
+      r.rect(0, MENU_BAR_TOP, r.width, 1, PALETTE.GOLD);
+    }
     const held = new Set(this.fingers.values());
     for (const b of this.buttons) {
+      if (b.hidden) continue;
       const on = held.has(b.code);
       const colour = on ? PALETTE.YELLOW : PALETTE.WHITE;
       r.rect(b.x, b.y, b.w, 1, colour);

@@ -77,7 +77,7 @@ export class LongJumpEvent extends RunUpFieldEvent {
       PALETTE.GREY_LIGHT,
     );
     const showMark = this.phaseTimer >= LONG_JUMP.TAPE_TIME;
-    this.drawMessages(r, 'RUN A+D  HOLD W', showMark, this.perfect ? 'PERFECT TAKE-OFF!' : '');
+    this.drawMessages(r, this.runHoldHint(), showMark, this.perfect ? 'PERFECT TAKE-OFF!' : '');
   }
 
   private drawRunwayAndPit(r: Renderer, toScreen: (m: number) => number): void {

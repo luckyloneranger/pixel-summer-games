@@ -24,6 +24,7 @@ export interface TitleFrame {
   confetti: readonly Confetto[];
   ticker: string;
   flash: boolean; // the white flash after pressing Enter
+  start: string; // "PRESS START" or "TAP TO START"
 }
 
 // Layout in screen pixels (drawing only).
@@ -165,10 +166,11 @@ export class TitleArt {
     const cycle = [PALETTE.WHITE, PALETTE.YELLOW, PALETTE.ORANGE, PALETTE.YELLOW];
     const phase = Math.floor((f.t / TITLE.BLINK_PERIOD) * cycle.length) % cycle.length;
     const colour = f.steady ? PALETTE.WHITE : cycle[phase];
-    r.text('PRESS START', cx, PRESS_Y, colour, 'center');
+    r.text(f.start, cx, PRESS_Y, colour, 'center');
     const nudge = f.steady ? 0 : Math.round(Math.abs(Math.sin(f.t * Math.PI * 2)) * 3);
-    r.text('>', cx - 60 + nudge, PRESS_Y, PALETTE.YELLOW);
-    r.text('<', cx + 52 - nudge, PRESS_Y, PALETTE.YELLOW);
+    const half = textWidth(f.start) / 2;
+    r.text('>', cx - half - 14 + nudge, PRESS_Y, PALETTE.YELLOW);
+    r.text('<', cx + half + 6 - nudge, PRESS_Y, PALETTE.YELLOW);
   }
 
   private drawTicker(r: Renderer, f: TitleFrame): void {

@@ -4,7 +4,6 @@ import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import { blink } from '../ui/widgets';
 import type { EventId } from '../events/event';
-import { EVENT_HINTS } from '../game/events';
 import { EVENT_NAMES, formatMark, qualifyingMark } from '../game/scoring';
 import type { Session } from '../game/session';
 import { PALETTE } from '../gfx/palette';
@@ -105,14 +104,18 @@ export class EventIntroScene implements Scene {
     const best = this.game.store.data.personalBests[this.eventId];
     r.text(`BEST ${best === undefined ? '-' : formatMark(this.eventId, best)}`, cx, y, PALETTE.GREY_LIGHT, 'center');
 
-    const twoPlayers = this.session.activePlayers().length > 1;
-    r.text(EVENT_HINTS[this.eventId], cx, 114, PALETTE.CYAN, 'center');
-    if (twoPlayers) r.text('P1: A D W     P2: LEFT RIGHT UP', cx, 126, PALETTE.CYAN, 'center');
+    // Two players on one keyboard: show each one's keys (online, each device has its own).
+    const p = this.game.prompts;
+    const sharedKeyboard = this.session.activePlayers().length > 1 && !this.session.online && !p.touch;
+    r.text(p.eventHint(this.eventId), cx, 114, PALETTE.CYAN, 'center');
+    if (sharedKeyboard) {
+      r.text(`P1: ${p.run(0)} ${p.action(0)}     P2: ${p.run(1)} ${p.action(1)}`, cx, 126, PALETTE.CYAN, 'center');
+    }
     if (this.iAmReady) {
       const other = this.session.players[1 - (this.session.online?.localIndex ?? 0)];
       r.text(`WAITING FOR ${other?.initials ?? 'FRIEND'}...`, cx, 144, PALETTE.CYAN, 'center');
     } else if (blink(this.time, 1, this.game.steady)) {
-      r.text('PRESS ENTER', cx, 144, PALETTE.WHITE, 'center');
+      r.text(p.pressOk(), cx, 144, PALETTE.WHITE, 'center');
     }
   }
 }

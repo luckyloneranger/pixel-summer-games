@@ -154,13 +154,13 @@ export class LobbyScene implements Scene {
     drawHeader(r, this.role === 'host' ? 'YOUR ROOM' : 'JOINING');
     if (this.error) {
       r.text(this.error, cx, 80, PALETTE.RED, 'center');
-      r.text('ESC: BACK', cx, 166, PALETTE.GREY_LIGHT, 'center');
+      r.text(this.game.prompts.backTo(), cx, 166, PALETTE.GREY_LIGHT, 'center');
       return;
     }
     const c = this.conn;
     if (c.state === 'connecting') {
       r.text('CONNECTING...', cx, 80, PALETTE.WHITE, 'center');
-      r.text('ESC: BACK', cx, 166, PALETTE.GREY_LIGHT, 'center');
+      r.text(this.game.prompts.backTo(), cx, 166, PALETTE.GREY_LIGHT, 'center');
       return;
     }
     // Room code, big, so it can be read out to a friend.
@@ -173,7 +173,7 @@ export class LobbyScene implements Scene {
 
     if (this.role === 'guest') {
       r.text(this.peer ? 'WAITING FOR THE HOST TO START' : 'CONNECTED', cx, 104, PALETTE.CYAN, 'center');
-      r.text('ESC: LEAVE', cx, 166, PALETTE.GREY_LIGHT, 'center');
+      r.text(this.game.prompts.backTo('LEAVE'), cx, 166, PALETTE.GREY_LIGHT, 'center');
       return;
     }
     const rows = [
@@ -188,7 +188,7 @@ export class LobbyScene implements Scene {
       const dim = i === 2 && !this.peer;
       r.text(label, 40, y, dim ? PALETTE.GREY_DARK : selected ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
     });
-    r.text('ESC: CLOSE ROOM', cx, 166, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.backTo('CLOSE ROOM'), cx, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }
 

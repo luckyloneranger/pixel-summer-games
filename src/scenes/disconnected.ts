@@ -32,6 +32,6 @@ export class DisconnectedScene implements Scene {
     r.rect(x, y, w, h, PALETTE.INK);
     r.text(this.message, r.width / 2, y + 14, PALETTE.WHITE, 'center');
     r.text('THE MATCH IS OVER', r.width / 2, y + 28, PALETTE.GREY_LIGHT, 'center');
-    r.text('ENTER: MENU', r.width / 2, y + 44, PALETTE.YELLOW, 'center');
+    r.text(this.game.prompts.okTo('MENU'), r.width / 2, y + 44, PALETTE.YELLOW, 'center');
   }
 }

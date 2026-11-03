@@ -178,7 +178,7 @@ export class ResultsScene implements Scene {
 
     const series = this.session.series;
     if (!series || !this.outcome) {
-      r.text('ENTER: TRY AGAIN  ESC: BACK', cx, 166, PALETTE.GREY_LIGHT, 'center');
+      r.text(this.game.prompts.hint(this.game.prompts.okTo('TRY AGAIN'), this.game.prompts.backTo()), cx, 166, PALETTE.GREY_LIGHT, 'center');
       return;
     }
     // One line per human: qualified (championship) and running total.
@@ -196,7 +196,7 @@ export class ResultsScene implements Scene {
       r.text(`${label}${status}`, cx - 8, y, colour, 'right');
       r.text(`TOTAL ${total}`, cx + 8, y, PALETTE.WHITE);
     });
-    const next = series.state === 'playing' ? 'ENTER: NEXT EVENT' : 'ENTER: CONTINUE';
+    const next = this.game.prompts.okTo(series.state === 'playing' ? 'NEXT EVENT' : 'CONTINUE');
     r.text(next, cx, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }

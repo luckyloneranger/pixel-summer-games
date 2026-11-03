@@ -37,8 +37,8 @@ export class OnlineMenuScene implements Scene {
     drawMenu(r, ITEMS, this.selected, 104, 56, 16);
     r.text('PLAY A FRIEND ON ANOTHER DEVICE.', r.width / 2, 104, PALETTE.GREY_LIGHT, 'center');
     r.text('ONE CREATES A ROOM AND SHARES', r.width / 2, 116, PALETTE.GREY_LIGHT, 'center');
-    r.text('THE 4-LETTER CODE; THE OTHER JOINS.', r.width / 2, 128, PALETTE.GREY_LIGHT, 'center');
-    r.text('NEEDS AN INTERNET CONNECTION', r.width / 2, 148, PALETTE.GREY, 'center');
-    r.text('ESC: BACK', r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
+    r.text('THE 4-LETTER CODE, THE OTHER JOINS.', r.width / 2, 128, PALETTE.GREY_LIGHT, 'center');
+    r.text('NEEDS AN INTERNET CONNECTION', r.width / 2, this.game.prompts.noteY(142), PALETTE.GREY, 'center');
+    r.text(this.game.prompts.backTo(), r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }

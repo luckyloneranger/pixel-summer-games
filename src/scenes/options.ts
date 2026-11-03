@@ -30,7 +30,7 @@ const ROWS: Row[] = [
 /** A short explanation shown under the list for the selected row. */
 const HELP: Partial<Record<Row, [string, string]>> = {
   'CASUAL MODE': ['MISS A QUALIFYING MARK AND', 'KEEP GOING WITH 0 POINTS'],
-  'ASSIST RUN': ['HOLD A RUN KEY TO REACH 80%', 'SPEED. TAPPING STILL GOES FASTER'],
+  'ASSIST RUN': ['HOLD RUN TO REACH 80% OF TOP', 'SPEED. TAPPING STILL GOES FASTER'],
   'REDUCE FLASHING': ['NO BLINKING TEXT', 'AND NO SCREEN SHAKE'],
   CONTROLS: ['CHANGE THE KEYS FOR', 'PLAYER 1 AND PLAYER 2'],
 };
@@ -78,7 +78,8 @@ export class OptionsScene implements Scene {
         if (toggle) s.muted = !s.muted;
         break;
       case 'CONTROLS':
-        if (confirm) this.game.scenes.push(new ControlsScene(this.game));
+        // Keys can't be changed without a keyboard (pressing one switches to keyboard hints).
+        if (confirm && !this.game.prompts.touch) this.game.scenes.push(new ControlsScene(this.game));
         return;
     }
     if (toggle) {
@@ -111,12 +112,14 @@ export class OptionsScene implements Scene {
       if (typeof v === 'number') drawVolumeBar(r, 176, y, v);
       else r.text(v, 176, y, PALETTE.YELLOW);
     });
-    const help = HELP[ROWS[this.row]];
+    const touchControls = ROWS[this.row] === 'CONTROLS' && this.game.prompts.touch;
+    const help = touchControls ? ['NEEDS A KEYBOARD:', 'PLUG ONE IN TO CHANGE THE KEYS'] : HELP[ROWS[this.row]];
     if (help) {
-      r.text(help[0], r.width / 2, 138, PALETTE.GREY_LIGHT, 'center');
-      r.text(help[1], r.width / 2, 148, PALETTE.GREY_LIGHT, 'center');
+      const y = this.game.prompts.noteY(148) - 10; // two lines, the second just above the phone bar
+      r.text(help[0], r.width / 2, y, PALETTE.GREY_LIGHT, 'center');
+      r.text(help[1], r.width / 2, y + 10, PALETTE.GREY_LIGHT, 'center');
     }
-    r.text('LEFT/RIGHT: CHANGE  ESC: BACK', r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.hint(`${this.game.prompts.leftRight()}: CHANGE`, this.game.prompts.backTo()), r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }
 

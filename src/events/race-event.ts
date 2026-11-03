@@ -12,6 +12,7 @@ import { SILENT, type AthleticsEvent, type EventContext, type EventId, type Even
 import { Footsteps, runningCrowd } from './footsteps';
 import { keysFor, type PlayerKeys } from './player-input';
 import type { NetLink } from './event';
+import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
 import type { RunnerState, StartPhase } from '../net/protocol';
 import { NET } from '../game/tuning';
 import { DustPuffs, DustTrail } from '../gfx/effects';
@@ -129,8 +130,21 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   /** Online: keep the other player's lane moving between messages. */
   protected advanceRemote(_lane: L, _dt: number): void {}
   /** The control hint shown under ON YOUR MARKS. */
-  protected startHint = 'ALTERNATE A + D TO RUN';
-  protected startHint2P = 'P1: A + D    P2: LEFT + RIGHT';
+  /** Words for the controls (keys or buttons). */
+  protected get prompts(): Prompts {
+    return this.ctx.prompts ?? KEYBOARD_PROMPTS;
+  }
+
+  /** Shown on the start line: how to run. */
+  protected startHint(): string {
+    return this.prompts.eventHint('dash100');
+  }
+
+  /** Two players on one keyboard: each one's keys. */
+  protected startHint2P(): string {
+    const p = this.prompts;
+    return `P1: ${p.run(0)}    P2: ${p.run(1)}`;
+  }
 
   // ------------------------------------------------ rules
 
@@ -683,7 +697,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     switch (this.phase) {
       case 'marks':
         r.text('ON YOUR MARKS', cx, y, PALETTE.WHITE, 'center', 2);
-        if (!allOut) r.text(this.humans.length > 1 ? this.startHint2P : this.startHint, cx, y + 22, PALETTE.YELLOW, 'center');
+        if (!allOut) r.text(this.humans.length > 1 && !this.net ? this.startHint2P() : this.startHint(), cx, y + 22, PALETTE.YELLOW, 'center');
         break;
       case 'set':
         r.text('SET', cx, y, PALETTE.YELLOW, 'center', 2);

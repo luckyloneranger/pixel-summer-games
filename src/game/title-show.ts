@@ -226,7 +226,7 @@ function puffs(x: number, feet: number, after: number): ParadeItem[] {
 // --------------------------------------------------------------- ticker
 
 const TIPS = [
-  'TIP: TAP THE TWO RUN KEYS IN TURN - NEVER THE SAME ONE TWICE',
+  'TIP: TAP LEFT AND RIGHT IN TURN - NEVER THE SAME ONE TWICE',
   'TIP: AROUND 20 DEGREES IS A GOOD LONG JUMP ANGLE',
   'TIP: THROW THE JAVELIN AT ABOUT 40 DEGREES',
   'TIP: THE HIGH JUMP NEEDS A STEEP TAKE-OFF - HOLD LONGER',

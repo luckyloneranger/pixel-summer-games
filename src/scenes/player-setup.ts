@@ -145,14 +145,16 @@ export class PlayerSetupScene implements Scene {
 
     const row = rows[Math.min(this.row, rows.length - 1)];
     const help = this.editing
-      ? 'UP/DOWN LETTER  L/R MOVE  ENTER OK'
+      ? this.game.prompts.letters()
+      : this.players === 2 && this.game.prompts.touch
+        ? '2 PLAYERS NEED A KEYBOARD'
       : row.endsWith('NAME')
-        ? 'ENTER: EDIT NAME'
+        ? this.game.prompts.okTo('EDIT NAME')
         : row === 'START'
-          ? 'ENTER: START'
-          : 'LEFT/RIGHT: CHANGE';
-    r.text(help, r.width / 2, 156, PALETTE.YELLOW, 'center');
-    r.text('ESC: BACK', r.width / 2, 168, PALETTE.GREY_LIGHT, 'center');
+          ? this.game.prompts.okTo('START')
+          : `${this.game.prompts.leftRight()}: CHANGE`;
+    r.text(help, r.width / 2, this.game.prompts.noteY(156), PALETTE.YELLOW, 'center');
+    r.text(this.game.prompts.backTo(), r.width / 2, 168, PALETTE.GREY_LIGHT, 'center');
   }
 
   private drawValue(r: Renderer, row: Row, x: number, y: number): void {

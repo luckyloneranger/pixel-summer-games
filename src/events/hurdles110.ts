@@ -43,7 +43,9 @@ export interface HurdleLane extends Lane {
 export class Hurdles110Event extends RaceEvent<HurdleLane> {
   readonly id = 'hurdles110';
   readonly name = '110 M HURDLES';
-  protected startHint = 'A+D RUN   W OR SPACE JUMP';
+  protected startHint(): string {
+    return this.prompts.eventHint('hurdles110');
+  }
 
   constructor() {
     super(HURDLES);

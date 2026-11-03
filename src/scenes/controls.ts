@@ -92,7 +92,8 @@ export class ControlsScene implements Scene {
     r.text('RESET TO DEFAULTS', 40, resetY, this.row === RESET_ROW ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
 
     if (this.message) r.text(this.message, r.width / 2, 140, PALETTE.CYAN, 'center');
-    const help = this.listening ? 'PRESS THE NEW KEY  ESC: CANCEL' : 'ENTER: CHANGE  ESC: BACK';
+    const p = this.game.prompts;
+    const help = this.listening ? `PRESS THE NEW KEY  ${p.back()}: CANCEL` : p.hint(p.okTo('CHANGE'), p.backTo());
     r.text(help, r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }

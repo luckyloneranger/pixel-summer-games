@@ -65,7 +65,9 @@ Every event uses the same two systems: alternate-tap running and a hold-and-rele
 | Back / pause | Esc or P | – | Pause icon |
 | Mute | M | – | Speaker icon |
 
-In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1\_RIGHT, P1\_ACTION and so on) so they can be remapped in Options. Only the six gameplay keys can be remapped; Enter, Esc, P, M and the backtick key stay reserved for menus, pause, mute and debug (decided in Phase 8b). Touch buttons stay visible on touch devices, hide when a physical key is pressed, and ignore new touches for a moment after switching between event and menu buttons, so a finger still tapping a run pad can't hit a menu button.
+In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1\_RIGHT, P1\_ACTION and so on) so they can be remapped in Options. Only the six gameplay keys can be remapped; Enter, Esc, P, M and the backtick key stay reserved for menus, pause, mute and debug (decided in Phase 8b). Touch buttons stay visible on touch devices, hide when a physical key is pressed, and ignore new touches for a moment after leaving an event's buttons, so a finger still tapping a run pad can't hit a menu button. On menu screens the buttons sit in one bar along the bottom edge (← ↑ ↓ → on the left, BACK and OK on the right) so they never cover the menu. On the title and demo, a tap anywhere starts.
+
+**Hints match the device in use** (decided in Phase 12b). Every on-screen hint is built from one place (`src/ui/prompts.ts`). With a keyboard it names the keys, following any keys changed in Options ("RUN A+D  HOLD W", "PRESS ENTER", "ESC: BACK"). On a phone it names the buttons ("RUN ← →  HOLD ACTION", "TAP OK", "TAP TO START"). Hints switch the moment the player changes device. Screens that continue use the OK button on a phone, not a tap anywhere, so fingers still mashing ← → can't skip the results. Versus, two-player Championship and changing keys show "NEEDS A KEYBOARD" on a phone.
 
 ### Alternate-tap running
 

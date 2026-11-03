@@ -18,6 +18,7 @@ import { AUDIO, EFFECTS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import { TouchControls, drawRotateNotice } from '../ui/touch-controls';
 import { buildKeymap } from './keymap';
+import { Prompts } from '../ui/prompts';
 
 /** Owns the loop, the canvas, the scene stack and the shared services. */
 export class Game {
@@ -98,6 +99,12 @@ export class Game {
     this.input.setKeymap(buildKeymap(this.store.data.settings.controls));
   }
 
+  /** Words for the controls, matching the keyboard or the on-screen buttons in use. */
+  readonly prompts = new Prompts(
+    () => (this.touch.enabled ? 'touch' : 'keys'),
+    () => this.store.data.settings.controls,
+  );
+
   /** Reduce shake and flashing is on: blinking text stays steady. */
   get steady(): boolean {
     return this.store.data.settings.reduceFlashing;
@@ -176,7 +183,8 @@ export class Game {
     this.audio.setCrowd(this.scenes.top?.crowdLevel?.() ?? 0);
 
     this.scenes.render(this.renderer);
-    this.touch.setLayout(this.scenes.top?.name === 'EVENT' ? 'event' : 'menu');
+    const top = this.scenes.top?.name;
+    this.touch.setLayout(top === 'EVENT' ? 'event' : top === 'TITLE' || top === 'DEMO' ? 'title' : 'menu');
     this.touch.render(this.renderer);
     if (this.onlineBanner) this.drawBanner(this.onlineBanner);
     if (this.portrait) drawRotateNotice(this.renderer);

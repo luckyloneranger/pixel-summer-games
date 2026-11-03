@@ -124,7 +124,7 @@ export class HighJumpEvent extends RunUpFieldEvent {
       this.attemptNote(),
       PALETTE.GREY_LIGHT,
     );
-    this.drawMessages(r, 'RUN A+D  HOLD W', false);
+    this.drawMessages(r, this.runHoldHint(), false);
     if (this.phase === 'landed') this.drawResult(r);
     if (this.phase === 'hold') this.drawAngle(r, toScreen(this.athleteX), GROUND_Y - 12);
   }

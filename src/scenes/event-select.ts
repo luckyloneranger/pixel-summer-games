@@ -61,6 +61,6 @@ export class EventSelectScene implements Scene {
     const sel = this.row === CHAMPIONSHIP_EVENTS.length;
     if (sel) r.text('>', 26, dy, PALETTE.YELLOW);
     r.text(`CPU DIFFICULTY < ${this.game.store.data.settings.difficulty} >`, 40, dy, sel ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
-    r.text('ENTER: PLAY  ESC: BACK', r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.hint(this.game.prompts.okTo('PLAY'), this.game.prompts.backTo()), r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }

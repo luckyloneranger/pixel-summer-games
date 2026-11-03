@@ -67,7 +67,10 @@ export class MenuScene implements Scene {
     r.clear(PALETTE.NAVY);
     drawHeader(r, 'MAIN MENU');
     drawMenu(r, ITEMS, this.selected, 104, 40, 15);
-    r.text('UP/DOWN: CHOOSE  ENTER: OK', r.width / 2, 156, PALETTE.GREY_LIGHT, 'center');
-    r.text('ESC: BACK', r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
+    const p = this.game.prompts;
+    // Versus shares one keyboard between two players.
+    if (p.touch && ITEMS[this.selected].label === 'VERSUS') r.text('VERSUS NEEDS A KEYBOARD', r.width / 2, p.noteY(156), PALETTE.YELLOW, 'center');
+    else r.text(`${p.upDown()}: CHOOSE  ${p.okTo('SELECT')}`, r.width / 2, 156, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.backTo(), r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }

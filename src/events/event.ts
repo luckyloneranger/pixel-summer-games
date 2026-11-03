@@ -3,6 +3,7 @@ import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import type { TeamKit } from '../gfx/sprites/athlete';
 import type { GameMessage } from '../net/protocol';
+import type { Prompts } from '../ui/prompts';
 
 export type EventId = 'dash100' | 'longJump' | 'highJump' | 'javelin' | 'hurdles110';
 export type Difficulty = 'easy' | 'normal' | 'hard';
@@ -60,6 +61,8 @@ export interface EventContext {
   effects?: EffectsSink;
   /** Online play: the link to the other player (local play if not given). */
   net?: NetLink;
+  /** Words for the controls (keyboard words if not given). */
+  prompts?: Prompts;
 }
 
 /** One player's outcome of an event. */
