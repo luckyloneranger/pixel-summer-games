@@ -208,5 +208,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - README rewritten (play link, events, modes, controls, development, tuning, layout, deploying, originality).
 - 200 unit tests (adds demo race, DNF, photo finish, dust timing, shake requests).
 
-**Known issues / notes**
-- The repository rename and the Pages source setting must be done in GitHub's settings (this session's GitHub access can't change repository settings).
+**Launch setup**
+- Repository renamed to `pixel-summer-games` (no "Olympic" in the public address) and GitHub Pages switched to deploy from GitHub Actions.
+- Live at https://luckyloneranger.github.io/pixel-summer-games/
+- The claude.ai preview artifact is a separate single-file build (that host only allows inline scripts).
