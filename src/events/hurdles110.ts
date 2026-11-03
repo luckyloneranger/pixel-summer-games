@@ -1,5 +1,5 @@
 import type { Renderer } from '../core/renderer';
-import { HURDLES } from '../game/tuning';
+import { EFFECTS, HURDLES } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import type { Pose } from '../gfx/sprites/athlete';
 import { drawHurdle } from '../gfx/sprites/props';
@@ -110,7 +110,10 @@ export class Hurdles110Event extends RaceEvent<HurdleLane> {
     lane.knocked[lane.nextHurdle] = true;
     lane.hits++;
     lane.sinceHit = 0;
-    if (lane.playerIndex >= 0) this.sound.play('clank');
+    if (lane.playerIndex >= 0) {
+      this.sound.play('clank');
+      this.ctx.effects?.shake(EFFECTS.SHAKE_HURDLE);
+    }
     const loss = outcome === 'crash' ? HURDLES.CRASH_SPEED_LOSS : HURDLES.HIT_SPEED_LOSS;
     lane.runner.speed *= 1 - loss;
     if (outcome === 'crash') lane.stumbleTime = HURDLES.STUMBLE_TIME;

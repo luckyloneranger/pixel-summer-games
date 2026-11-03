@@ -14,6 +14,9 @@ import { FieldAttempts } from './field-attempts';
 import { Projectile } from './projectile';
 import { TapRunner, applyRunPresses } from './tap-runner';
 import { keysFor } from './player-input';
+import { DustPuffs, DustTrail } from '../gfx/effects';
+import { EFFECTS } from '../game/tuning';
+import { NO_EFFECTS, type EffectsSink } from './event';
 import type { Look } from '../gfx/sprite';
 
 /** A human taking part: their attempts and how they look. */
@@ -71,6 +74,9 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected clock = 0; // s since the event started (animations)
   protected readonly stadium = new Stadium();
   private assist = false;
+  protected effects: EffectsSink = NO_EFFECTS;
+  protected readonly dust = new DustPuffs();
+  private readonly trail = new DustTrail();
   protected sound: SoundSink = SILENT;
   private readonly footsteps = new Footsteps();
   /** Sounds for letting go and for landing (set by each event). */
@@ -98,6 +104,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   init(ctx: EventContext): void {
     this.sound = ctx.sound ?? SILENT;
     this.assist = ctx.assist ?? false;
+    this.effects = ctx.effects ?? NO_EFFECTS;
+    this.dust.clear();
     this.competitors = ctx.players.map((p, i) => ({
       playerIndex: p.index ?? i,
       name: p.initials,
@@ -126,6 +134,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.runner.reset();
     this.meter.reset();
     this.footsteps.reset();
+    this.trail.reset();
     this.takeoffX = 0;
     this.lastMark = null;
     this.foulReason = '';
@@ -152,6 +161,10 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected onRelease(): void {}
   /** Every step after the release (flight and landed). */
   protected afterRelease(_dt: number): void {}
+  /** Screen y (px) of the runway surface, where dust puffs start. */
+  protected dustGroundY(): number {
+    return 0;
+  }
   /** Turn the landing point (m from the line) into the recorded mark. */
   protected abstract markFor(landX: number): number;
 
@@ -160,6 +173,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   update(dt: number, input: InputSnapshot): void {
     this.clock += dt;
     this.phaseTimer += dt;
+    this.dust.update(dt);
     // Only the athlete whose turn it is reads keys (both sets for a lone player).
     const keys = keysFor(input, this.current.playerIndex, this.competitors.length === 1);
     const { left, right } = keys;
@@ -225,6 +239,9 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   private moveOnRunway(dt: number): void {
     this.runner.update(dt);
     this.footsteps.update(this.runner, this.sound);
+    if (this.trail.due(this.runner.position, this.runner.speedFraction)) {
+      this.dust.add(this.athleteX - 0.4, this.dustGroundY());
+    }
     if (this.athleteX > 0) this.foul('OVER THE LINE');
   }
 
@@ -246,6 +263,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.lastMark = this.markFor(this.flight.x);
     this.record.record(this.lastMark);
     this.sound.play(this.landCue);
+    this.effects.shake(EFFECTS.SHAKE_LAND);
     if (this.lastMark >= this.qualifyMark) this.sound.play('cheer', 0.8);
     this.enterPhase('landed');
   }

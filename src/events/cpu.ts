@@ -49,6 +49,7 @@ const CPU_DEFS: { name: string; kit: TeamKit; skin: SkinTone; hair: string }[] =
   { name: 'ACE', kit: 'blue', skin: 'medium', hair: PALETTE.INK },
   { name: 'JET', kit: 'green', skin: 'dark', hair: PALETTE.INK },
   { name: 'KAI', kit: 'yellow', skin: 'light', hair: PALETTE.BROWN },
+  { name: 'ZED', kit: 'purple', skin: 'medium', hair: PALETTE.BROWN }, // only in the demo race
 ];
 
 const ALL_KITS: TeamKit[] = ['red', 'blue', 'green', 'yellow', 'purple'];
@@ -57,10 +58,14 @@ const ALL_KITS: TeamKit[] = ['red', 'blue', 'green', 'yellow', 'purple'];
  * The made-up CPU athletes who fill the empty lanes. A CPU whose kit matches
  * a player's team switches to a free colour, so you never race your own kit.
  */
-export function cpuLineup(playerTeams: TeamKit | (TeamKit | undefined)[] = 'red'): { name: string; look: Look }[] {
+export function cpuLineup(
+  playerTeams: TeamKit | (TeamKit | undefined)[] = 'red',
+  count = 3,
+): { name: string; look: Look }[] {
   const taken = new Set<TeamKit>((Array.isArray(playerTeams) ? playerTeams : [playerTeams]).map((t) => t ?? 'red'));
-  const cpuKits = CPU_DEFS.map((d) => d.kit);
-  return CPU_DEFS.map((d) => {
+  const defs = CPU_DEFS.slice(0, count);
+  const cpuKits = defs.map((d) => d.kit);
+  return defs.map((d) => {
     let kit = d.kit;
     if (taken.has(kit)) {
       kit = ALL_KITS.find((k) => !taken.has(k) && !cpuKits.includes(k))!;

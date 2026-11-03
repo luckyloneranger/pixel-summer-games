@@ -203,3 +203,17 @@ export const TOUCH = {
   HIT_SLOP: 4, // px of extra touch area around every button
   SWITCH_GUARD: 1.0, // s after the buttons change (event <-> menu) when new touches are ignored
 };
+
+/** Game-feel effects (screen shake is skipped when "reduce flashing" is on). */
+export const EFFECTS = {
+  DUST_SPEED: 0.85, // fraction of top speed above which feet kick up dust
+  DUST_EVERY: 1.1, // m run between dust puffs
+  DUST_LIFE: 0.4, // s a puff lasts
+  SHAKE_HURDLE: 3, // px, screen shake when you hit a hurdle
+  SHAKE_LAND: 1, // px, small bump on a sand landing or javelin sticking in
+  SHAKE_TIME: 0.25, // s a shake lasts
+  PHOTO_FINISH_GAP: 0.05, // s, top two this close = photo finish
+  PHOTO_FINISH_TIME: 1.5, // s the race freezes for the photo finish
+  DNF_STOP_TIME: 3, // s stopped (after everyone else finished) before "DID NOT FINISH"
+  ATTRACT_DELAY: 8, // s of no input on the title before the demo race starts
+};

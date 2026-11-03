@@ -39,6 +39,10 @@ export class LongJumpEvent extends RunUpFieldEvent {
     this.perfect = this.takeoffX >= -LONG_JUMP.PERFECT_ZONE;
   }
 
+  protected dustGroundY(): number {
+    return GROUND_Y;
+  }
+
   protected markFor(landX: number): number {
     const bonus = this.perfect ? 1 + LONG_JUMP.PERFECT_BONUS : 1;
     return floorCentimetres(Math.max(0, landX * bonus));
@@ -53,6 +57,7 @@ export class LongJumpEvent extends RunUpFieldEvent {
 
     this.stadium.drawStands(r, cameraPx, ANIMATION.CROWD_PARALLAX, this.waveFrame);
     this.drawRunwayAndPit(r, toScreen);
+    this.dust.render(r, toScreen);
 
     const x = toScreen(this.athleteX);
     const flying = this.phase === 'flight' || this.phase === 'landed';

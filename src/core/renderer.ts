@@ -1,5 +1,6 @@
 import { DISPLAY } from '../game/tuning';
 import { GLYPHS, GLYPH_ORDER, GLYPH_SIZE, glyphIndex, textWidth } from '../gfx/font';
+import { PALETTE } from '../gfx/palette';
 
 /** Largest whole-number scale at which a w x h image fits the available space. */
 export function computeScale(availW: number, availH: number, w: number, h: number): number {
@@ -83,10 +84,15 @@ export class Renderer {
     }
   }
 
-  /** Copy the low-resolution frame to the screen. Call once per frame. */
-  present(): void {
+  /** Copy the low-resolution frame to the screen, shifted by whole game pixels for shake. */
+  present(shakeX = 0, shakeY = 0): void {
     this.screenCtx.imageSmoothingEnabled = false;
-    this.screenCtx.drawImage(this.low, 0, 0, this.screen.width, this.screen.height);
+    if (shakeX !== 0 || shakeY !== 0) {
+      this.screenCtx.fillStyle = PALETTE.BLACK;
+      this.screenCtx.fillRect(0, 0, this.screen.width, this.screen.height);
+    }
+    const s = this.scale;
+    this.screenCtx.drawImage(this.low, shakeX * s, shakeY * s, this.screen.width, this.screen.height);
   }
 
   /** The font as one strip image in a colour, built once and then reused. */

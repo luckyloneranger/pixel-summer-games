@@ -24,6 +24,13 @@ export interface SoundSink {
 /** A sink that ignores everything (tests, and before audio is ready). */
 export const SILENT: SoundSink = { play: () => {} };
 
+/** Screen effects an event can ask for (the game may skip them, e.g. reduce shake). */
+export interface EffectsSink {
+  shake(pixels: number): void;
+}
+
+export const NO_EFFECTS: EffectsSink = { shake: () => {} };
+
 /** What an event needs to start. */
 export interface EventContext {
   players: PlayerInfo[];
@@ -35,6 +42,8 @@ export interface EventContext {
   assist?: boolean;
   /** Where sound cues go (silent if not given). */
   sound?: SoundSink;
+  /** Where screen effects go (none if not given). */
+  effects?: EffectsSink;
 }
 
 /** One player's outcome of an event. */
@@ -54,6 +63,8 @@ export interface EventResult {
   attempts?: (number | null)[];
   /** Races only: seconds from GO to the first valid tap. */
   reactionTime?: number;
+  /** Races only: stopped before the line (no mark). */
+  dnf?: boolean;
 }
 
 /** Every event implements this, so the championship code treats them all the same. */

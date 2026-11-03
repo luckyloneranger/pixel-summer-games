@@ -6,6 +6,7 @@ import { PALETTE } from '../gfx/palette';
 import { type MenuItem, drawHeader, drawMenu, moveSelection } from '../ui/widgets';
 import { EventSelectScene } from './event-select';
 import { HighScoresScene } from './high-scores';
+import { HowToPlayScene } from './how-to-play';
 import { OptionsScene } from './options';
 import { PlayerSetupScene } from './player-setup';
 
@@ -14,7 +15,7 @@ const ITEMS: MenuItem[] = [
   { label: 'PRACTICE' },
   { label: 'VERSUS' },
   { label: 'HIGH SCORES' },
-  { label: 'HOW TO PLAY', enabled: false, note: 'PHASE 9' },
+  { label: 'HOW TO PLAY' },
   { label: 'OPTIONS' },
 ];
 
@@ -47,6 +48,9 @@ export class MenuScene implements Scene {
         break;
       case 'HIGH SCORES':
         g.scenes.push(new HighScoresScene(g, { toTitle: false }));
+        break;
+      case 'HOW TO PLAY':
+        g.scenes.push(new HowToPlayScene(g));
         break;
       case 'OPTIONS':
         g.scenes.push(new OptionsScene(g));

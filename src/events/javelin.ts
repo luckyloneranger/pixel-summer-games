@@ -51,6 +51,10 @@ export class JavelinEvent extends RunUpFieldEvent {
     this.runner.update(dt);
   }
 
+  protected dustGroundY(): number {
+    return GROUND_Y;
+  }
+
   protected markFor(landX: number): number {
     this.landingHeading = this.flight.headingDegrees;
     return floorCentimetres(Math.max(0, landX));
@@ -75,6 +79,7 @@ export class JavelinEvent extends RunUpFieldEvent {
 
     this.stadium.drawStands(r, cam.x, ANIMATION.CROWD_PARALLAX, this.waveFrame, cam.y);
     this.drawField(r, at, cam.y);
+    this.dust.render(r, (m) => at(m, 0).sx);
 
     // Athlete, carrying the javelin until it's thrown.
     const athlete = at(this.athleteX, 0);

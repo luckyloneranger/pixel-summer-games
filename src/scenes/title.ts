@@ -2,9 +2,10 @@ import type { Game } from '../core/game';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
-import { TITLE } from '../game/tuning';
+import { EFFECTS, TITLE } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import { MenuScene } from './menu';
+import { AttractScene } from './attract';
 import { blink } from '../ui/widgets';
 
 /** Placeholder title screen. Art and the attract-mode demo come later. */
@@ -13,6 +14,7 @@ export class TitleScene implements Scene {
   readonly isMenu = true;
   readonly music = 'title' as const;
   private time = 0;
+  private idle = 0; // s since the last key press, for the demo race
 
   constructor(private readonly game: Game) {}
 
@@ -22,7 +24,17 @@ export class TitleScene implements Scene {
 
   update(dt: number, input: InputSnapshot): void {
     this.time += dt;
-    if (input.justPressed('CONFIRM')) this.game.scenes.push(new MenuScene(this.game));
+    this.idle += dt;
+    if (input.justPressed('CONFIRM')) {
+      this.idle = 0;
+      this.game.scenes.push(new MenuScene(this.game));
+    } else if (input.justPressed('BACK') || input.justPressed('MENU_UP') || input.justPressed('MENU_DOWN')) {
+      this.idle = 0;
+    } else if (this.idle >= EFFECTS.ATTRACT_DELAY) {
+      // Nobody is playing: show off with a CPU demo race.
+      this.idle = 0;
+      this.game.scenes.push(new AttractScene(this.game));
+    }
   }
 
   render(r: Renderer): void {

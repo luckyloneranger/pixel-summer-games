@@ -104,7 +104,7 @@ export class ResultsScene implements Scene {
       const { y, colour } = this.row(r, res, i, cols[0]);
       r.text(String(res.lane ?? '-'), cols[1] + 8, y, colour, 'center');
       r.text(res.name, cols[2], y, colour);
-      r.text(res.disqualified ? 'DQ' : fmt(res.mark), cols[3], y, colour);
+      r.text(res.disqualified ? 'DQ' : res.dnf ? 'DNF' : fmt(res.mark), cols[3], y, colour);
       r.text(String(res.points), cols[4], y, colour);
     });
   }

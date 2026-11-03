@@ -11,8 +11,8 @@ import { SaveStore } from './storage';
 import { MusicPlayer } from '../audio/music';
 import { playSfx, type SoundName } from '../audio/sfx';
 import { AudioEngine } from '../audio/synth';
-import type { SoundSink } from '../events/event';
-import { AUDIO } from '../game/tuning';
+import type { EffectsSink, SoundSink } from '../events/event';
+import { AUDIO, EFFECTS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import { TouchControls, drawRotateNotice } from '../ui/touch-controls';
 import { buildKeymap } from './keymap';
@@ -32,6 +32,8 @@ export class Game {
   private readonly music: MusicPlayer;
   readonly touch: TouchControls;
   private portrait = false;
+  private shakeLeft = 0; // s of screen shake left
+  private shakePixels = 0;
   private toastText = '';
   private toastTime = 0;
   private readonly clock = new FixedStepClock();
@@ -49,9 +51,10 @@ export class Game {
     this.music = new MusicPlayer(this.audio);
     // Browsers only allow sound after the player interacts, so switch it on then.
     const unlock = () => this.audio.unlock();
-    window.addEventListener('keydown', unlock);
-    window.addEventListener('pointerdown', unlock);
-    window.addEventListener('touchstart', unlock);
+    // iPhone Safari is picky about which gesture may start audio, so try them all.
+    for (const type of ['keydown', 'pointerdown', 'touchstart', 'touchend', 'click']) {
+      window.addEventListener(type, unlock);
+    }
     // Pause events when the tab is hidden or the window loses focus.
     const focusLost = () => this.scenes.top?.onFocusLost?.();
     window.addEventListener('blur', focusLost);
@@ -73,6 +76,15 @@ export class Game {
   sfx(name: SoundName, param = 0): void {
     playSfx(this.audio, name, param);
   }
+
+  /** Screen effects handed to events. Shake is skipped with "reduce flashing" on. */
+  readonly effects: EffectsSink = {
+    shake: (pixels) => {
+      if (this.steady) return;
+      this.shakePixels = Math.max(this.shakePixels, pixels);
+      this.shakeLeft = EFFECTS.SHAKE_TIME;
+    },
+  };
 
   /** Sound output handed to events. */
   readonly sound: SoundSink = { play: (cue, param) => this.sfx(cue, param) };
@@ -120,6 +132,8 @@ export class Game {
     if (this.input.justPressed('DEBUG')) this.debug.visible = !this.debug.visible;
     if (this.input.justPressed('MUTE')) this.toggleMute();
     this.toastTime = Math.max(0, this.toastTime - dt);
+    this.shakeLeft = Math.max(0, this.shakeLeft - dt);
+    if (this.shakeLeft === 0) this.shakePixels = 0;
     // A touch device held upright: pause everything until it's turned sideways.
     const portrait = this.touch.enabled && window.innerHeight > window.innerWidth;
     if (portrait && !this.portrait) this.scenes.top?.onFocusLost?.();
@@ -154,7 +168,15 @@ export class Game {
       this.renderer.text(this.toastText, this.renderer.width - 6, this.renderer.height - 12, PALETTE.YELLOW, 'right');
     }
     if (this.debug.visible) this.debug.render(this.renderer, this.buildDebugLines());
-    this.renderer.present();
+    // Shake: jump the whole picture a pixel or few, fading out.
+    let sx = 0;
+    let sy = 0;
+    if (this.shakeLeft > 0) {
+      const amount = Math.round(this.shakePixels * (this.shakeLeft / EFFECTS.SHAKE_TIME));
+      sx = Math.round((Math.random() * 2 - 1) * amount); // visual only: keep the seeded rng for gameplay
+      sy = Math.round((Math.random() * 2 - 1) * amount);
+    }
+    this.renderer.present(sx, sy);
   }
 
   /** Debug text is rebuilt every frame, but only while the overlay is open. */
