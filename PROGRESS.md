@@ -19,6 +19,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 10+ – More events | – |
 | 11a – Online: server, lobby, races | ✅ Approved (room server live on Cloudflare) |
 | 11b – Online: field events, reconnect | ✅ Approved |
+| 12 – A more fun title screen | 🔍 Ready for review |
 
 ## Phase 0 – Setup and skeleton
 
@@ -272,4 +273,22 @@ All of Phases 0–9 are approved. The game is live at https://luckyloneranger.gi
 - If a whole attempt's run-up happens while you're disconnected, you'll see the jump replayed from the take-off when you're back, not the run-up.
 - Reloading the page mid-match counts as leaving: the reconnect only covers network drops.
 
-**Next:** a more fun title screen (plan given, waiting for the OK).
+**Next:** Phase 12 – a more fun title screen.
+
+## Phase 12 – A more fun title screen
+
+**Done**
+- New title screen (`src/scenes/title.ts`): a night-time stadium with floodlight towers and sweeping beams, twinkling stars, and a Mexican wave rolling along the crowd every few seconds.
+- The logo sits on a scoreboard panel with chasing bulbs. It drops in and bounces, throws confetti when it lands, and a shine sweeps across the letters every few seconds.
+- Four background acts take turns on the track: a three-way sprint, a long jump into the sand, a javelin throw that sticks in the ground, and a high jumper flopping over the bar onto the mat. All four play before the demo race starts.
+- "PRESS START" cycles colours, with arrows nudging in. Enter fires the starting pistol with a quick white flash, then opens the menu.
+- A ticker along the bottom shows the top championship score, your personal bests (or a nudge to set one) and tips.
+- With "reduce flashing" on, the shine, flash, sweeping beams, bulb chase and twinkle all stay still, and Enter goes straight to the menu.
+- The demo race now starts after 15 s of no input (was 8 s).
+- Title logic is kept apart from drawing (`src/game/title-show.ts` for the logic, `src/gfx/title-art.ts` for the drawing). Every timing and speed is in `TITLE` in `tuning.ts`.
+- 258 unit tests. The new ones cover the logo drop and bounce, the shine, the wave, the confetti, all four acts fitting before the demo, each act's motion (the javelin lands, the high jumper clears the bar), and the ticker text and scrolling.
+
+**Known issues / notes**
+- Title music is unchanged, as agreed.
+
+**Next:** waiting for approval.

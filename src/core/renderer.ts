@@ -60,6 +60,11 @@ export class Renderer {
     this.ctx.drawImage(img, Math.round(x), Math.round(y));
   }
 
+  /** Draw part of an image: the w x h area at (sx, sy) of `img`, placed at (x, y). */
+  imagePart(img: HTMLCanvasElement, sx: number, sy: number, w: number, h: number, x: number, y: number): void {
+    this.ctx.drawImage(img, sx, sy, w, h, Math.round(x), Math.round(y), w, h);
+  }
+
   /** Draw a 1px line (used for the javelin at any angle). */
   line(x1: number, y1: number, x2: number, y2: number, colour: string): void {
     const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1), 1);

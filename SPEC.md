@@ -193,7 +193,7 @@ then:    points = clamp(round(points), 0, 1200)
 
 A qualified event loops back to the next intro card. A missed mark goes straight to Game over.
 
-1. **Title** with "PRESS START" and attract-mode demo (nice to have).
+1. **Title**: a night-time stadium with floodlights, twinkling stars and a Mexican wave in the crowd; the logo drops in on a scoreboard panel with a bounce and confetti, and a shine crosses it now and then; athletes show off each event in turn on the track (sprint, long jump, javelin, high jump); a ticker along the bottom shows the top score, your personal bests and tips. "PRESS START" cycles colours; Enter fires the starting pistol with a quick white flash, then opens the menu. With "reduce flashing" on, the shine, flash, sweeping lights and twinkle stay still. After 15 s with no input the attract-mode demo race starts.
 2. **Main menu:** Championship, Practice, Versus, High Scores, How to Play, Options.
 3. **Player setup:** initials, team colour, difficulty.
 4. **Event intro card:** event name, qualifying mark, controls hint.

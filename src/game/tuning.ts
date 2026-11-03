@@ -14,7 +14,24 @@ export const LOOP = {
 
 /** Title screen. */
 export const TITLE = {
-  BLINK_PERIOD: 1.0, // s, one full on/off cycle of "PRESS START"
+  BLINK_PERIOD: 1.0, // s, one full colour cycle of "PRESS START"
+  LOGO_DROP_TIME: 0.9, // s for the logo to fall in and settle (with bounces)
+  LOGO_DROP_FROM: 90, // px above its resting place that the logo starts
+  SHINE_EVERY: 4, // s between shines sweeping across the logo
+  SHINE_TIME: 0.6, // s for one shine to cross the logo
+  CONFETTI_COUNT: 48, // pieces thrown when the logo lands
+  CONFETTI_FALL: 40, // px/s² that confetti speeds up as it falls
+  CONFETTI_DRIFT: 30, // px/s, largest sideways speed of a confetti piece
+  WAVE_PERIOD: 6, // s between Mexican waves in the crowd
+  WAVE_SPEED: 160, // px/s the wave travels along the stands
+  WAVE_WIDTH: 24, // px of crowd standing up at once
+  FLOODLIGHT_SWING: 0.35, // radians the floodlight beams swing either side
+  FLOODLIGHT_PERIOD: 5, // s for one full swing of the beams
+  STAR_TWINKLE: 1.3, // s for one star twinkle cycle
+  ACT_TIME: 3.6, // s each background act lasts (all four fit before the demo race starts)
+  RUN_SPEED: 110, // px/s, how fast the background athletes run
+  TICKER_SPEED: 30, // px/s the bottom ticker scrolls
+  FLASH_TIME: 0.18, // s of white flash (and starting pistol) before the menu opens
 };
 
 /** Debug overlay. */
@@ -217,7 +234,7 @@ export const EFFECTS = {
   PHOTO_FINISH_GAP: 0.05, // s, top two this close = photo finish
   PHOTO_FINISH_TIME: 1.5, // s the race freezes for the photo finish
   DNF_STOP_TIME: 3, // s stopped (after everyone else finished) before "DID NOT FINISH"
-  ATTRACT_DELAY: 8, // s of no input on the title before the demo race starts
+  ATTRACT_DELAY: 15, // s of no input on the title before the demo race starts
 };
 
 /** High jump. */

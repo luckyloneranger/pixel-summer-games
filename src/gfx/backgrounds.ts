@@ -94,6 +94,21 @@ export class Stadium {
     r.rect(0, grassTop, r.width, r.height - grassTop, PALETTE.GREEN);
   }
 
+  /**
+   * Stand up the part of the crowd between x0 and x1 (px), over a crowd already
+   * drawn with no camera scroll (the title screen's Mexican wave).
+   */
+  drawWaveStrip(r: Renderer, x0: number, x1: number): void {
+    const up = this.crowd()[1];
+    const h = LAYOUT.WALL_TOP - LAYOUT.STAND_TOP;
+    for (let x = Math.max(0, Math.floor(x0)); x < Math.min(r.width, x1); ) {
+      const tileX = x % CROWD_TILE_W;
+      const w = Math.min(CROWD_TILE_W - tileX, Math.ceil(x1) - x);
+      r.imagePart(up, tileX, 0, w, h, x, LAYOUT.STAND_TOP);
+      x += w;
+    }
+  }
+
   private crowd(): HTMLCanvasElement[] {
     if (!this.crowdFrames) {
       const fans = layoutCrowd();
