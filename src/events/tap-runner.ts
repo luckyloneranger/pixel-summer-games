@@ -33,13 +33,16 @@ export class TapRunner {
     this.tapTimes.length = 0;
   }
 
-  /** Register a run-key press. Returns true if it was a valid (alternating) tap. */
-  tap(key: RunKey): boolean {
+  /**
+   * Register a run-key press. Returns true if it was a valid (alternating) tap.
+   * With `gain` false (e.g. in the air) the tap keeps your rhythm but adds no speed.
+   */
+  tap(key: RunKey, gain = true): boolean {
     if (key === this.lastKey) return false;
     this.lastKey = key;
     this.taps++;
     this.tapTimes.push(this.time);
-    if (this.canAccelerate) {
+    if (gain && this.canAccelerate) {
       this.speed += this.cfg.TAP_IMPULSE * (1 - this.speed / this.cfg.AIM_SPEED);
       this.speed = Math.min(this.speed, this.cfg.MAX_SPEED);
     }
@@ -80,9 +83,9 @@ export class TapRunner {
  * pressed in the same instant, only the one the runner needs next counts,
  * so pressing both together isn't a shortcut.
  */
-export function applyRunPresses(runner: TapRunner, left: boolean, right: boolean): boolean {
-  if (left && right) return runner.tap(runner.nextKey ?? 'left');
-  if (left) return runner.tap('left');
-  if (right) return runner.tap('right');
+export function applyRunPresses(runner: TapRunner, left: boolean, right: boolean, gain = true): boolean {
+  if (left && right) return runner.tap(runner.nextKey ?? 'left', gain);
+  if (left) return runner.tap('left', gain);
+  if (right) return runner.tap('right', gain);
   return false;
 }

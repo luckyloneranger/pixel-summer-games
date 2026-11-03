@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Rng } from '../src/core/rng';
 import { Dash100Event, PLAYER_LANE, roundHundredths } from '../src/events/dash100';
 import type { Difficulty } from '../src/events/event';
-import { DASH100 } from '../src/game/tuning';
+import { RACE_START } from '../src/game/tuning';
 import { NOTHING, STEP, pressed } from './helpers';
 
 function newRace(seed = 1, difficulty: Difficulty = 'normal'): Dash100Event {
@@ -41,9 +41,9 @@ describe('100 m start sequence', () => {
     for (const seed of [1, 2, 3, 4, 5]) {
       const e = newRace(seed);
       expect(e.phase).toBe('marks');
-      const wait = waitForGo(e) - DASH100.MARKS_TIME;
-      expect(wait).toBeGreaterThanOrEqual(DASH100.SET_WAIT_MIN - STEP);
-      expect(wait).toBeLessThanOrEqual(DASH100.SET_WAIT_MAX + 2 * STEP);
+      const wait = waitForGo(e) - RACE_START.MARKS_TIME;
+      expect(wait).toBeGreaterThanOrEqual(RACE_START.SET_WAIT_MIN - STEP);
+      expect(wait).toBeLessThanOrEqual(RACE_START.SET_WAIT_MAX + 2 * STEP);
     }
   });
 
@@ -65,7 +65,7 @@ describe('false starts', () => {
     e.update(STEP, pressed('P1_LEFT'));
     expect(e.phase).toBe('falseStart');
     expect(e.falseStarts).toBe(1);
-    waitSeconds(e, DASH100.FALSE_START_TEXT_TIME);
+    waitSeconds(e, RACE_START.FALSE_START_TEXT_TIME);
     expect(e.phase).toBe('marks');
     for (const lane of e.lanes) expect(lane.runner.position).toBe(0);
   });
@@ -73,8 +73,8 @@ describe('false starts', () => {
   it('a second false start disqualifies; the CPUs still race', () => {
     const e = newRace();
     e.update(STEP, pressed('P1_RIGHT'));
-    waitSeconds(e, DASH100.FALSE_START_TEXT_TIME);
-    waitSeconds(e, DASH100.MARKS_TIME);
+    waitSeconds(e, RACE_START.FALSE_START_TEXT_TIME);
+    waitSeconds(e, RACE_START.MARKS_TIME);
     expect(e.phase).toBe('set');
     e.update(STEP, pressed('P2_LEFT'));
     expect(e.phase).toBe('disqualified');

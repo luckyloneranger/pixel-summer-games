@@ -4,6 +4,7 @@ import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import { Dash100Event } from '../events/dash100';
 import type { AthleticsEvent } from '../events/event';
+import { Hurdles110Event } from '../events/hurdles110';
 import { JavelinEvent } from '../events/javelin';
 import { LongJumpEvent } from '../events/long-jump';
 import type { Difficulty } from '../events/event';
@@ -16,6 +17,7 @@ const EVENTS: { label: string; create: () => AthleticsEvent }[] = [
   { label: '100 M DASH', create: () => new Dash100Event() },
   { label: 'LONG JUMP', create: () => new LongJumpEvent() },
   { label: 'JAVELIN', create: () => new JavelinEvent() },
+  { label: '110 M HURDLES', create: () => new Hurdles110Event() },
 ];
 /** One row per event, then the difficulty row. */
 const ROW_COUNT = EVENTS.length + 1;
@@ -56,7 +58,7 @@ export class MenuScene implements Scene {
 
     const labels = [...EVENTS.map((e) => e.label), `DIFFICULTY < ${this.game.settings.difficulty} >`];
     labels.forEach((label, i) => {
-      const y = 74 + i * 13;
+      const y = 72 + i * 12;
       const selected = i === this.row;
       if (selected) r.text('>', 64, y, PALETTE.YELLOW);
       r.text(label, 80, y, selected ? PALETTE.WHITE : PALETTE.GREY_LIGHT);

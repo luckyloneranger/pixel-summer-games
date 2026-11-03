@@ -135,6 +135,7 @@ Each event shows an intro card first: event name, qualifying mark and a one-line
 
 - 10 hurdles at the real spacing: first hurdle at 13.72 m, then one every 9.14 m, last hurdle 14.02 m from the finish.
 - Tap Action to jump. The jump arc lasts about 0.45 s.
+- Run-key presses in the air (or while stumbling after running into a hurdle) add no speed, but they still count for left/right alternation, so you don't lose your rhythm on landing. Decided in Phase 5.
 - Hitting a hurdle (jumping too early, too late, or not at all) knocks it over, plays a clank and cuts speed by 40%. Running straight into one cuts more. A knocked hurdle never disqualifies you.
 - Same start sequence, false-start rule and CPU runners as the 100 m.
 

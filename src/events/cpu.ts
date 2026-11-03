@@ -28,9 +28,16 @@ export class CpuTapper {
     return new CpuTapper(rate, rng.range(CPU.REACTION_MIN, CPU.REACTION_MAX));
   }
 
-  /** Call once per step while racing; `sinceGo` is the time at the end of this step. */
-  update(runner: TapRunner, sinceGo: number): boolean {
+  /**
+   * Call once per step while racing; `sinceGo` is the time at the end of this
+   * step. When `canTap` is false (in the air) a due tap is skipped, not saved up.
+   */
+  update(runner: TapRunner, sinceGo: number, canTap = true): boolean {
     if (sinceGo < this.nextTapAt) return false;
+    if (!canTap) {
+      this.nextTapAt += 1 / this.tapRate;
+      return false;
+    }
     runner.tap(this.nextKey);
     this.nextKey = this.nextKey === 'left' ? 'right' : 'left';
     this.nextTapAt += 1 / this.tapRate;

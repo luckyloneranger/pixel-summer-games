@@ -38,15 +38,19 @@ export const RUNNER = {
   TAP_RATE_WINDOW: 1, // s, window used to measure taps per second (debug/HUD)
 };
 
-/** 100 m dash. */
-export const DASH100 = {
-  DISTANCE: 100, // m
+/** Start sequence and false starts, shared by every race. */
+export const RACE_START = {
   MARKS_TIME: 1.5, // s, "ON YOUR MARKS" shown before "SET"
   SET_WAIT_MIN: 1.0, // s, shortest random wait between SET and GO
   SET_WAIT_MAX: 2.5, // s, longest random wait between SET and GO
   GO_TEXT_TIME: 0.8, // s, how long "GO!" stays on screen
   FALSE_START_TEXT_TIME: 2.0, // s, "FALSE START" shown before the restart
   FALSE_STARTS_TO_DQ: 2, // false starts by one player that disqualify them
+};
+
+/** 100 m dash. */
+export const DASH100 = {
+  DISTANCE: 100, // m
   PIXELS_PER_METER: 12, // px per m when drawing the track
   CAMERA_LEAD: 80, // px, runner's distance from the screen's left edge (shows the track ahead)
 };
@@ -114,4 +118,24 @@ export const JAVELIN = {
   PIXELS_PER_METER: 8, // px per m when drawing (shows about 40 m of field)
   CAMERA_LEAD: 100, // px, followed object's distance from the left edge of the screen
   CAMERA_RISE_START: 80, // px above the ground before the camera starts rising with the javelin
+};
+
+/** 110 m hurdles. */
+export const HURDLES = {
+  DISTANCE: 110, // m
+  FIRST_HURDLE: 13.72, // m from the start
+  SPACING: 9.14, // m between hurdles
+  COUNT: 10, // hurdles per lane (last one is 14.02 m from the finish)
+  JUMP_TIME: 0.45, // s in the air per jump
+  JUMP_HEIGHT: 1.2, // m, height of the feet at the top of the jump (hurdle is 1.07 m)
+  CLEAR_FROM: 0.2, // fraction of the jump: the hurdle must pass under you after this...
+  CLEAR_TO: 0.8, // ...and before this, or you clip it
+  HIT_SPEED_LOSS: 0.4, // fraction of speed lost when you clip a hurdle
+  CRASH_SPEED_LOSS: 0.7, // fraction of speed lost running straight into one
+  STUMBLE_TIME: 0.4, // s of stumbling after a crash
+  HIT_TEXT_TIME: 0.6, // s the "HIT!" label shows over the athlete
+  QUALIFY: 15.5, // s, qualifying time on Normal
+  CPU_HIT_CHANCE: { easy: 0.25, normal: 0.12, hard: 0.05 }, // chance a CPU clips each hurdle
+  PIXELS_PER_METER: 12, // px per m when drawing the track
+  CAMERA_LEAD: 80, // px, runner's distance from the left edge of the screen
 };

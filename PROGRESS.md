@@ -8,9 +8,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 1 – 100 m with plain boxes | ✅ Approved |
 | 2 – 100 m art and CPU runners | ✅ Approved |
 | 3 – Long jump | ✅ Approved |
-| 4 – Javelin | ✅ Done, awaiting play-test |
-| 5 – 110 m hurdles | ⏳ Next |
-| 6 – Game flow | – |
+| 4 – Javelin | ✅ Approved |
+| 5 – 110 m hurdles | ✅ Done, awaiting play-test |
+| 6 – Game flow | ⏳ Next |
 | 7 – Audio | – |
 | 8 – Two players, touch and options | – |
 | 9 – Polish and launch | – |
@@ -104,4 +104,21 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 - A very weak throw that lands behind the foul line scores 0.00 rather than counting as a foul (the spec doesn't say which).
 - Distance lines on the grass go out to 110 m.
 
-**Next:** Phase 5 – 110 m hurdles.
+## Phase 5 – 110 m hurdles
+
+**Done**
+- Shared race base `src/events/race-event.ts` (start sequence, false starts, lanes, CPUs, finish, results, drawing). The 100 m now uses it; its tests changed only to use the renamed `RACE_START` tuning group.
+- 110 m hurdles (`src/events/hurdles110.ts`): 10 hurdles per lane at 13.72 m + 9.14 m spacing (last 14.02 m from the finish). Tap W/Space to jump (0.45 s arc).
+- A hurdle passing under the middle 60% of the jump is cleared. Too early or late clips it (knocked down, −40% speed, "HIT!"). No jump crashes into it (−70% speed and a 0.4 s stumble). Never a disqualification.
+- Taps in the air or while stumbling add no speed but keep your left/right rhythm (recorded in SPEC section 5).
+- CPU hurdlers jump each hurdle and clip some (Easy 25%, Normal 12%, Hard 5% per hurdle); they skip taps in the air instead of saving them up.
+- Hurdle and knocked-hurdle drawings (`src/gfx/sprites/props.ts`), stumble sprite frame.
+- 117 unit tests (adds hurdle layout, clear/hit/crash rules, clean 10 taps/s run ≈ 12.9 s, hits costing time, CPU hit rates by difficulty, false starts).
+
+**Measured times** (test simulation, perfect jumps): 10 taps/s ≈ 12.9 s, 8.5 taps/s ≈ 14.1 s, ~6.7 taps/s ≈ 16.4 s. Hitting all 10 hurdles adds 6–9 s.
+
+**Known issues / notes**
+- Screen shake on a hit and the clank sound come in Phases 9 and 7.
+- An average tapper (about 7 taps/s) needs clean jumps to get near the 15.50 s qualifying mark.
+
+**Next:** Phase 6 – Game flow (menus, championship, scoring, high scores, pause).
