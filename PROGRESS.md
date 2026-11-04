@@ -19,9 +19,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 10+ – More events | – |
 | 11a – Online: server, lobby, races | ✅ Approved (room server live on Cloudflare) |
 | 11b – Online: field events, reconnect | ✅ Approved |
-| 12 – A more fun title screen | 🔍 Ready for review |
-| 12b – Hints that match the device | 🔍 Ready for review |
-| 13 – Graphics quality (13a–13d) | 🔍 Ready for review |
+| 12 – A more fun title screen | ✅ Approved |
+| 12b – Hints that match the device | ✅ Approved |
+| 13 – Graphics quality (13a–13d) | ✅ Approved |
 
 ## Phase 0 – Setup and skeleton
 
@@ -358,4 +358,4 @@ Built in one go at the user's request, instead of one sub-phase at a time.
 - Athletes stay 16×24 rather than the 24×32 first suggested. Four runners share 14-pixel lanes, so taller sprites would overlap the wall and each other, and every event would need re-laying out. The outlines, shading and extra frames give most of the gain.
 - The highlight zoom isn't pixel-perfect (it's a 1.25× enlargement for about a second). That's deliberate: it reads as a camera move.
 
-**Next:** waiting for approval.
+**Next:** to be chosen with the user.
