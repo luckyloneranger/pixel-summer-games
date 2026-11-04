@@ -100,6 +100,14 @@ export class Prompts {
         return `RUN ${run}  HOLD ${act}, THEN LET GO`;
       case 'hurdles110':
         return `RUN ${run}  TAP ${act} TO JUMP`;
+      case 'tripleJump':
+        return `JUMP, THEN TAP ${act} AS YOU LAND`;
+      case 'poleVault':
+        return `RUN ${run}  HOLD ${act}, LET GO`;
+      case 'hammer':
+        return `SPIN ${run}  ${act} IN THE GREEN`;
+      case 'swim50':
+        return this.touch ? 'TAP ← AND → TO SWIM' : `ALTERNATE ${run} TO SWIM`;
     }
   }
 

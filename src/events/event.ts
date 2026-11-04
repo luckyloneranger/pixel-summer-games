@@ -5,7 +5,7 @@ import type { TeamKit } from '../gfx/sprites/athlete';
 import type { GameMessage } from '../net/protocol';
 import type { Prompts } from '../ui/prompts';
 
-export type EventId = 'dash100' | 'longJump' | 'highJump' | 'javelin' | 'hurdles110';
+export type EventId = 'dash100' | 'longJump' | 'highJump' | 'javelin' | 'hurdles110' | 'tripleJump' | 'poleVault' | 'hammer' | 'swim50';
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface PlayerInfo {

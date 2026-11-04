@@ -127,7 +127,7 @@ export class ResultsScene implements Scene {
   render(r: Renderer): void {
     r.clear(PALETTE.NIGHT);
     drawHeader(r, EVENT_NAMES[this.eventId]);
-    if (this.eventId === 'highJump') this.drawHeightTable(r);
+    if (this.eventId === 'highJump' || this.eventId === 'poleVault') this.drawHeightTable(r);
     else if (EVENT_KIND[this.eventId] === 'field') this.drawFieldTable(r);
     else this.drawRaceTable(r);
     this.drawFooter(r);

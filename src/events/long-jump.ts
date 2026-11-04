@@ -4,7 +4,8 @@ import { PALETTE } from '../gfx/palette';
 import { ATHLETE_H, ATHLETE_W, type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { floorCentimetres } from './field-attempts';
-import { RunUpFieldEvent } from './run-up-event';
+import { RunUpFieldEvent, type RunUpConfig } from './run-up-event';
+import type { Difficulty, EventId } from './event';
 import { drawGroundShadow, drawSpeedLines } from '../gfx/effects';
 
 export type { FieldPhase as JumpPhase } from './run-up-event';
@@ -14,15 +15,25 @@ export type { FieldPhase as JumpPhase } from './run-up-event';
  * release to take off. The athlete is the projectile.
  */
 export class LongJumpEvent extends RunUpFieldEvent {
-  readonly id = 'longJump';
-  readonly name = 'LONG JUMP';
+  readonly id: EventId = 'longJump';
+  readonly name: string = 'LONG JUMP';
   protected readonly releaseCue = 'jump';
   protected readonly landCue = 'sand';
   /** True when the current jump took off within the perfect zone. */
   perfect = false;
 
-  constructor() {
-    super(LONG_JUMP, CPU_FIELD.LONG_JUMP);
+  constructor(
+    cfg: RunUpConfig = LONG_JUMP,
+    cpuRange: Record<Difficulty, readonly number[]> = CPU_FIELD.LONG_JUMP,
+    /** Where the sand is (m past the board), and whether the runway goes all the way to it. */
+    protected readonly pit = { start: LONG_JUMP.PIT_START, end: LONG_JUMP.PIT_END, runwayToPit: false },
+  ) {
+    super(cfg, cpuRange);
+  }
+
+  /** A word above the athlete in the air (the triple jump's HOP / STEP / JUMP). */
+  protected flightNote(): string {
+    return '';
   }
 
   protected startAttempt(): void {
@@ -69,7 +80,10 @@ export class LongJumpEvent extends RunUpFieldEvent {
     const flying = this.phase === 'flight' || this.phase === 'landed';
     const lift = flying ? Math.round(this.flight.y * ppm) : 0;
     const top = GROUND_Y - ATHLETE_H + 1 - lift;
-    drawGroundShadow(r, x, GROUND_Y, lift, this.athleteX > 0 ? PALETTE.GOLD : PALETTE.ORANGE_DARK);
+    const inPit = this.athleteX >= this.pit.start && this.athleteX <= this.pit.end;
+    drawGroundShadow(r, x, GROUND_Y, lift, inPit ? PALETTE.GOLD : PALETTE.ORANGE_DARK);
+    const note = this.phase === 'flight' ? this.flightNote() : '';
+    if (note) r.text(note, x, top - 10, PALETTE.YELLOW, 'center');
     if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x - ATHLETE_W / 2, top, this.runner.speedFraction, this.clock);
     r.image(this.athleteSprites().get(this.pose()), x - ATHLETE_W / 2, top);
 
@@ -97,15 +111,15 @@ export class LongJumpEvent extends RunUpFieldEvent {
     r.rect(startX, RUNWAY_TOP + RUNWAY_H - 1, r.width, 1, PALETTE.WHITE);
 
     // Sand pit with a darker rim and a few speckles.
-    const pitL = toScreen(LONG_JUMP.PIT_START);
-    const pitR = toScreen(LONG_JUMP.PIT_END);
+    const pitL = toScreen(this.pit.start);
+    const pitR = toScreen(this.pit.end);
     r.rect(pitL - 1, PIT_TOP - 1, pitR - pitL + 2, PIT_H + 2, PALETTE.BROWN);
     r.rect(pitL, PIT_TOP, pitR - pitL, PIT_H, PALETTE.GOLD);
-    for (let m = LONG_JUMP.PIT_START; m < LONG_JUMP.PIT_END; m += 0.5) {
+    for (let m = this.pit.start; m < this.pit.end; m += 0.5) {
       r.rect(toScreen(m) + 3, PIT_TOP + 4 + ((m * 2) % 3) * 5, 1, 1, PALETTE.YELLOW);
     }
-    // Grass between the board and the pit.
-    r.rect(toScreen(0), RUNWAY_TOP, pitL - toScreen(0), RUNWAY_H, PALETTE.GREEN);
+    // Grass between the board and the pit (the triple jump's runway carries on to it).
+    if (!this.pit.runwayToPit) r.rect(toScreen(0), RUNWAY_TOP, pitL - toScreen(0), RUNWAY_H, PALETTE.GREEN);
 
     // Take-off board (white) with the foul line at its front edge.
     const boardW = LONG_JUMP.PERFECT_ZONE * LONG_JUMP.PIXELS_PER_METER;
@@ -119,10 +133,10 @@ export class LongJumpEvent extends RunUpFieldEvent {
       r.rect(sx - 9, RUNWAY_TOP - 12, 18, 9, PALETTE.WHITE);
       r.text(String(m), sx, RUNWAY_TOP - 11, PALETTE.INK, 'center');
     }
-    for (let m = Math.ceil(LONG_JUMP.PIT_START + 1); m < LONG_JUMP.PIT_END; m++) {
+    for (let m = Math.ceil(this.pit.start + 1); m < this.pit.end; m++) {
       const sx = toScreen(m);
       r.rect(sx, PIT_TOP + PIT_H + 1, 1, 3, PALETTE.WHITE);
-      r.text(String(m), sx, PIT_TOP + PIT_H + 5, PALETTE.WHITE, 'center');
+      if (m < 10 || m % 2 === 0) r.text(String(m), sx, PIT_TOP + PIT_H + 5, PALETTE.WHITE, 'center'); // two-digit labels need room
     }
   }
 

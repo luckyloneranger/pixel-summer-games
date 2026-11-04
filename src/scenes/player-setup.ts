@@ -4,7 +4,7 @@ import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import type { Difficulty, EventId } from '../events/event';
 import { playerLook } from '../events/cpu';
-import { CHAMPIONSHIP_EVENTS } from '../game/championship';
+import { ALL_EVENTS, CHAMPIONSHIP_EVENTS } from '../game/championship';
 import { EVENT_NAMES } from '../game/scoring';
 import { Session } from '../game/session';
 import { PALETTE } from '../gfx/palette';
@@ -14,7 +14,7 @@ import { EventIntroScene } from './event-intro';
 
 const TEAMS = Object.keys(TEAM_KITS) as TeamKit[];
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
-const VERSUS_EVENTS: (EventId | 'all')[] = ['all', ...CHAMPIONSHIP_EVENTS];
+const VERSUS_EVENTS: (EventId | 'all')[] = ['all', ...ALL_EVENTS];
 
 type Row = 'PLAYERS' | 'P1 NAME' | 'P1 TEAM' | 'P2 NAME' | 'P2 TEAM' | 'EVENTS' | 'DIFFICULTY' | 'START';
 

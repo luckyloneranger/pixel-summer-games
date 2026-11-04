@@ -9,7 +9,7 @@ import { RUN_CYCLE } from '../gfx/sprites/athlete';
 import { PALETTE } from '../gfx/palette';
 import type { HighScore, PersonalBests } from './records';
 import { EVENT_KIND, EVENT_NAMES } from './scoring';
-import { CHAMPIONSHIP_EVENTS } from './championship';
+import { ALL_EVENTS } from './championship';
 import { TITLE } from './tuning';
 
 // ------------------------------------------------------------------ logo
@@ -237,7 +237,7 @@ const TIPS = [
 export function tickerText(bests: PersonalBests, top: HighScore | undefined): string {
   const parts: string[] = [];
   if (top) parts.push(`TOP SCORE ${top.score} BY ${top.initials}`);
-  const yours = CHAMPIONSHIP_EVENTS.filter((id): id is EventId => bests[id] !== undefined).map((id) => {
+  const yours = ALL_EVENTS.filter((id): id is EventId => bests[id] !== undefined).map((id) => {
     const unit = EVENT_KIND[id] === 'race' ? 'S' : 'M';
     return `${EVENT_NAMES[id]} ${bests[id]!.toFixed(2)} ${unit}`;
   });

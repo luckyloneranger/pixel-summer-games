@@ -2,7 +2,7 @@ import type { Game } from '../core/game';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
-import { ALL_EVENTS, CHAMPIONSHIP_EVENTS } from '../game/championship';
+import { ALL_EVENTS } from '../game/championship';
 import type { EventId } from '../events/event';
 import type { HighScore } from '../game/records';
 import { fetchBoard, onBoard } from '../net/leaderboard';
@@ -11,6 +11,19 @@ import { EVENT_NAMES, formatMark } from '../game/scoring';
 import { RECORDS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import { drawHeader, leftRight, moveSelection } from '../ui/widgets';
+
+/** Short event names, so a name and a mark fit on one line of the right column. */
+const SHORT_NAMES: Record<EventId, string> = {
+  dash100: '100 M',
+  longJump: 'LONG J',
+  highJump: 'HIGH J',
+  javelin: 'JAVELIN',
+  hurdles110: 'HURDLES',
+  tripleJump: 'TRIPLE',
+  poleVault: 'POLE V',
+  hammer: 'HAMMER',
+  swim50: 'SWIM 50',
+};
 
 /** The two tables kept in this browser. */
 export type ScoreTable = 'championship' | 'versus';
@@ -68,10 +81,10 @@ export class HighScoresScene implements Scene {
     else this.drawTable(r, rows, highlight, flash);
     // Right: personal bests per event.
     r.text('YOUR BESTS', 168, 30, PALETTE.GREY);
-    CHAMPIONSHIP_EVENTS.forEach((id, i) => {
-      const y = 42 + i * 21;
-      r.text(EVENT_NAMES[id], 168, y, PALETTE.GREY_LIGHT);
-      r.text(formatMark(id, data.personalBests[id] ?? null), 176, y + 10, PALETTE.YELLOW);
+    ALL_EVENTS.forEach((id, i) => {
+      const y = 42 + i * 12;
+      r.text(SHORT_NAMES[id], 168, y, PALETTE.GREY_LIGHT);
+      r.text(formatMark(id, data.personalBests[id] ?? null), 316, y, PALETTE.YELLOW, 'right');
     });
 
     if (!this.game.store.persistent) r.text('(SAVING IS OFF)', 304, 156, PALETTE.RED, 'right');

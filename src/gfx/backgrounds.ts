@@ -74,6 +74,10 @@ export const STADIUM_THEMES: Record<EventId, StadiumTheme> = {
   hurdles110: 'sunset',
   javelin: 'sunset',
   highJump: 'night',
+  tripleJump: 'day',
+  poleVault: 'night',
+  hammer: 'sunset',
+  swim50: 'day',
 };
 
 const SKY_PARALLAX = 0.05; // the sky scrolls this much slower than the track

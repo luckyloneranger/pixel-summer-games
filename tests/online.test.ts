@@ -99,6 +99,13 @@ describe('online races stay in sync', () => {
     });
   }
 
+  it('50 m freestyle with 100 ms of lag: both games agree', () => {
+    const { host, guest, link } = startPair(() => new Swim50Event(), 6);
+    runBoth(host, guest, link);
+    expect(host.isFinished() && guest.isFinished()).toBe(true);
+    expect(summary(guest.getResults())).toEqual(summary(host.getResults()));
+  });
+
   it("the guest only moves the guest's runner", () => {
     const { host, guest, link } = startPair(() => new Dash100Event(), 2);
     for (let i = 0; i < 600 && host.phase !== 'running'; i++) {
@@ -365,6 +372,9 @@ describe('RoomConnection', () => {
 import { LongJumpEvent } from '../src/events/long-jump';
 import { JavelinEvent } from '../src/events/javelin';
 import { HighJumpEvent } from '../src/events/high-jump';
+import { TripleJumpEvent } from '../src/events/triple-jump';
+import { PoleVaultEvent } from '../src/events/pole-vault';
+import { Swim50Event } from '../src/events/swim50';
 import type { RunUpFieldEvent } from '../src/events/run-up-event';
 
 /**
@@ -386,6 +396,8 @@ function fieldPlayer(g: RunUpFieldEvent, releaseAt: number, hold: number) {
       }
       return pressed('P1_ACTION');
     }
+    // In the air: keep tapping Action (the triple jump's contacts; nothing for the others).
+    if (g.phase === 'flight') return i % 2 === 0 ? pressed('P1_ACTION') : NOTHING;
     if (g.phase === 'hold') {
       held++;
       return held < hold + (n % 3) * 2 ? pressed('P1_ACTION') : NOTHING;
@@ -417,6 +429,8 @@ describe('online field events stay in sync', () => {
     ['long jump', () => new LongJumpEvent(), -6, 16],
     ['javelin', () => new JavelinEvent(), -8, 26],
     ['high jump', () => new HighJumpEvent(), -7.4, 32],
+    ['triple jump', () => new TripleJumpEvent(), -6, 16],
+    ['pole vault', () => new PoleVaultEvent(), -10.5, 46],
   ];
   for (const [name, make, releaseAt, hold] of events) {
     for (const lag of [0, 6, 40]) {
@@ -427,7 +441,7 @@ describe('online field events stay in sync', () => {
         expect(fieldSummary(guest.getResults())).toEqual(fieldSummary(host.getResults()));
         const ann = host.getResults().find((r) => r.name === 'ANN')!;
         expect(ann.attempts!.some((m) => m !== null)).toBe(true);
-        if (name !== 'high jump') expect(ann.attempts![1]).toBeNull(); // the planned foul
+        if (name !== 'high jump' && name !== 'pole vault') expect(ann.attempts![1]).toBeNull(); // the planned foul
       });
     }
   }

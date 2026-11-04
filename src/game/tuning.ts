@@ -127,6 +127,77 @@ export const CPU_FIELD = {
   LONG_JUMP: { easy: [6.0, 7.2], normal: [6.8, 8.0], hard: [7.5, 8.6] }, // m, [min, max]
   JAVELIN: { easy: [55, 72], normal: [65, 82], hard: [75, 92] }, // m, [min, max]
   HIGH_JUMP: { easy: [1.85, 2.05], normal: [2.0, 2.2], hard: [2.15, 2.35] }, // m, best height [min, max]
+  TRIPLE_JUMP: { easy: [13.5, 15.5], normal: [14.8, 16.8], hard: [15.8, 17.6] }, // m, [min, max]
+  POLE_VAULT: { easy: [4.6, 5.2], normal: [5.0, 5.7], hard: [5.4, 6.1] }, // m, best height [min, max]
+  HAMMER: { easy: [52, 66], normal: [62, 76], hard: [70, 82] }, // m, [min, max]
+};
+
+/** Triple jump: the long-jump run-up, then hop, step and jump. */
+export const TRIPLE_JUMP = {
+  RUNWAY: 40, // m from the start of the runway to the foul line
+  ATTEMPTS: 3,
+  LAUNCH_EFFICIENCY: 0.74, // hop speed = run speed x this (45°, top speed, three good contacts ≈ 18 m)
+  GRAVITY: 9.81, // m/s²
+  RESULT_TIME: 2.5, // s the mark stays up
+  PHASES: 3, // hop, step, jump
+  TIMING_WINDOW: 0.18, // s before touching down when pressing Action counts as a good contact
+  LATE_WINDOW: 0.35, // s: pressed earlier than the good window but within this = a weak contact
+  KEEP_GOOD: 0.9, // fraction of speed carried into the next phase after a good contact
+  KEEP_WEAK: 0.65, // ... after a weak contact
+  PIT_START: 11.0, // m past the board where the sand starts
+  PIT_END: 20.0, // m past the board where the sand ends
+};
+
+/** Pole vault: the high jump's rules, with a pole and much higher bars. */
+export const POLE_VAULT = {
+  RUNWAY: 40, // m of run-up
+  ATTEMPTS: 3, // tries at each height
+  HEIGHTS: [4.6, 4.8, 5.0, 5.2, 5.4, 5.6, 5.8, 6.0, 6.2], // m
+  LAUNCH_EFFICIENCY: 0.9, // launch speed = run speed x this (a perfect vault at top speed ≈ 6.4 m)
+  GRAVITY: 9.81, // m/s²
+  TAKEOFF_HEIGHT: 1.2, // m, the body's centre as the pole straightens
+  BAR_X: 3.0, // m past the plant box where the bar stands
+  MAT_START: 2.0, // m past the box where the landing mat starts
+  MAT_END: 8.0, // m
+  RESULT_TIME: 2.0, // s
+  BAR_FALL_TIME: 0.6, // s for a knocked bar to fall
+  PIXELS_PER_METER: 14, // px per m (a 6.2 m bar still fits under the scoreboard)
+  CAMERA_LEAD: 120, // px from the left edge to the athlete
+};
+
+/** Hammer throw: spin by tapping left and right, let go in the sector. */
+export const HAMMER = {
+  ATTEMPTS: 3,
+  GRAVITY: 9.81, // m/s²
+  SPIN_IMPULSE: 0.09, // spin (0-1 of the top rate) added by one alternate tap
+  SPIN_DRAIN: 0.12, // spin lost per second
+  MIN_TURN_RATE: 0.6, // turns per second when barely spinning
+  MAX_TURN_RATE: 2.2, // turns per second at full spin
+  MAX_TURNS: 5, // still holding after this many turns = foul
+  RELEASE_SPEED: 28.5, // m/s of the hammer at full spin
+  RELEASE_ANGLE: 42, // degrees: the hammer's take-off angle
+  RELEASE_HEIGHT: 1.6, // m
+  SECTOR: 35, // degrees: the landing sector's full width
+  RESULT_TIME: 2.5, // s
+  PIXELS_PER_METER: 3.4, // px per m: the whole field fits on screen
+  ASSIST_SPIN: 0.8, // assist run: holding a run key spins up to this
+  ASSIST_RATE: 0.5, // spin per second added while holding
+};
+
+/** 50 m freestyle: tap left and right for strokes. Slower than running. */
+export const SWIM50 = {
+  DISTANCE: 50, // m
+  PIXELS_PER_METER: 10, // px per m
+  CAMERA_LEAD: 110, // px
+};
+
+/** The tap model for swimming (same rules as RUNNER, water speeds). */
+export const SWIMMER = {
+  MAX_SPEED: 2.55, // m/s
+  AIM_SPEED: 3.3, // m/s (above MAX_SPEED so fast tappers reach it)
+  TAP_IMPULSE: 0.36, // m/s added by one stroke from a standstill
+  DRAG: 0.9, // m/s lost every second
+  TAP_RATE_WINDOW: 1, // s
 };
 
 /** Javelin throw. */
@@ -176,6 +247,10 @@ export const SCORING = {
   highJump: { ZERO: 1.5, PAR: 2.3, QUALIFY: 2.0 }, // m
   javelin: { ZERO: 30.0, PAR: 90.0, QUALIFY: 70.0 }, // m
   hurdles110: { ZERO: 20.0, PAR: 13.0, QUALIFY: 15.5 }, // s
+  tripleJump: { ZERO: 10.0, PAR: 17.5, QUALIFY: 15.0 }, // m
+  poleVault: { ZERO: 3.5, PAR: 6.0, QUALIFY: 5.2 }, // m
+  hammer: { ZERO: 30.0, PAR: 80.0, QUALIFY: 66.0 }, // m
+  swim50: { ZERO: 35.0, PAR: 21.5, QUALIFY: 25.0 }, // s
   PAR_POINTS: 1000, // points at the PAR mark
   MAX_POINTS: 1200, // points cap for beating PAR
 };

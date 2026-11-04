@@ -22,6 +22,10 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: 'eightMetres', name: 'EIGHT METRES', detail: 'LONG JUMP 8.00 M OR MORE' },
   { id: 'highFlyer', name: 'HIGH FLYER', detail: 'HIGH JUMP 2.20 M OR MORE' },
   { id: 'javelinAce', name: 'JAVELIN ACE', detail: 'JAVELIN 85.00 M OR MORE' },
+  { id: 'hopStepJump', name: 'HOP STEP JUMP', detail: 'TRIPLE JUMP 16.50 M OR MORE' },
+  { id: 'skyHigh', name: 'SKY HIGH', detail: 'POLE VAULT 5.80 M OR MORE' },
+  { id: 'ironSpin', name: 'IRON SPIN', detail: 'HAMMER THROW 75.00 M OR MORE' },
+  { id: 'makingWaves', name: 'MAKING WAVES', detail: '50 M FREESTYLE UNDER 22.50 S' },
   { id: 'champion', name: 'CHAMPION', detail: 'COMPLETE A CHAMPIONSHIP' },
   { id: 'ironAthlete', name: 'IRON ATHLETE', detail: 'COMPLETE A CHAMPIONSHIP ON HARD' },
   { id: 'rivals', name: 'FRIENDLY RIVALS', detail: 'FINISH A VERSUS MATCH' },
@@ -36,6 +40,10 @@ const MARK_AWARDS: readonly [string, EventId, number, 'under' | 'over'][] = [
   ['eightMetres', 'longJump', 8.0, 'over'],
   ['highFlyer', 'highJump', 2.2, 'over'],
   ['javelinAce', 'javelin', 85, 'over'],
+  ['hopStepJump', 'tripleJump', 16.5, 'over'],
+  ['skyHigh', 'poleVault', 5.8, 'over'],
+  ['ironSpin', 'hammer', 75, 'over'],
+  ['makingWaves', 'swim50', 22.5, 'under'],
 ];
 
 /** What happened in one event, from this player's point of view. */

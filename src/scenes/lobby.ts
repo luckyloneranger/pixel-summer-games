@@ -6,7 +6,7 @@ import type { Difficulty, EventId } from '../events/event';
 import { RoomConnection, helloMessage } from '../net/connection';
 import { PROTOCOL_VERSION, makeRoomCode } from '../net/protocol';
 import { EVENT_NAMES } from '../game/scoring';
-import { CHAMPIONSHIP_EVENTS } from '../game/championship';
+import { CHAMPIONSHIP_EVENTS, ONLINE_EVENTS } from '../game/championship';
 import { Session, type SessionPlayer } from '../game/session';
 import { PALETTE } from '../gfx/palette';
 import { TEAM_KITS, type TeamKit } from '../gfx/sprites/athlete';
@@ -17,7 +17,7 @@ import { EventIntroScene } from './event-intro';
 const EVENT_CHOICES: { label: string; events: EventId[] }[] = [
   { label: 'ALL FIVE', events: [...CHAMPIONSHIP_EVENTS] },
   { label: 'BOTH RACES', events: ['dash100', 'hurdles110'] },
-  ...CHAMPIONSHIP_EVENTS.map((id) => ({ label: EVENT_NAMES[id], events: [id] })),
+  ...ONLINE_EVENTS.map((id) => ({ label: EVENT_NAMES[id], events: [id] })),
 ];
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
 const TEAMS = Object.keys(TEAM_KITS) as TeamKit[];

@@ -94,6 +94,54 @@ function pages(p: Prompts): Page[] {
         '1 METRE BEFORE THE HURDLE.',
       ],
     },
+    {
+      title: 'TRIPLE JUMP',
+      pose: 'jump',
+      lines: [
+        'TAKE OFF LIKE THE LONG JUMP.',
+        `THEN TAP ${act} JUST BEFORE`,
+        'EACH LANDING: HOP, STEP, JUMP.',
+        'ON TIME KEEPS YOUR SPEED. MISS',
+        'IT AND THE JUMP ENDS THERE.',
+        'TIP: AIM HIGH, ABOUT 45 DEGREES.',
+      ],
+    },
+    {
+      title: 'POLE VAULT',
+      pose: 'flop',
+      lines: [
+        `RUN UP AND HOLD ${act} TO SET`,
+        'THE ANGLE. LET GO TO PLANT THE',
+        'POLE AND VAULT OVER THE BAR.',
+        '3 MISSES IN A ROW AND YOU ARE OUT.',
+        'TIP: GO STEEP (ABOUT 70-75',
+        'DEGREES) AT FULL SPEED.',
+      ],
+    },
+    {
+      title: 'HAMMER THROW',
+      pose: 'throw',
+      lines: [
+        `TAP ${run} IN TURN TO SPIN`,
+        'FASTER. THE DIAL SHOWS WHERE',
+        `THE HAMMER POINTS: PRESS ${act}`,
+        'AS IT PASSES THE GREEN SECTOR.',
+        'MORE THAN 5 TURNS IS A FOUL.',
+        'TIP: THE MIDDLE GOES FURTHEST.',
+      ],
+    },
+    {
+      title: '50 M FREESTYLE',
+      pose: 'swim1',
+      lines: [
+        'LIKE THE 100 M, IN THE POOL:',
+        'WAIT FOR GO, THEN TAP IN TURN.',
+        'WATER IS SLOWER, SO IT TAKES',
+        'ABOUT 22 SECONDS AT BEST.',
+        'TIP: A STEADY RHYTHM BEATS',
+        'WILD BURSTS.',
+      ],
+    },
   ];
 }
 

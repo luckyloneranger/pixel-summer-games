@@ -46,6 +46,8 @@ export interface RaceConfig {
   DISTANCE: number; // m
   PIXELS_PER_METER: number;
   CAMERA_LEAD: number; // px
+  /** The tap model's speeds (running if not given; swimming is slower). */
+  RUNNER?: typeof RUNNER;
 }
 
 export const PLAYER_LANE = 2; // player 1 runs in lane 2
@@ -77,7 +79,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   private racerList: L[] = [];
   private readonly dust = new DustPuffs();
   private readonly trails = new Map<Lane, DustTrail>();
-  private winnerNow: L | null = null; // first place, worked out once per frame for drawing
+  protected winnerNow: L | null = null; // first place, worked out once per frame for drawing
   /** Seconds since GO. */
   raceTime = 0;
   private recorder: GhostRecorder | null = null;
@@ -119,6 +121,18 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   /** After moving this step, from `before` m to the runner's new position. */
   protected afterMove(_lane: L, _dt: number, _before: number): void {}
   /** Draw extra things in a lane before its athlete (e.g. hurdles). */
+  /** Running events have shadows, speed lines and dust; swimming doesn't. */
+  protected readonly onLand: boolean = true;
+
+  /** The stadium and the track (swimming draws a pool instead). */
+  protected drawSurface(r: Renderer, cameraPx: number, waveFrame: number, toScreen: (m: number) => number): void {
+    this.stadium.drawBackground(r, cameraPx, ANIMATION.CROWD_PARALLAX, waveFrame);
+    this.drawTrackMarkings(r, toScreen);
+  }
+
+  /** Drawn just after each athlete (swimming adds the waterline over them). */
+  protected afterAthlete(_r: Renderer, _lane: L, _x: number, _footY: number): void {}
+
   protected drawLaneProps(_r: Renderer, _lane: L, _toScreen: (m: number) => number, _footY: number): void {}
   /** Pixels the athlete is lifted off the track (jumps). */
   protected liftFor(_lane: L): number {
@@ -170,7 +184,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
         laneNumber,
         name: human ? human.initials : cpu!.name,
         look: human ? playerLook(human.team) : cpu!.look,
-        runner: new TapRunner(RUNNER),
+        runner: new TapRunner(this.cfg.RUNNER ?? RUNNER),
         cpu: null,
         playerIndex: human ? (human.index ?? slot) : -1,
         disqualified: false,
@@ -586,9 +600,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     const waveFrame = this.playerWon ? Math.floor(this.clock / ANIMATION.WAVE_FRAME_TIME) % 2 : 0;
     this.stadium.time = this.clock;
     this.stadium.flashes = this.playerWon && !(this.ctx.effects?.calm ?? true);
-    this.stadium.drawBackground(r, cameraPx, ANIMATION.CROWD_PARALLAX, waveFrame);
-    this.drawTrackMarkings(r, toScreen);
-    this.dust.render(r, toScreen);
+    this.drawSurface(r, cameraPx, waveFrame, toScreen);
+    if (this.onLand) this.dust.render(r, toScreen);
 
     this.drawGhost(r, toScreen);
     // Top lane first, so lower lanes overlap the ones behind them.
@@ -605,9 +618,12 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       if (x < -ATHLETE_W || x > r.width) continue;
       const lift = this.liftFor(lane);
       const y = footY - ATHLETE_H + 1 - lift;
-      drawGroundShadow(r, x + ATHLETE_W / 2, footY, lift, PALETTE.ORANGE_DARK);
-      if (lane.playerIndex >= 0 && this.phase === 'running') drawSpeedLines(r, x, y, lane.runner.speedFraction, this.clock);
+      if (this.onLand) {
+        drawGroundShadow(r, x + ATHLETE_W / 2, footY, lift, PALETTE.ORANGE_DARK);
+        if (lane.playerIndex >= 0 && this.phase === 'running') drawSpeedLines(r, x, y, lane.runner.speedFraction, this.clock);
+      }
       r.image(this.spritesFor(lane).get(this.poseFor(lane)), x, y);
+      this.afterAthlete(r, lane, x, footY);
     }
 
     const shown = this.player.finishTime ?? (this.phase === 'running' ? this.raceTime : 0);

@@ -189,6 +189,18 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected onRelease(): void {}
   /** Every step after the release (flight and landed). */
   protected afterRelease(_dt: number): void {}
+  /** Action pressed while in the air (the triple jump times its contacts with it). */
+  protected onFlightAction(): void {}
+  /** On touchdown: return true to take off again instead of landing (call relaunch). */
+  protected bounce(): boolean {
+    return false;
+  }
+  /** Take off again from where the flight touched down (the other game is told too). */
+  protected relaunch(speed: number, angle: number): void {
+    this.takeoffX = this.flight.x;
+    this.net?.send({ k: 'release', n: this.attemptNo, x: this.takeoffX, speed, angle });
+    this.launch(speed, angle);
+  }
   /** Called once when the athlete or javelin comes down (sand bursts and the like). */
   protected onLand(): void {}
   /** Screen y (px) of the runway surface, where dust puffs start. */
@@ -270,9 +282,11 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
         return;
 
       case 'flight':
+        if (actionPressed) this.onFlightAction();
         this.flight.update(dt);
         this.afterRelease(dt);
-        if (this.flight.landed) this.land();
+        // Touching down ends the attempt, unless the event bounces on (triple jump).
+        if (this.flight.landed && !this.bounce()) this.land();
         return;
 
       case 'landed':
@@ -344,7 +358,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
         if (m.phase !== this.phase) this.phase = m.phase;
         return;
       case 'release':
-        if (!before) return;
+        // A second take-off mid-flight is the next phase of a triple jump.
+        if (!before && this.phase !== 'flight') return;
         this.runner.position = m.x + this.cfg.RUNWAY;
         this.meter.angle = m.angle;
         this.takeoffX = m.x;

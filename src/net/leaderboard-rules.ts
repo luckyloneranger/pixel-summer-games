@@ -10,6 +10,10 @@ export const BOARD_EVENTS: Record<string, { lowerIsBetter: boolean; min: number;
   longJump: { lowerIsBetter: false, min: 0.01, max: 9.9 },
   highJump: { lowerIsBetter: false, min: 1.85, max: 2.4 },
   javelin: { lowerIsBetter: false, min: 0.01, max: 105 },
+  tripleJump: { lowerIsBetter: false, min: 0.01, max: 20 },
+  poleVault: { lowerIsBetter: false, min: 4.6, max: 6.2 },
+  hammer: { lowerIsBetter: false, min: 0.01, max: 90 },
+  swim50: { lowerIsBetter: true, min: 19, max: 90 },
 };
 
 /** How many names each weekly board shows. */

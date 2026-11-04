@@ -31,6 +31,11 @@ export class Projectile {
     return (this.vy + Math.sqrt(this.vy * this.vy + 2 * g * this.y0)) / g;
   }
 
+  /** Launch speed (m/s). */
+  get speed(): number {
+    return Math.hypot(this.vx, this.vy);
+  }
+
   /** Where it will come down (m along the ground). */
   get landingX(): number {
     return this.x0 + this.vx * this.flightTime;

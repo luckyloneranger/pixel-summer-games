@@ -8,6 +8,10 @@ export const EVENT_KIND: Record<EventId, 'race' | 'field'> = {
   highJump: 'field',
   javelin: 'field',
   hurdles110: 'race',
+  tripleJump: 'field',
+  poleVault: 'field',
+  hammer: 'field',
+  swim50: 'race',
 };
 
 export const EVENT_NAMES: Record<EventId, string> = {
@@ -16,6 +20,10 @@ export const EVENT_NAMES: Record<EventId, string> = {
   highJump: 'HIGH JUMP',
   javelin: 'JAVELIN',
   hurdles110: '110 M HURDLES',
+  tripleJump: 'TRIPLE JUMP',
+  poleVault: 'POLE VAULT',
+  hammer: 'HAMMER THROW',
+  swim50: '50 M FREESTYLE',
 };
 
 /** Points for a mark: 0 at ZERO, 1,000 at PAR, capped at 1,200. No mark = 0. */

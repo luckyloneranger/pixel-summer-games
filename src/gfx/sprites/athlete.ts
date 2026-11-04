@@ -316,6 +316,43 @@ export const ATHLETE_FRAMES = {
   run1: [...UPPER_ARM_BACK, ...LEGS_NEAR_PLANTED],
   run2: [...UPPER_ARM_FORWARD, ...LEGS_FAR_FORWARD],
   run3: [...UPPER_ARM_FORWARD, ...LEGS_FAR_PLANTED],
+  // Swimming, front crawl (lying in the water, head to the right, arms turning over).
+  swim0: [
+    ...blank(18),
+    '........kk......',
+    '.......kk..hhh..',
+    '.......k..hhhhh.',
+    'wwKKSSSSSSkkkok.',
+    'kkkkSSSSSSSkkk..',
+    '...........k....',
+  ],
+  swim1: [
+    ...blank(18),
+    '................',
+    '...........hhh..',
+    '..........hhhhh.',
+    'wwKKSSSSSSkkkokk',
+    'kkkkSSSSSSSkkk.k',
+    '..k.............',
+  ],
+  swim2: [
+    ...blank(18),
+    '................',
+    '...........hhh..',
+    '..k.......hhhhh.',
+    '.k.KSSSSSSkkkok.',
+    'wwKKSSSSSSSkkk..',
+    'kk..............',
+  ],
+  swim3: [
+    ...blank(18),
+    '..........k.....',
+    '.........k.hhh..',
+    '.........khhhhh.',
+    'kkKKSSSSSSkkkok.',
+    'wwkkSSSSSSSkkk..',
+    '................',
+  ],
   runPassA: [...UPPER_ARM_BACK, ...LEGS_PASS_NEAR],
   runPassB: [...UPPER_ARM_FORWARD, ...LEGS_PASS_FAR],
 } satisfies Record<string, string[]>;
@@ -323,6 +360,9 @@ export const ATHLETE_FRAMES = {
 export type Pose = keyof typeof ATHLETE_FRAMES;
 /** Six frames: forward, planted, passing, then the same with the other leg. */
 export const RUN_CYCLE: readonly Pose[] = ['run0', 'run1', 'runPassA', 'run2', 'run3', 'runPassB'];
+
+/** Front crawl, one stroke after another. */
+export const SWIM_CYCLE: readonly Pose[] = ['swim0', 'swim1', 'swim2', 'swim3'];
 
 /** Hair styles, so athletes don't all look alike. */
 export type HairStyle = 'short' | 'bun' | 'long';
