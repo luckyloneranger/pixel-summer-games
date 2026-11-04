@@ -13,6 +13,7 @@ import { Footsteps, runningCrowd } from './footsteps';
 import { keysFor, type PlayerKeys } from './player-input';
 import type { NetLink } from './event';
 import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
+import { GhostRecorder, ghostPosition } from '../game/ghost';
 import type { RunnerState, StartPhase } from '../net/protocol';
 import { NET } from '../game/tuning';
 import { DustPuffs, DustTrail, drawGroundShadow, drawSpeedLines } from '../gfx/effects';
@@ -79,6 +80,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   private winnerNow: L | null = null; // first place, worked out once per frame for drawing
   /** Seconds since GO. */
   raceTime = 0;
+  private recorder: GhostRecorder | null = null;
+  private ghostSprites: AthleteSprites | null = null;
   /** Seconds since the event started (drives animations). */
   clock = 0;
 
@@ -228,6 +231,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       this.resetLane(lane);
     }
     this.raceTime = 0;
+    this.recorder = this.soloOffline ? new GhostRecorder() : null; // a fresh recording every start
     this.sentEarly = false;
     this.lastLocalFinish = null;
     this.lastLocalDnf = false;
@@ -379,6 +383,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
           this.updateRacer(lane, dt, k);
         }
         this.raceTime += dt;
+        if (this.recorder && this.player.finishTime === null) this.recorder.sample(this.raceTime, this.player.runner.position);
         this.checkDidNotFinish(dt);
         if (!this.net) this.checkPhotoFinish(); // no freeze online: the two screens would drift apart
         this.sendState(dt, this.justFinishedLocally());
@@ -585,6 +590,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     this.drawTrackMarkings(r, toScreen);
     this.dust.render(r, toScreen);
 
+    this.drawGhost(r, toScreen);
     // Top lane first, so lower lanes overlap the ones behind them.
     for (const lane of this.lanes) {
       const footY = LAYOUT.TRACK_TOP + lane.laneNumber * LAYOUT.LANE_HEIGHT - 3;
@@ -675,6 +681,33 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     }
     if (lane.finishTime === null) return runner.position > 0 ? 'stand' : 'set';
     return this.winnerNow === lane ? 'celebrate' : 'stand';
+  }
+
+  /** One human racing offline: record the run, and race last best's ghost. */
+  private get soloOffline(): boolean {
+    return this.humans.length === 1 && !this.net;
+  }
+
+  ghostRun(): number[] | null {
+    const p = this.player;
+    if (!this.recorder || p.finishTime === null || p.disqualified) return null;
+    const run = [...this.recorder.samples];
+    run.push(this.cfg.DISTANCE); // ends on the line, just after the finish time
+    return run;
+  }
+
+  /** The ghost of your best run, drawn see-through in your lane. */
+  private drawGhost(r: Renderer, toScreen: (m: number) => number): void {
+    const ghost = this.ctx.ghost;
+    if (!ghost || !this.soloOffline) return;
+    const t = this.phase === 'running' || this.phase === 'finished' ? this.raceTime : 0;
+    const pos = ghostPosition(ghost, t);
+    const x = toScreen(pos) - ATHLETE_W / 2;
+    if (x < -ATHLETE_W || x > r.width) return;
+    const footY = LAYOUT.TRACK_TOP + this.player.laneNumber * LAYOUT.LANE_HEIGHT - 3;
+    this.ghostSprites ??= new AthleteSprites(this.player.look, true);
+    const pose = pos > 0 ? RUN_CYCLE[Math.floor(pos / ANIMATION.STRIDE_PER_FRAME) % RUN_CYCLE.length] : 'set';
+    r.image(this.ghostSprites.get(pose), x, footY - ATHLETE_H + 1);
   }
 
   private spritesFor(lane: Lane): AthleteSprites {

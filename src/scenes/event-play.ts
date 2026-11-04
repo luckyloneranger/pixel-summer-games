@@ -57,6 +57,8 @@ export class EventPlayScene implements Scene {
       sound: this.game.sound,
       effects: this.game.effects,
       assist: this.game.store.data.settings.assist,
+      // Your best run's ghost (offline only; the event uses it with one player).
+      ghost: online || !this.game.store.data.settings.ghost ? undefined : this.game.store.data.ghosts[this.eventId],
     });
   }
 
@@ -100,6 +102,7 @@ export class EventPlayScene implements Scene {
   }
 
   private showResults(results: ReturnType<AthleticsEvent['getResults']>): void {
+    this.keepGhostIfBest(results);
     this.game.scenes.replace(new ResultsScene(this.game, this.session, this.eventId, results));
   }
 
@@ -123,5 +126,17 @@ export class EventPlayScene implements Scene {
 
   debugLines(): string[] {
     return [...(this.event.debugLines?.() ?? []), 'N: SKIP EVENT'];
+  }
+
+  /** A new best race (offline, one player): keep it as the ghost to beat next time. */
+  private keepGhostIfBest(results: ReturnType<AthleticsEvent['getResults']>): void {
+    const run = this.session.online ? null : (this.event.ghostRun?.() ?? null);
+    const me = results.find((r) => r.playerIndex === 0);
+    if (!run || !me || me.mark === null || me.disqualified) return;
+    const data = this.game.store.data;
+    const old = data.personalBests[this.eventId];
+    if (old !== undefined && !isBetter(this.eventId, me.mark, old)) return;
+    data.ghosts[this.eventId] = run;
+    this.game.store.save();
   }
 }

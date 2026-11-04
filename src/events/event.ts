@@ -65,6 +65,8 @@ export interface EventContext {
   effects?: EffectsSink;
   /** Online play: the link to the other player (local play if not given). */
   net?: NetLink;
+  /** Races: positions of your best run to race against (see game/ghost.ts). */
+  ghost?: readonly number[];
   /** Words for the controls (keyboard words if not given). */
   prompts?: Prompts;
 }
@@ -103,6 +105,8 @@ export interface AthleticsEvent {
   getResults(): EventResult[];
   /** Extra lines for the debug overlay. */
   debugLines?(): string[];
+  /** Races: this run as a ghost to save, if the one human finished it (else null). */
+  ghostRun?(): number[] | null;
   /** How loud the crowd should be right now, 0-1. */
   crowdLevel?(): number;
 }

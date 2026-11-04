@@ -34,6 +34,11 @@ export const TITLE = {
   FLASH_TIME: 0.18, // s of white flash (and starting pistol) before the menu opens
 };
 
+/** Ghost runner: your best race replayed beside you. */
+export const GHOST = {
+  SAMPLE: 0.05, // s between recorded positions (a 15 s race is 300 numbers)
+};
+
 /** Debug overlay. */
 export const DEBUG = {
   FPS_SAMPLE_PERIOD: 0.5, // s, how often the FPS number refreshes

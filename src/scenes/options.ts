@@ -12,6 +12,7 @@ type Row =
   | 'ASSIST RUN'
   | 'REDUCE FLASHING'
   | 'RETRO TV'
+  | 'GHOST RUNNER'
   | 'MASTER VOLUME'
   | 'MUSIC VOLUME'
   | 'EFFECTS VOLUME'
@@ -22,6 +23,7 @@ const ROWS: Row[] = [
   'ASSIST RUN',
   'REDUCE FLASHING',
   'RETRO TV',
+  'GHOST RUNNER',
   'MASTER VOLUME',
   'MUSIC VOLUME',
   'EFFECTS VOLUME',
@@ -29,7 +31,7 @@ const ROWS: Row[] = [
   'CONTROLS',
 ];
 
-const ROW_H = 11; // px between option rows (9 rows fit above the help lines)
+const ROW_H = 10; // px between option rows (10 rows fit above the help lines)
 
 /** A short explanation shown under the list for the selected row. */
 const HELP: Partial<Record<Row, [string, string]>> = {
@@ -37,6 +39,7 @@ const HELP: Partial<Record<Row, [string, string]>> = {
   'ASSIST RUN': ['HOLD RUN TO REACH 80% OF TOP', 'SPEED. TAPPING STILL GOES FASTER'],
   'REDUCE FLASHING': ['NO BLINKING, FLASHES, SHAKE', 'OR SLOW-MOTION ZOOM'],
   'RETRO TV': ['SCANLINES AND DARK CORNERS', 'LIKE AN OLD TELEVISION'],
+  'GHOST RUNNER': ['RACE AGAINST YOUR BEST RUN', '(ONE PLAYER, NOT ONLINE)'],
   CONTROLS: ['CHANGE THE KEYS FOR', 'PLAYER 1 AND PLAYER 2'],
 };
 
@@ -73,6 +76,9 @@ export class OptionsScene implements Scene {
       case 'RETRO TV':
         if (toggle) s.crt = !s.crt;
         break;
+      case 'GHOST RUNNER':
+        if (toggle) s.ghost = !s.ghost;
+        break;
       case 'MASTER VOLUME':
         s.master = clamp(s.master);
         break;
@@ -106,6 +112,7 @@ export class OptionsScene implements Scene {
       onOff(s.assist),
       onOff(s.reduceFlashing),
       onOff(s.crt),
+      onOff(s.ghost),
       s.master,
       s.music,
       s.sfx,

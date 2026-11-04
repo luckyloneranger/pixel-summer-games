@@ -384,12 +384,16 @@ export function makeLook(kit: TeamKit, skin: SkinTone, hair: string, hairStyle: 
 export class AthleteSprites {
   private readonly frames = new Map<Pose, HTMLCanvasElement>();
 
-  constructor(private readonly look: Look) {}
+  /** `ghost` builds see-through pale copies (the ghost runner). */
+  constructor(
+    private readonly look: Look,
+    private readonly ghost = false,
+  ) {}
 
   get(pose: Pose): HTMLCanvasElement {
     let img = this.frames.get(pose);
     if (!img) {
-      img = buildSprite(withHair(ATHLETE_FRAMES[pose], this.look.hairStyle ?? 'short', pose), this.look, true);
+      img = buildSprite(withHair(ATHLETE_FRAMES[pose], this.look.hairStyle ?? 'short', pose), this.look, true, this.ghost);
       this.frames.set(pose, img);
     }
     return img;

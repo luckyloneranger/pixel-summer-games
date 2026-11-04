@@ -70,6 +70,14 @@ export function shadePixels(px: Pixels): Pixels {
   );
 }
 
+/**
+ * A ghost: every other pixel in a checkerboard, all in one pale colour, so
+ * the scene shows through (the palette has no see-through colours).
+ */
+export function ghostPixels(px: Pixels): Pixels {
+  return px.map((row, y) => row.map((c, x) => (c !== null && (x + y) % 2 === 0 ? PALETTE.CLOUD : null)));
+}
+
 /** The outline colour round shaded sprites. */
 export const OUTLINE = PALETTE.INK;
 
@@ -90,7 +98,8 @@ function pixelsToCanvas(px: Pixels): HTMLCanvasElement {
 }
 
 /** Turn a pixel map into a small canvas, once, at load time. `shaded` adds highlights and an outline. */
-export function buildSprite(map: readonly string[], look: Look, shaded = false): HTMLCanvasElement {
+export function buildSprite(map: readonly string[], look: Look, shaded = false, ghost = false): HTMLCanvasElement {
   const px = mapToPixels(map, look);
+  if (ghost) return pixelsToCanvas(ghostPixels(shadePixels(px)));
   return pixelsToCanvas(shaded ? shadePixels(px) : px);
 }

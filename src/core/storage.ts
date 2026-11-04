@@ -23,12 +23,16 @@ export interface SaveData {
     reduceFlashing: boolean;
     /** Retro TV look: scanlines and darker corners (off by default). */
     crt: boolean;
+    /** Race your best run's ghost (offline, one player). */
+    ghost: boolean;
     assist: boolean;
     /** Remapped gameplay keys, or null for the defaults. */
     controls: Controls | null;
   };
   highScores: { championship: HighScore[]; versus: HighScore[] };
   personalBests: PersonalBests;
+  /** Each race's best run, for the ghost runner (positions, see game/ghost.ts). */
+  ghosts: Partial<Record<EventId, number[]>>;
 }
 
 /** Versioned key, so a future format change can't misread old saves. */
@@ -52,11 +56,13 @@ export function defaultSave(): SaveData {
       muted: false,
       reduceFlashing: false,
       crt: false,
+      ghost: true,
       assist: false,
       controls: null,
     },
     highScores: { championship: [], versus: [] },
     personalBests: {},
+    ghosts: {},
   };
 }
 
@@ -94,6 +100,7 @@ export class SaveStore {
           versus: parsed.highScores?.versus ?? [],
         },
         personalBests: { ...parsed.personalBests },
+        ghosts: { ...parsed.ghosts },
       };
     } catch {
       this.fallBackToMemory();
