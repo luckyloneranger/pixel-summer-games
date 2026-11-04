@@ -121,7 +121,7 @@ export class HighScoresScene implements Scene {
   /** The weekly online top 10 for one event (up/down to change event). */
   private drawBoard(r: Renderer): void {
     const id = BOARD_LIST[this.boardEvent];
-    r.text(`${this.game.prompts.upDown()} ${EVENT_NAMES[id]}`, 8, 42, PALETTE.CYAN);
+    r.text(`↑↓ ${EVENT_NAMES[id]}`, 8, 42, PALETTE.CYAN); // arrows, not words: long names must fit
     const say = (text: string) => r.text(text, 16, 62, PALETTE.GREY_LIGHT);
     if (!this.game.store.data.settings.leaderboard) {
       say('TURN ON LEADERBOARD');

@@ -23,20 +23,21 @@ export type Action =
 
 export type KeyMap = Record<Action, string[]>;
 
-// Codes starting with "Touch" come from the on-screen buttons (ui/touch-controls.ts).
+// Codes starting with "Touch" come from the on-screen buttons (ui/touch-controls.ts),
+// and "Pad" from a gamepad (core/gamepad.ts): LB/RB or X/Y to run, A to act, B back.
 export const DEFAULT_KEYMAP: KeyMap = {
-  P1_LEFT: ['KeyA', 'TouchLeft'],
-  P1_RIGHT: ['KeyD', 'TouchRight'],
-  P1_ACTION: ['KeyW', 'Space', 'TouchAction'],
+  P1_LEFT: ['KeyA', 'TouchLeft', 'PadLB', 'PadX'],
+  P1_RIGHT: ['KeyD', 'TouchRight', 'PadRB', 'PadY'],
+  P1_ACTION: ['KeyW', 'Space', 'TouchAction', 'PadA', 'PadRT'],
   P2_LEFT: ['ArrowLeft'],
   P2_RIGHT: ['ArrowRight'],
   P2_ACTION: ['ArrowUp'],
-  MENU_UP: ['ArrowUp', 'KeyW', 'TouchUp'],
-  MENU_DOWN: ['ArrowDown', 'KeyS', 'TouchDown'],
-  MENU_LEFT: ['ArrowLeft', 'KeyA', 'TouchLeft'],
-  MENU_RIGHT: ['ArrowRight', 'KeyD', 'TouchRight'],
-  CONFIRM: ['Enter', 'NumpadEnter', 'TouchOk'],
-  BACK: ['Escape', 'KeyP', 'TouchBack', 'TouchPause'],
+  MENU_UP: ['ArrowUp', 'KeyW', 'TouchUp', 'PadUp'],
+  MENU_DOWN: ['ArrowDown', 'KeyS', 'TouchDown', 'PadDown'],
+  MENU_LEFT: ['ArrowLeft', 'KeyA', 'TouchLeft', 'PadLeft'],
+  MENU_RIGHT: ['ArrowRight', 'KeyD', 'TouchRight', 'PadRight'],
+  CONFIRM: ['Enter', 'NumpadEnter', 'TouchOk', 'PadA', 'PadStart'],
+  BACK: ['Escape', 'KeyP', 'TouchBack', 'TouchPause', 'PadB', 'PadSelect'],
   MUTE: ['KeyM', 'TouchMute'],
   DEBUG: ['Backquote'],
   DEBUG_SLOWER: ['BracketLeft'],
@@ -63,7 +64,7 @@ export const RESERVED_KEYS = new Set(['Enter', 'NumpadEnter', 'Escape', 'KeyP', 
 /** The keyboard keys (no touch codes) each remappable action starts with. */
 export function defaultControls(): Controls {
   const c: Controls = {};
-  for (const a of REMAPPABLE) c[a] = DEFAULT_KEYMAP[a].filter((k) => !k.startsWith('Touch'));
+  for (const a of REMAPPABLE) c[a] = DEFAULT_KEYMAP[a].filter((k) => !isFixedCode(k));
   return c;
 }
 
@@ -85,12 +86,17 @@ export function remapKey(controls: Controls | null, action: Action, key: string)
   return next;
 }
 
-/** The full key map with saved controls applied (touch codes always kept). */
+/** On-screen buttons and gamepad buttons: always mapped, never remapped. */
+export function isFixedCode(code: string): boolean {
+  return code.startsWith('Touch') || code.startsWith('Pad');
+}
+
+/** The full key map with saved controls applied (touch and pad codes always kept). */
 export function buildKeymap(controls: Controls | null): KeyMap {
   const map: KeyMap = { ...DEFAULT_KEYMAP };
   if (!controls) return map;
   for (const a of REMAPPABLE) {
-    const touch = DEFAULT_KEYMAP[a].filter((k) => k.startsWith('Touch'));
+    const touch = DEFAULT_KEYMAP[a].filter(isFixedCode);
     map[a] = [...(controls[a] ?? defaultControls()[a]), ...touch];
   }
   return map;

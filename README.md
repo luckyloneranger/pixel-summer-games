@@ -4,7 +4,7 @@ A retro 8-bit track-and-field game for the browser. Hammer two keys to sprint, t
 
 **Play:** https://luckyloneranger.github.io/pixel-summer-games/ (once GitHub Pages is switched on, see [Deploying](#deploying)).
 
-Everything (pixel art, font, music and sound effects) is original and generated in code. There are no image or audio files, no accounts and no tracking. Only Online mode uses the network: a tiny relay server (in `server/`) that passes messages between the two players in a room and stores nothing.
+Everything (pixel art, font, music and sound effects) is original and generated in code. There are no image or audio files, no accounts and no tracking. Only Online mode and the opt-in weekly leaderboard use the network: a small server (in `server/`) that passes messages between the two players in a room, and keeps each week's top marks (initials and marks only).
 
 ## Events
 
@@ -15,14 +15,20 @@ Everything (pixel art, font, music and sound effects) is original and generated 
 | High jump | Run up, hold W to set a steep angle (about 60–70°), let go just before the line. Clear the bar to raise it; three misses in a row and you're out. |
 | Javelin | Same run-up and angle, but you throw. Three throws, best counts. |
 | 110 m hurdles | Run with A and D, tap W to jump each hurdle (about 1 m before it at full speed). Hitting one costs speed. |
+| Triple jump | Take off like the long jump, then tap W just before each landing: hop, step, jump. On time keeps your speed; miss it and the jump ends there. |
+| Pole vault | Like the high jump with a pole and much higher bars (4.60 to 6.20 m). Go steep, about 70–75°. |
+| Hammer throw | Tap A and D in turn to spin faster; press W as the hammer passes the green sector on the dial. More than five turns is a foul. Not online yet. |
+| 50 m freestyle | The sprint's rules in a pool: wait for GO, then tap A and D. About 22 s at best. |
 
 ## Modes
 
 - **Championship**, 1 or 2 players: all five events in order (100 m, long jump, high jump, javelin, hurdles). Miss a qualifying mark and you're out (Options → Casual mode lets you carry on with 0 points). Ends on the podium and the high-score table.
-- **Practice**: any event, with your personal best shown.
-- **Versus**, 2 players: all five events or just one; the higher total wins.
+- **Practice**: any of the nine events, with your personal best shown. In the 100 m, hurdles and swim you race a see-through **ghost** of your best run (Options → Ghost runner).
+- **Versus**, 2 players: the five championship events or any single event; the higher total wins.
 - **Online**, 2 players on different devices: one creates a room and shares its 4-letter code, the other joins. Any event or all five; field events take turns and you watch your friend's attempts live. A short drop (up to 10 s) reconnects by itself.
 - **How to Play**: a short guide to each event.
+- **Awards**: 17 awards for things like a sub-10 second 100 m or finishing a championship on Hard. An "AWARD!" banner appears when you earn one.
+- **High Scores**: your top 10s and bests, plus (if you turn it on) the **weekly online top 10** for each event.
 
 ## Controls
 
@@ -40,9 +46,11 @@ Everything (pixel art, font, music and sound effects) is original and generated 
 
 In a one-player game, both key sets work. Keys can be remapped in **Options → Controls**.
 
+**Gamepads**: LB and RB (or X and Y) to run, A for Action and OK, B to go back, the d-pad or left stick in menus. Hints switch to pad buttons as soon as you press one.
+
 **Phones and tablets** (held sideways): on-screen run pads, an ACTION button, pause and sound icons, and arrow / OK / BACK buttons in menus.
 
-**Options:** Casual mode, Assist run (hold a run key to run at 80% speed), Reduce flashing (no blinking text and no screen shake), volumes and mute. Settings, high scores and personal bests are saved in your browser.
+**Options:** Casual mode, Assist run (hold a run key to run at 80% speed), Reduce flashing (no blinking text, flashes, shake or slow-motion zoom), Retro TV, Ghost runner, Leaderboard (off by default: when on, your initials and new personal bests go to the weekly online top 10), volumes and mute. Settings, high scores, personal bests, ghosts and awards are saved in your browser.
 
 ## Running it yourself
 

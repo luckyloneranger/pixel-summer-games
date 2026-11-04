@@ -34,6 +34,11 @@ export const TITLE = {
   FLASH_TIME: 0.18, // s of white flash (and starting pistol) before the menu opens
 };
 
+/** Gamepads. */
+export const GAMEPAD = {
+  STICK: 0.5, // how far (0-1) the left stick must be pushed to count as a d-pad press
+};
+
 /** Award banners. */
 export const AWARDS = {
   BANNER_TIME: 2.6, // s each "AWARD!" banner stays up
@@ -159,6 +164,7 @@ export const POLE_VAULT = {
   BAR_X: 3.0, // m past the plant box where the bar stands
   MAT_START: 2.0, // m past the box where the landing mat starts
   MAT_END: 8.0, // m
+  LAND_HEIGHT: 0.6, // m, top of the landing mat
   RESULT_TIME: 2.0, // s
   BAR_FALL_TIME: 0.6, // s for a knocked bar to fall
   PIXELS_PER_METER: 14, // px per m (a 6.2 m bar still fits under the scoreboard)
@@ -345,6 +351,7 @@ export const HIGH_JUMP = {
   BAR_X: 1.0, // m past the take-off line where the bar stands
   MAT_START: 0.6, // m past the line where the landing mat starts
   MAT_END: 4.5, // m past the line where it ends
+  LAND_HEIGHT: 0.6, // m, top of the mat: jumps landing on it come down here (not at the ground)
   RESULT_TIME: 2.0, // s the result stays up before the next jump
   BAR_FALL_TIME: 0.5, // s for a knocked bar to fall onto the mat
   PIXELS_PER_METER: 14, // px per m when drawing (same scale as the long jump)

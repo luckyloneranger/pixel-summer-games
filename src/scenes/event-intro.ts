@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { ALL_EVENTS } from '../game/championship';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -24,6 +25,11 @@ export class EventIntroScene implements Scene {
     private readonly session: Session,
     private readonly eventId: EventId,
   ) {}
+
+  /** A short fanfare as the card comes up (a different pitch for each event). */
+  enter(): void {
+    this.game.sfx('intro', ALL_EVENTS.indexOf(this.eventId));
+  }
 
   update(dt: number, input: InputSnapshot): void {
     this.time += dt;

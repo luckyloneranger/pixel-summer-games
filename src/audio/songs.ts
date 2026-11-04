@@ -1,4 +1,5 @@
-// Three original chiptune loops, written as note lists.
+// Three original chiptune loops, written as note lists (the title tune was
+// rewritten in Phase 16).
 // Each token is NOTE:LENGTH, with LENGTH in 16th notes. "-" is a rest.
 // Drums: k = kick, s = snare, h = hi-hat. Every channel of a song must add
 // up to the same length so they loop together (a test checks this).
@@ -14,19 +15,21 @@ export interface Song {
 export type SongName = 'title' | 'menu' | 'podium';
 
 export const SONGS: Record<SongName, Song> = {
-  // Bright and bouncy: "PRESS START".
+  // Upbeat and a little cheeky: "PRESS START" (A minor, landing on C major).
   title: {
-    tempo: 140,
+    tempo: 150,
     lead:
-      'C5:2 E5:2 G5:2 C6:2 B5:2 G5:2 E5:4 ' +
-      'F5:2 A5:2 C6:2 A5:2 G5:4 -:2 E5:2 ' +
-      'D5:2 F5:2 A5:2 D6:2 C6:2 A5:2 F5:4 ' +
-      'G5:2 F5:2 E5:2 D5:2 C5:6 -:2',
-    harmony: 'E4:8 G4:8 F4:8 A4:8 F4:8 A4:8 D4:8 G4:8',
+      'A4:2 C5:2 E5:2 A5:3 G5:1 E5:2 C5:2 D5:2 ' +
+      'E5:3 D5:1 C5:2 B4:2 C5:4 -:2 E5:2 ' +
+      'F5:2 A5:2 C6:2 B5:2 A5:2 G5:2 F5:2 E5:2 ' +
+      'D5:2 E5:2 G5:2 B5:2 C6:6 -:2',
+    harmony: 'C4:8 E4:8 E4:8 C4:8 F4:8 A4:8 G4:8 G4:8',
     bass:
-      'C3:4 G3:4 C3:4 G3:4 F3:4 C4:4 F3:4 C4:4 ' +
-      'D3:4 A3:4 D3:4 A3:4 G3:4 D3:4 G3:4 B2:4',
-    drums: 'k:2 h:2 s:2 h:2 k:2 k:2 s:2 h:2 '.repeat(4).trim(),
+      'A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 G2:2 G3:2 ' +
+      'A2:2 A3:2 A2:2 A3:2 E2:2 E3:2 E2:2 E3:2 ' +
+      'F2:2 F3:2 F2:2 F3:2 F2:2 F3:2 A2:2 A3:2 ' +
+      'G2:2 G3:2 G2:2 G3:2 C3:4 G2:4',
+    drums: 'k:2 h:2 s:2 h:1 k:1 k:2 h:2 s:2 h:2 '.repeat(4).trim(),
   },
   // Relaxed: menus, setup, intro cards and results.
   menu: {

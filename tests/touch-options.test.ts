@@ -90,7 +90,7 @@ describe('key remapping', () => {
 
   it('builds the key map with touch codes kept and menu keys untouched', () => {
     const map = buildKeymap(remapKey(null, 'P1_LEFT', 'KeyJ'));
-    expect(map.P1_LEFT).toEqual(['KeyJ', 'TouchLeft']);
+    expect(map.P1_LEFT).toEqual(['KeyJ', 'TouchLeft', 'PadLB', 'PadX']); // on-screen and pad buttons stay
     expect(map.MENU_LEFT).toEqual(DEFAULT_KEYMAP.MENU_LEFT);
     expect(buildKeymap(null)).toEqual(DEFAULT_KEYMAP);
     const input = new Input(map);

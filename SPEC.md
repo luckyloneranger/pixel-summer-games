@@ -43,10 +43,10 @@ Version 1 has four events, three modes, keyboard and touch controls, and high sc
 
 | Area | In v1 | Later (backlog, rough priority order) |
 | --- | --- | --- |
-| Events | 100 m dash, long jump, javelin throw, 110 m hurdles (high jump added in Phase 10) | Triple jump, 100 m freestyle swim, archery, weightlifting, skeet shooting, hammer throw, pole vault |
-| Modes | Championship (arcade), Practice (any single event), Versus (2 players on one keyboard) | Online multiplayer (Phase 11), ghost runner of your best run, achievements |
-| Controls | Keyboard on desktop, on-screen touch buttons on mobile | Gamepad (browser Gamepad API) |
-| Saving | High scores, personal bests and settings in the browser (localStorage) | Online leaderboard (would need a server) |
+| Events | 100 m dash, long jump, javelin throw, 110 m hurdles (high jump added in Phase 10; triple jump, pole vault, hammer throw and 50 m freestyle in Phase 15) | Archery, weightlifting, skeet shooting |
+| Modes | Championship (arcade), Practice (any single event), Versus (2 players on one keyboard) | Online multiplayer (Phase 11), ghost runner and achievements (Phase 14) |
+| Controls | Keyboard on desktop, on-screen touch buttons on mobile (gamepads added in Phase 16) | — |
+| Saving | High scores, personal bests and settings in the browser (localStorage) | Weekly online leaderboard, opt-in (Phase 14) |
 | Customisation | Player initials and team colour | Athlete looks, kit designs |
 
 **Not in v1:** online multiplayer (added from Phase 11, after v1, with a small relay server), accounts, a backend server, payments or ads, 3D graphics, real athletes, licensed music.
@@ -396,6 +396,26 @@ Build in this order. Get the feel of the running right with plain boxes before a
 - 13c – Effects: speed lines near top speed, a javelin trail and shadow, a sand burst on landing, a mat squash, a slow-motion zoom highlight when a jump or throw is heading past the qualifying mark (offline only, as it would put online games out of step), and a blinds wipe between screens.
 - 13d – Retro TV (Options, off by default): scanlines and darker corners.
 - Reduce flashing turns off the camera flashes, screen shake and the highlight. Game logic is unchanged; slow motion can't change a mark because flights use an exact formula.
+
+**Phase 14 – Reasons to come back** (14a–14c, planned and built in one go at the user's request)
+
+- 14a – Ghost runner: your best 100 m, hurdles and 50 m swim are saved as positions every 0.05 s and replayed as a see-through ghost in your lane (offline, one player; Options switch, on by default).
+- 14b – Awards: 17 achievements checked on the results screen (event marks, wins, reaction time, championship and online results, a best in every event); saved in the browser; an AWARD! banner; an AWARDS screen on the main menu.
+- 14c – Weekly online leaderboard: opt-in (Options, off by default). New personal bests send initials and mark to the game server, which keeps each ISO week's marks in a SQLite Durable Object (best per name, top 10 per event, 4 weeks kept). Marks are checked against believable limits; 20 sends per hour per address. Shown in High Scores. Working rule 6 updated.
+
+**Phase 15 – Four new events** (all nine in Practice, Versus, bests, awards and the leaderboard; the Championship stays at the classic five)
+
+- Triple jump: the long-jump run-up and take-off, then a tap of Action just before each touchdown (good, weak or missed contact) for the step and the jump. Each extra take-off is sent online like the first.
+- Pole vault: the high jump made configurable; bars from 4.60 to 6.20 m, a pole that's carried, planted and bent, then dropped.
+- Hammer throw: tap in turn to spin faster, press Action as the hammer passes the green sector on a dial; a foul outside the 35° sector or after five turns. Offline only for now.
+- 50 m freestyle: the race rules in a pool with swimming sprites and water speeds.
+
+**Phase 16 – Controls and polish**
+
+- Gamepads (browser Gamepad API): LB/RB or X/Y run, A acts and confirms, B goes back, the d-pad or left stick moves in menus; hints switch to pad buttons when one is pressed.
+- A new original title tune, and a short fanfare on each event's intro card (pitched per event).
+- Fixes: the lobby's "close room" note sat under the phone control bar; high jumps and vaults now land on the mat's top, so CLEARED appears on time.
+- Not done: reloading mid-match still counts as leaving (rejoining would need the whole match kept on the server).
 
 ## 10. Testing, quality and definition of done
 

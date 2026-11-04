@@ -4,7 +4,7 @@
 import type { EventId } from '../events/event';
 import { defaultControls, keyName, type Controls } from '../core/keymap';
 
-export type PromptMode = 'keys' | 'touch';
+export type PromptMode = 'keys' | 'touch' | 'pad';
 
 /** Lowest y (px) for a line of text above the phone control bar (it starts at 154). */
 const NOTE_LIMIT = 144;
@@ -20,37 +20,44 @@ export class Prompts {
     return this.mode() === 'touch';
   }
 
+  /** Is the player using a gamepad right now? */
+  get pad(): boolean {
+    return this.mode() === 'pad';
+  }
+
   /** The two run keys: "A+D" (player 1), "LEFT+RIGHT" (player 2), or "← →". */
   run(player = 0): string {
     if (this.touch) return '← →';
+    if (this.pad && player === 0) return 'LB+RB'; // a second player is still on the keyboard
     const p = player === 1 ? 'P2' : 'P1';
     return `${this.key(`${p}_LEFT`)}+${this.key(`${p}_RIGHT`)}`;
   }
 
   /** The jump / throw key: "W", "UP", or the ACTION button. */
   action(player = 0): string {
+    if (this.pad && player === 0) return 'A';
     return this.touch ? 'ACTION' : this.key(player === 1 ? 'P2_ACTION' : 'P1_ACTION');
   }
 
   ok(): string {
-    return this.touch ? 'OK' : 'ENTER';
+    return this.pad ? 'A' : this.touch ? 'OK' : 'ENTER';
   }
 
   back(): string {
-    return this.touch ? 'BACK' : 'ESC';
+    return this.pad ? 'B' : this.touch ? 'BACK' : 'ESC';
   }
 
   upDown(): string {
-    return this.touch ? '↑ ↓' : 'UP/DOWN';
+    return this.touch || this.pad ? '↑ ↓' : 'UP/DOWN';
   }
 
   leftRight(): string {
-    return this.touch ? '← →' : 'LEFT/RIGHT';
+    return this.touch || this.pad ? '← →' : 'LEFT/RIGHT';
   }
 
-  /** "PRESS ENTER" or "TAP OK". */
+  /** "PRESS ENTER", "TAP OK" or "PRESS A". */
   pressOk(): string {
-    return this.touch ? 'TAP OK' : 'PRESS ENTER';
+    return this.pad ? 'PRESS A' : this.touch ? 'TAP OK' : 'PRESS ENTER';
   }
 
   /** The title screen's call to action (a tap anywhere starts on a phone). */
@@ -83,6 +90,7 @@ export class Prompts {
 
   /** Letter entry (initials, room code). */
   letters(): string {
+    if (this.pad) return '↑ ↓ LETTER  ← → MOVE  A NEXT';
     return this.touch ? '↑ ↓ LETTER  ← → MOVE  OK NEXT' : 'UP/DOWN LETTER  L/R MOVE  ENTER OK';
   }
 

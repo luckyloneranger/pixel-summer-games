@@ -21,6 +21,7 @@ import { drawWipe, highlightZoom, wipeCover } from '../gfx/screen-fx';
 import type { Scene } from './scene-manager';
 import { TouchControls, drawRotateNotice } from '../ui/touch-controls';
 import { buildKeymap } from './keymap';
+import { GamepadPoller, connectedPads } from './gamepad';
 import { Prompts } from '../ui/prompts';
 
 /** Owns the loop, the canvas, the scene stack and the shared services. */
@@ -41,6 +42,9 @@ export class Game {
   private shakeLeft = 0; // s of screen shake left
   private shakePixels = 0;
   private toastText = '';
+  private readonly pads = new GamepadPoller();
+  /** The last thing the player pressed was a gamepad button. */
+  private padActive = false;
   private awardQueue: string[] = [];
   private awardTime = 0; // s the current award banner has been up
   private lastFrameDt = 0; // s since the last frame was drawn
@@ -63,6 +67,9 @@ export class Game {
     this.touch = new TouchControls(canvas, this.input);
     this.audio = new AudioEngine(this.store.data.settings);
     this.music = new MusicPlayer(this.audio);
+    // The last device used decides the hints: a key or a touch stops gamepad hints.
+    window.addEventListener('keydown', () => (this.padActive = false));
+    window.addEventListener('pointerdown', () => (this.padActive = false));
     // Browsers only allow sound after the player interacts, so switch it on then.
     const unlock = () => this.audio.unlock();
     // iPhone Safari is picky about which gesture may start audio, so try them all.
@@ -116,7 +123,7 @@ export class Game {
 
   /** Words for the controls, matching the keyboard or the on-screen buttons in use. */
   readonly prompts = new Prompts(
-    () => (this.touch.enabled ? 'touch' : 'keys'),
+    () => (this.padActive ? 'pad' : this.touch.enabled ? 'touch' : 'keys'),
     () => this.store.data.settings.controls,
   );
 
@@ -166,6 +173,13 @@ export class Game {
   }
 
   private update(dt: number): void {
+    // Gamepad buttons become key presses before this step's input is read.
+    const padPressed = this.pads.poll(connectedPads(), (c) => this.input.keyDown(c), (c) => this.input.keyUp(c));
+    if (padPressed) {
+      this.padActive = true;
+      this.touch.enabled = false; // no on-screen buttons while playing with a pad
+      this.audio.unlock();
+    }
     this.input.beginStep();
     this.effects.calm = this.steady;
     this.highlightAge += dt;
@@ -262,11 +276,11 @@ export class Game {
     const a = achievement(this.awardQueue[0]);
     if (!a) return;
     const r = this.renderer;
-    r.rect(40, 30, r.width - 80, 22, PALETTE.INK);
-    r.rect(40, 30, r.width - 80, 1, PALETTE.YELLOW);
-    r.rect(40, 51, r.width - 80, 1, PALETTE.YELLOW);
-    r.text('AWARD!', r.width / 2, 33, PALETTE.YELLOW, 'center');
-    r.text(a.name, r.width / 2, 42, PALETTE.WHITE, 'center');
+    // Over the title bar, where it hides nothing that matters for a moment.
+    r.rect(0, 0, r.width, 24, PALETTE.INK);
+    r.rect(0, 23, r.width, 1, PALETTE.YELLOW);
+    r.text('AWARD!', r.width / 2, 3, PALETTE.YELLOW, 'center');
+    r.text(a.name, r.width / 2, 13, PALETTE.WHITE, 'center');
   }
 
   /** A strip across the top of the screen (online connection trouble). */

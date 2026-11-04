@@ -16,6 +16,7 @@ export interface HeightEventConfig extends RunUpConfig {
   BAR_X: number; // m past the take-off line
   MAT_START: number; // m
   MAT_END: number; // m
+  LAND_HEIGHT: number; // m, top of the landing mat (where a jump that reaches it comes down)
   BAR_FALL_TIME: number; // s
   PIXELS_PER_METER: number;
   CAMERA_LEAD: number; // px
@@ -89,6 +90,9 @@ export class HighJumpEvent extends RunUpFieldEvent {
 
   /** Decide clear or knock from the exact flight path, the moment you let go. */
   protected onRelease(): void {
+    // Land on the mat's top, or on the ground if the jump comes down short of it.
+    this.flight.setFloor(this.hcfg.LAND_HEIGHT);
+    if (this.flight.landingX < this.hcfg.MAT_START) this.flight.setFloor(0);
     this.crossing = this.flight.heightAt(this.hcfg.BAR_X);
     this.cleared = this.crossing !== null && this.crossing >= this.jumpBar;
   }

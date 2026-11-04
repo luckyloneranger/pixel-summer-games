@@ -22,6 +22,9 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 12 – A more fun title screen | ✅ Approved |
 | 12b – Hints that match the device | ✅ Approved |
 | 13 – Graphics quality (13a–13d) | ✅ Approved |
+| 14 – Ghost runner, awards, weekly leaderboard | 🔍 Ready for review |
+| 15 – Triple jump, pole vault, hammer, 50 m swim | 🔍 Ready for review |
+| 16 – Gamepad, new title tune, fixes | 🔍 Ready for review |
 
 ## Phase 0 – Setup and skeleton
 
@@ -358,4 +361,54 @@ Built in one go at the user's request, instead of one sub-phase at a time.
 - Athletes stay 16×24 rather than the 24×32 first suggested. Four runners share 14-pixel lanes, so taller sprites would overlap the wall and each other, and every event would need re-laying out. The outlines, shading and extra frames give most of the gain.
 - The highlight zoom isn't pixel-perfect (it's a 1.25× enlargement for about a second). That's deliberate: it reads as a camera move.
 
-**Next:** to be chosen with the user.
+**Next:** Phases 14–16.
+
+## Phases 14–16 – Planned and built in one go (user's request)
+
+**Phase 14 – Reasons to come back**
+- **Ghost runner:** your best 100 m, hurdles and 50 m swim race beside you as a see-through ghost (offline, one player; Options → Ghost runner).
+- **Awards:** 17 of them, an AWARD! banner when you earn one, and an AWARDS screen on the main menu.
+- **Weekly online leaderboard:** off until you turn it on in Options.
+  - When it's on, new personal bests send your initials and mark to the game server.
+  - The weekly top 10 for each event shows in High Scores.
+  - The server checks marks against believable limits and allows 20 sends per hour from each address.
+  - It's deployed and running on Cloudflare (the deploy log shows the new storage). Working rule 6 is updated in SPEC and CLAUDE.md.
+
+**Phase 15 – Four new events**
+- **Triple jump:** tap Action just before each landing. Good, weak or missed contacts decide whether the step and jump happen.
+- **Pole vault:** bars from 4.60 to 6.20 m, with a pole that's carried, bent and dropped.
+- **Hammer throw:** spin by tapping, then let go in the green sector on a dial.
+- **50 m freestyle:** a race in a pool, with new swimming sprites.
+- **Tuning against real-world levels:** a perfect triple jump reaches about 18 m and a perfect vault about 6.4 m.
+- **Where they appear:** all nine events are in Practice, Versus, bests, the ticker, How to Play, awards and the leaderboard.
+- **Championship and online:** the Championship stays at the classic five. Online offers every event except the hammer.
+
+**Phase 16 – Controls and polish**
+- **Gamepad support,** with hints that switch to pad buttons when you use one.
+- **Music:** a new original title tune, and a fanfare on each event's intro card.
+- **Fixes:**
+  - the lobby's "close room" note was hidden under the phone control bar;
+  - CLEARED appeared about 0.1 s late in the high jump (jumps now land on the mat top).
+
+**Tests**
+- 325 unit tests. The new ones cover:
+  - ghost recording and replay;
+  - awards;
+  - leaderboard rules, ISO weeks, ranking and the client;
+  - every event being wired up;
+  - triple-jump contacts;
+  - pole-vault heights and clearance;
+  - hammer sector, fouls and three throws;
+  - a believable swim time;
+  - online sync for the triple jump, pole vault and swim;
+  - gamepad input and hints;
+  - landing on the mat.
+- The browser tests pass.
+
+**Known issues / notes**
+- The hammer is offline only. Online needs its spin streamed like a run-up.
+- The leaderboard's anti-cheat is basic: limits and a rate limit. A determined cheater could still post a believable fake mark.
+- Reloading mid-match still counts as leaving an online match.
+- A gamepad's Start button confirms. Pause with B or Select.
+
+**Next:** waiting for approval.

@@ -42,7 +42,7 @@ export class Input implements InputSnapshot {
   /** Raw key press. Auto-repeat (key held down) is ignored. */
   keyDown(code: string, repeat = false): void {
     if (repeat || this.heldKeys.has(code)) return;
-    if (!code.startsWith('Touch')) this.lastKey = code;
+    if (!code.startsWith('Touch') && !code.startsWith('Pad')) this.lastKey = code; // keyboard keys only (for remapping)
     const actions = this.actionsByKey.get(code);
     if (!actions) return;
     for (const a of actions) {

@@ -173,7 +173,7 @@ export class LobbyScene implements Scene {
 
     if (this.role === 'guest') {
       r.text(this.peer ? 'WAITING FOR THE HOST TO START' : 'CONNECTED', cx, 104, PALETTE.CYAN, 'center');
-      r.text(this.game.prompts.backTo('LEAVE'), cx, 166, PALETTE.GREY_LIGHT, 'center');
+      r.text(this.game.prompts.backTo('LEAVE'), cx, this.game.prompts.noteY(166), PALETTE.GREY_LIGHT, 'center');
       return;
     }
     const rows = [
@@ -188,7 +188,7 @@ export class LobbyScene implements Scene {
       const dim = i === 2 && !this.peer;
       r.text(label, 40, y, dim ? PALETTE.GREY_DARK : selected ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
     });
-    r.text(this.game.prompts.backTo('CLOSE ROOM'), cx, 166, PALETTE.GREY_LIGHT, 'center');
+    r.text(this.game.prompts.backTo('CLOSE ROOM'), cx, this.game.prompts.noteY(166), PALETTE.GREY_LIGHT, 'center');
   }
 }
 

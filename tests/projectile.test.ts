@@ -77,3 +77,16 @@ describe('AngleMeter', () => {
     expect(m.state).toBe('locked');
   });
 });
+
+describe('landing height (high-jump mat)', () => {
+  it('a flight that comes down on the mat lands sooner, at the mat top', () => {
+    const ground = new Projectile(9.81);
+    ground.launch(0, 1, 6, 60);
+    const mat = new Projectile(9.81);
+    mat.launch(0, 1, 6, 60, 0.6);
+    expect(mat.flightTime).toBeLessThan(ground.flightTime);
+    for (let i = 0; i < 600 && !mat.landed; i++) mat.update(1 / 60);
+    expect(mat.y).toBe(0.6);
+    expect(mat.heightAt(1)).toBeCloseTo(ground.heightAt(1)!); // the path is the same until then
+  });
+});

@@ -16,7 +16,8 @@ export type SoundName =
   | 'clank'
   | 'cheer'
   | 'medal'
-  | 'newRecord';
+  | 'newRecord'
+  | 'intro';
 
 /**
  * Play a sound effect. `param` is 0-1 where a sound uses it
@@ -76,6 +77,13 @@ export function playSfx(a: AudioEngine, name: SoundName, param = 0): void {
       arpeggio(a, [523, 659, 784, 1047], 0.1, 0.35);
       a.tone({ wave: 'triangle', freq: 262, duration: 0.6, volume: 0.4 });
       return;
+    case 'intro': {
+      // A short fanfare on each event's card, pitched a little differently per event (param = event number).
+      const lift = Math.pow(2, (Math.round(param) % 5) / 12);
+      arpeggio(a, [392, 523, 659, 784].map((f) => f * lift), 0.07, 0.3);
+      a.tone({ wave: 'triangle', freq: 196 * lift, duration: 0.45, volume: 0.35 });
+      return;
+    }
     case 'newRecord':
       for (let r = 0; r < 2; r++) arpeggio(a, [784, 988, 1175, 1568], 0.06, 0.25, r * 0.28);
       return;
