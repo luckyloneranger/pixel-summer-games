@@ -11,7 +11,7 @@ Work one phase at a time, plan before coding, and stop for the user after every 
 3. Build the smallest playable version first. Plain boxes before art.
 4. Put every tunable number in `src/game/tuning.ts`, with units in a comment. No unexplained numbers in event code.
 5. Keep game logic (`update`) separate from drawing (`render`) so the logic can be unit-tested.
-6. Ask before adding any npm package. No network requests while the game runs, except in Online mode after the player chooses it (Phase 11, approved by the user); offline modes stay fully offline. No analytics or tracking.
+6. Ask before adding any npm package. No network requests while the game runs, except in Online mode after the player chooses it (Phase 11) and the weekly leaderboard after the player turns it on in Options (Phase 14; it sends only initials and marks). Both were approved by the user; everything else stays fully offline. No analytics or tracking.
 7. Original assets only. Don't copy sprites, music, sounds or names from existing games. Don't use "Olympic" or "Olympics" or the ring symbol. Fonts only under open licences such as the SIL Open Font License.
 8. At the end of each phase, meet the definition of done in section 10, then stop and wait.
 9. When the user reports a feel problem ("running feels sluggish"), suggest specific tuning changes with before and after values before rewriting any system.

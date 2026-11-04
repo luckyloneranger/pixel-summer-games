@@ -5,6 +5,7 @@ import type { Scene } from '../core/scene-manager';
 import type { EventId, EventResult } from '../events/event';
 import type { EventOutcome } from '../game/championship';
 import { updatePersonalBest } from '../game/records';
+import { submitMark } from '../net/leaderboard';
 import { awardsForBests, awardsForEvent, awardsForMatch } from '../game/achievements';
 import { EVENT_KIND, EVENT_NAMES, scoreResults } from '../game/scoring';
 import type { Session } from '../game/session';
@@ -50,7 +51,10 @@ export class ResultsScene implements Scene {
     let improved = false;
     for (const r of this.humans) {
       const mark = r.disqualified ? null : r.mark;
-      if (updatePersonalBest(game.store.data.personalBests, eventId, mark)) improved = true;
+      if (!updatePersonalBest(game.store.data.personalBests, eventId, mark)) continue;
+      improved = true;
+      // Opted in: the new best goes to this week's online top 10.
+      if (game.store.data.settings.leaderboard && mark !== null) void submitMark(eventId, r.name, mark);
     }
     this.newRecord = improved;
     if (improved) game.store.save();

@@ -25,6 +25,8 @@ export interface SaveData {
     crt: boolean;
     /** Race your best run's ghost (offline, one player). */
     ghost: boolean;
+    /** Send new personal bests to the weekly online leaderboard (off until the player turns it on). */
+    leaderboard: boolean;
     assist: boolean;
     /** Remapped gameplay keys, or null for the defaults. */
     controls: Controls | null;
@@ -59,6 +61,7 @@ export function defaultSave(): SaveData {
       reduceFlashing: false,
       crt: false,
       ghost: true,
+      leaderboard: false,
       assist: false,
       controls: null,
     },

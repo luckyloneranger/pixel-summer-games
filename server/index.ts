@@ -4,9 +4,26 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { isRoomCode, parseClientMessage, type ServerMessage } from '../src/net/protocol';
+import { isValidSubmission, rankBoard, weekId, type BoardEntry, type Submission } from '../src/net/leaderboard-rules';
+
+const MAX_SUBMISSION_BYTES = 256;
+const SUBMITS_PER_HOUR = 20; // per connection address, to slow down spam
+const WEEKS_KEPT = 4; // older weeks are deleted
 
 export interface Env {
   ROOMS: DurableObjectNamespace<Room>;
+  BOARD: DurableObjectNamespace<Leaderboard>;
+}
+
+/** Lets the game (on another website) call the leaderboard. */
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 }
 
 export default {
@@ -19,6 +36,28 @@ export default {
         return new Response('Expected a WebSocket upgrade', { status: 426 });
       }
       return env.ROOMS.getByName(match[1]).fetch(request);
+    }
+    // Weekly leaderboard: GET /scores/EVENT for the top 10, POST /scores to send a mark.
+    if (url.pathname.startsWith('/scores')) {
+      if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+      const board = env.BOARD.getByName('global');
+      const event = /^\/scores\/([a-zA-Z0-9]+)$/.exec(url.pathname)?.[1];
+      if (request.method === 'GET' && event) return board.top(event).then((rows) => json(rows));
+      if (request.method === 'POST' && url.pathname === '/scores') {
+        const text = await request.text();
+        if (text.length > MAX_SUBMISSION_BYTES) return json({ ok: false }, 413);
+        let body: unknown;
+        try {
+          body = JSON.parse(text);
+        } catch {
+          return json({ ok: false }, 400);
+        }
+        if (!isValidSubmission(body)) return json({ ok: false }, 400);
+        const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+        const ok = await board.submit(body, ip);
+        return json({ ok }, ok ? 200 : 429);
+      }
+      return json({ ok: false }, 404);
     }
     if (url.pathname === '/') return new Response('Pixel Summer Games rooms: OK\n');
     return new Response('Not found', { status: 404 });
@@ -109,6 +148,44 @@ export class Room extends DurableObject<Env> {
   private leave(ws: WebSocket): void {
     if (seatOf(ws).replaced) return; // the player is still here, on a new socket
     for (const other of this.seated()) if (other !== ws) send(other, { t: 'left' });
+  }
+}
+
+/**
+ * The weekly leaderboard: one Durable Object for everyone, with a small SQLite
+ * table of (week, event, initials, mark). Only the best mark per name shows.
+ */
+export class Leaderboard extends DurableObject<Env> {
+  private readonly recent = new Map<string, number[]>(); // address -> submit times (ms)
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    ctx.storage.sql.exec(
+      'CREATE TABLE IF NOT EXISTS scores (week TEXT NOT NULL, event TEXT NOT NULL, initials TEXT NOT NULL, mark REAL NOT NULL, at INTEGER NOT NULL)',
+    );
+    ctx.storage.sql.exec('CREATE INDEX IF NOT EXISTS by_board ON scores (week, event)');
+  }
+
+  /** This week's top marks for an event. */
+  async top(event: string): Promise<{ week: string; rows: BoardEntry[] }> {
+    const week = weekId(Date.now());
+    const rows = this.ctx.storage.sql
+      .exec<{ initials: string; mark: number }>('SELECT initials, mark FROM scores WHERE week = ? AND event = ?', week, event)
+      .toArray();
+    return { week, rows: rankBoard(event, rows) };
+  }
+
+  /** Save a mark (already checked). False if this address is sending too many. */
+  async submit(s: Submission, address: string): Promise<boolean> {
+    const now = Date.now();
+    const times = (this.recent.get(address) ?? []).filter((t) => now - t < 3_600_000);
+    if (times.length >= SUBMITS_PER_HOUR) return false;
+    times.push(now);
+    this.recent.set(address, times);
+    const week = weekId(now);
+    this.ctx.storage.sql.exec('INSERT INTO scores VALUES (?, ?, ?, ?, ?)', week, s.event, s.initials, s.mark, now);
+    this.ctx.storage.sql.exec('DELETE FROM scores WHERE week < ?', weekId(now - WEEKS_KEPT * 7 * 86_400_000));
+    return true;
   }
 }
 
