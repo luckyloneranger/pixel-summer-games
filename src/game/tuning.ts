@@ -34,6 +34,11 @@ export const TITLE = {
   FLASH_TIME: 0.18, // s of white flash (and starting pistol) before the menu opens
 };
 
+/** Award banners. */
+export const AWARDS = {
+  BANNER_TIME: 2.6, // s each "AWARD!" banner stays up
+};
+
 /** Ghost runner: your best race replayed beside you. */
 export const GHOST = {
   SAMPLE: 0.05, // s between recorded positions (a 15 s race is 300 numbers)

@@ -4,6 +4,9 @@ import { qualifies, scoreResults } from './scoring';
 /** Championship order (SPEC section 6, decathlon order since the high jump joined in Phase 10). */
 export const CHAMPIONSHIP_EVENTS: readonly EventId[] = ['dash100', 'longJump', 'highJump', 'javelin', 'hurdles110'];
 
+/** Every event in the game (Practice, Versus and bests list them all). */
+export const ALL_EVENTS: readonly EventId[] = [...CHAMPIONSHIP_EVENTS];
+
 export interface Standing {
   name: string;
   playerIndex: number; // 0 or 1 for humans, -1 for CPUs

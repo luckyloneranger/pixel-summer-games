@@ -5,6 +5,7 @@ import type { Scene } from '../core/scene-manager';
 import type { EventId, EventResult } from '../events/event';
 import type { EventOutcome } from '../game/championship';
 import { updatePersonalBest } from '../game/records';
+import { awardsForBests, awardsForEvent, awardsForMatch } from '../game/achievements';
 import { EVENT_KIND, EVENT_NAMES, scoreResults } from '../game/scoring';
 import type { Session } from '../game/session';
 import { RECORDS } from '../game/tuning';
@@ -53,11 +54,37 @@ export class ResultsScene implements Scene {
     }
     this.newRecord = improved;
     if (improved) game.store.save();
+    this.checkAwards();
 
     // A jingle for a new record, otherwise a fanfare for a medal.
     const medalled = this.humans.some((r) => this.medalPlace(r) >= 0);
     if (this.newRecord) game.sfx('newRecord');
     else if (medalled) game.sfx('medal');
+  }
+
+  /** Awards for this event, your bests, and (if it just ended) the match. */
+  private checkAwards(): void {
+    const s = this.session;
+    const online = s.online;
+    const mine = (i: number) => (online ? i === online.localIndex : true);
+    const ids = [
+      ...awardsForEvent({ eventId: this.eventId, results: this.results, mine }),
+      ...awardsForBests(this.game.store.data.personalBests),
+    ];
+    const series = s.series;
+    if (series && series.state !== 'playing') {
+      ids.push(
+        ...awardsForMatch({
+          mode: s.mode,
+          difficulty: s.difficulty,
+          completed: series.state === 'complete',
+          online: !!online,
+          standings: series.standings(),
+          localIndex: online?.localIndex ?? 0,
+        }),
+      );
+    }
+    this.game.unlock(ids);
   }
 
   private get humans(): EventResult[] {

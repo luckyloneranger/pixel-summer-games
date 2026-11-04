@@ -33,6 +33,8 @@ export interface SaveData {
   personalBests: PersonalBests;
   /** Each race's best run, for the ghost runner (positions, see game/ghost.ts). */
   ghosts: Partial<Record<EventId, number[]>>;
+  /** Awards earned: id -> when (ms since 1970). */
+  achievements: Record<string, number>;
 }
 
 /** Versioned key, so a future format change can't misread old saves. */
@@ -63,6 +65,7 @@ export function defaultSave(): SaveData {
     highScores: { championship: [], versus: [] },
     personalBests: {},
     ghosts: {},
+    achievements: {},
   };
 }
 
@@ -101,6 +104,7 @@ export class SaveStore {
         },
         personalBests: { ...parsed.personalBests },
         ghosts: { ...parsed.ghosts },
+        achievements: { ...parsed.achievements },
       };
     } catch {
       this.fallBackToMemory();

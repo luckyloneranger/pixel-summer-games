@@ -9,6 +9,7 @@ import { HighScoresScene } from './high-scores';
 import { HowToPlayScene } from './how-to-play';
 import { OptionsScene } from './options';
 import { OnlineMenuScene } from './online-menu';
+import { AwardsScene } from './awards';
 import { PlayerSetupScene } from './player-setup';
 
 const ITEMS: MenuItem[] = [
@@ -17,6 +18,7 @@ const ITEMS: MenuItem[] = [
   { label: 'VERSUS' },
   { label: 'ONLINE' },
   { label: 'HIGH SCORES' },
+  { label: 'AWARDS' },
   { label: 'HOW TO PLAY' },
   { label: 'OPTIONS' },
 ];
@@ -54,6 +56,9 @@ export class MenuScene implements Scene {
       case 'HIGH SCORES':
         g.scenes.push(new HighScoresScene(g, { toTitle: false }));
         break;
+      case 'AWARDS':
+        g.scenes.push(new AwardsScene(g));
+        break;
       case 'HOW TO PLAY':
         g.scenes.push(new HowToPlayScene(g));
         break;
@@ -66,7 +71,7 @@ export class MenuScene implements Scene {
   render(r: Renderer): void {
     r.clear(PALETTE.NAVY);
     drawHeader(r, 'MAIN MENU');
-    drawMenu(r, ITEMS, this.selected, 104, 40, 15);
+    drawMenu(r, ITEMS, this.selected, 104, 36, 13);
     const p = this.game.prompts;
     // Versus shares one keyboard between two players.
     if (p.touch && ITEMS[this.selected].label === 'VERSUS') r.text('VERSUS NEEDS A KEYBOARD', r.width / 2, p.noteY(156), PALETTE.YELLOW, 'center');

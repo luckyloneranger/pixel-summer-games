@@ -14,8 +14,9 @@ import { MusicPlayer } from '../audio/music';
 import { playSfx, type SoundName } from '../audio/sfx';
 import { AudioEngine } from '../audio/synth';
 import type { EffectsSink, SoundSink } from '../events/event';
-import { AUDIO, EFFECTS } from '../game/tuning';
+import { AUDIO, AWARDS, EFFECTS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
+import { achievement, newAwards } from '../game/achievements';
 import { drawWipe, highlightZoom, wipeCover } from '../gfx/screen-fx';
 import type { Scene } from './scene-manager';
 import { TouchControls, drawRotateNotice } from '../ui/touch-controls';
@@ -40,6 +41,9 @@ export class Game {
   private shakeLeft = 0; // s of screen shake left
   private shakePixels = 0;
   private toastText = '';
+  private awardQueue: string[] = [];
+  private awardTime = 0; // s the current award banner has been up
+  private lastFrameDt = 0; // s since the last frame was drawn
   private highlightAge = Infinity; // s since a big-jump highlight started
   private wipeAge = 0; // s since the current screen appeared (for the wipe)
   private lastTop: Scene | undefined;
@@ -191,6 +195,7 @@ export class Game {
   }
 
   private render(nowMs: number): void {
+    this.lastFrameDt = this.lastRenderMs >= 0 ? Math.min(0.1, (nowMs - this.lastRenderMs) / 1000) : 0;
     if (this.lastRenderMs >= 0) this.debug.fpsCounter.frame((nowMs - this.lastRenderMs) / 1000);
     this.lastRenderMs = nowMs;
 
@@ -205,6 +210,7 @@ export class Game {
     this.touch.setLayout(top === 'EVENT' ? 'event' : top === 'TITLE' || top === 'DEMO' ? 'title' : 'menu');
     this.touch.render(this.renderer);
     if (this.onlineBanner) this.drawBanner(this.onlineBanner);
+    this.drawAward(this.lastFrameDt);
     if (this.portrait) drawRotateNotice(this.renderer);
     if (this.toastTime > 0) {
       const w = this.toastText.length * 8 + 8;
@@ -232,6 +238,35 @@ export class Game {
     const overlay = top?.isOverlay || this.lastTop?.isOverlay;
     this.lastTop = top;
     if (!overlay) this.wipeAge = 0;
+  }
+
+  /** Earn awards (ones already earned are ignored); each new one gets a banner. */
+  unlock(ids: readonly string[]): void {
+    const have = this.store.data.achievements;
+    const fresh = newAwards(have, ids);
+    if (!fresh.length) return;
+    for (const id of fresh) have[id] = Date.now();
+    this.store.save();
+    this.awardQueue.push(...fresh);
+  }
+
+  /** "AWARD! FIRST STEPS" across the top, one at a time. */
+  private drawAward(dt: number): void {
+    if (!this.awardQueue.length) return;
+    this.awardTime += dt;
+    if (this.awardTime >= AWARDS.BANNER_TIME) {
+      this.awardQueue.shift();
+      this.awardTime = 0;
+      if (!this.awardQueue.length) return;
+    }
+    const a = achievement(this.awardQueue[0]);
+    if (!a) return;
+    const r = this.renderer;
+    r.rect(40, 30, r.width - 80, 22, PALETTE.INK);
+    r.rect(40, 30, r.width - 80, 1, PALETTE.YELLOW);
+    r.rect(40, 51, r.width - 80, 1, PALETTE.YELLOW);
+    r.text('AWARD!', r.width / 2, 33, PALETTE.YELLOW, 'center');
+    r.text(a.name, r.width / 2, 42, PALETTE.WHITE, 'center');
   }
 
   /** A strip across the top of the screen (online connection trouble). */
