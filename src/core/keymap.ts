@@ -10,6 +10,7 @@ export type Action =
   | 'P2_RIGHT'
   | 'P2_ACTION'
   | 'P1_CHORD'
+  | 'PAUSE'
   | 'MENU_UP'
   | 'MENU_DOWN'
   | 'MENU_LEFT'
@@ -30,10 +31,11 @@ export const DEFAULT_KEYMAP: KeyMap = {
   P1_LEFT: ['KeyA', 'TouchLeft', 'PadLB', 'PadX'],
   P1_RIGHT: ['KeyD', 'TouchRight', 'PadRB', 'PadY'],
   P1_ACTION: ['KeyW', 'Space', 'TouchAction', 'PadA', 'PadRT'],
-  P2_LEFT: ['ArrowLeft'],
-  P2_RIGHT: ['ArrowRight'],
-  P2_ACTION: ['ArrowUp'],
+  P2_LEFT: ['ArrowLeft', 'Pad2LB', 'Pad2X'],
+  P2_RIGHT: ['ArrowRight', 'Pad2RB', 'Pad2Y'],
+  P2_ACTION: ['ArrowUp', 'Pad2A', 'Pad2RT'],
   P1_CHORD: ['TouchChord'], // both run pads at once (touch): the hurdles' jump
+  PAUSE: ['PadStart', 'Pad2Start'], // Start pauses an event (it also confirms in menus)
   MENU_UP: ['ArrowUp', 'KeyW', 'TouchUp', 'PadUp'],
   MENU_DOWN: ['ArrowDown', 'KeyS', 'TouchDown', 'PadDown'],
   MENU_LEFT: ['ArrowLeft', 'KeyA', 'TouchLeft', 'PadLeft'],

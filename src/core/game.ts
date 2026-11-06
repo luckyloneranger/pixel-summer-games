@@ -131,6 +131,7 @@ export class Game {
   readonly prompts = new Prompts(
     () => (this.padActive ? 'pad' : this.touch.enabled ? 'touch' : 'keys'),
     () => this.store.data.settings.controls,
+    () => this.pads.count,
   );
 
   /** Reduce shake and flashing is on: blinking text stays steady. */

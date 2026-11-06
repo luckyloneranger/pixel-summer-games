@@ -37,7 +37,7 @@ export class PauseScene implements Scene {
   update(dt: number, input: InputSnapshot): void {
     const g = this.game;
     if (this.online) this.play.tickUnderPause(dt); // the race doesn't stop for one player
-    if (input.justPressed('BACK')) {
+    if (input.justPressed('BACK') || input.justPressed('PAUSE')) {
       g.scenes.pop();
       return;
     }

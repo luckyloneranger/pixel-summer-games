@@ -68,7 +68,7 @@ export class EventPlayScene implements Scene {
   }
 
   update(dt: number, input: InputSnapshot): void {
-    if (input.justPressed('BACK')) {
+    if (input.justPressed('BACK') || input.justPressed('PAUSE')) {
       this.game.scenes.push(new PauseScene(this.game, this, !!this.session.online));
       return;
     }

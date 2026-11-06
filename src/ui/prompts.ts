@@ -13,6 +13,8 @@ export class Prompts {
   constructor(
     private readonly mode: () => PromptMode,
     private readonly controls: () => Controls | null = () => null,
+    /** Gamepads connected (a second one is player 2's). */
+    private readonly padCount: () => number = () => 0,
   ) {}
 
   /** Is the player using the on-screen buttons right now? */
@@ -28,14 +30,14 @@ export class Prompts {
   /** The two run keys: "A+D" (player 1), "LEFT+RIGHT" (player 2), or "← →". */
   run(player = 0): string {
     if (this.touch) return '← →';
-    if (this.pad && player === 0) return 'LB+RB'; // a second player is still on the keyboard
+    if (this.pad && (player === 0 || this.padCount() >= 2)) return 'LB+RB'; // player 2 has a pad only if two are connected
     const p = player === 1 ? 'P2' : 'P1';
     return `${this.key(`${p}_LEFT`)}+${this.key(`${p}_RIGHT`)}`;
   }
 
   /** The jump / throw key: "W", "UP", or the ACTION button. */
   action(player = 0): string {
-    if (this.pad && player === 0) return 'A';
+    if (this.pad && (player === 0 || this.padCount() >= 2)) return 'A';
     return this.touch ? 'ACTION' : this.key(player === 1 ? 'P2_ACTION' : 'P1_ACTION');
   }
 

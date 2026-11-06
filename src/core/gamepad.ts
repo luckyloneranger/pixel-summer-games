@@ -26,24 +26,30 @@ export interface PadLike {
   axes: readonly number[];
 }
 
-/** Which of our codes a pad is holding right now (the left stick counts as the d-pad). */
-export function heldCodes(pad: PadLike): Set<string> {
+/**
+ * Which of our codes a pad is holding right now (the left stick counts as the
+ * d-pad). The first pad's codes start "Pad", the second's "Pad2" (player 2).
+ */
+export function heldCodes(pad: PadLike, second = false): Set<string> {
   const held = new Set<string>();
+  const add = (code: string) => held.add(second ? code.replace(/^Pad/, 'Pad2') : code);
   pad.buttons.forEach((b, i) => {
     const code = BUTTONS[i];
-    if (code && b.pressed) held.add(code);
+    if (code && b.pressed) add(code);
   });
   const [x = 0, y = 0] = pad.axes;
-  if (x < -GAMEPAD.STICK) held.add('PadLeft');
-  if (x > GAMEPAD.STICK) held.add('PadRight');
-  if (y < -GAMEPAD.STICK) held.add('PadUp');
-  if (y > GAMEPAD.STICK) held.add('PadDown');
+  if (x < -GAMEPAD.STICK) add('PadLeft');
+  if (x > GAMEPAD.STICK) add('PadRight');
+  if (y < -GAMEPAD.STICK) add('PadUp');
+  if (y > GAMEPAD.STICK) add('PadDown');
   return held;
 }
 
 /** Turns pad changes into key presses and releases. */
 export class GamepadPoller {
   private held = new Set<string>();
+  /** Pads connected at the last poll. */
+  count = 0;
 
   /**
    * Compare what's held now with last time and report the changes. Returns
@@ -51,7 +57,12 @@ export class GamepadPoller {
    */
   poll(pads: readonly (PadLike | null)[], press: (code: string) => void, release: (code: string) => void): boolean {
     const now = new Set<string>();
-    for (const p of pads) if (p) for (const c of heldCodes(p)) now.add(c);
+    // The first connected pad is player 1, the next one player 2.
+    const connected = pads.filter((p): p is PadLike => p !== null);
+    connected.slice(0, 2).forEach((p, i) => {
+      for (const c of heldCodes(p, i === 1)) now.add(c);
+    });
+    this.count = connected.length;
     let pressed = false;
     for (const c of now) {
       if (!this.held.has(c)) {

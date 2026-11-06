@@ -60,3 +60,33 @@ describe('gamepad', () => {
     expect(p.run(1)).toBe('LEFT+RIGHT'); // player 2 is still on the keyboard
   });
 });
+
+describe('two gamepads', () => {
+  it('the second pad drives player 2', () => {
+    const poller = new GamepadPoller();
+    const pressedCodes: string[] = [];
+    poller.poll([pad([4]), pad([4, 0])], (c) => pressedCodes.push(c), () => {});
+    expect(pressedCodes.sort()).toEqual(['Pad2A', 'Pad2LB', 'PadLB']);
+    expect(poller.count).toBe(2);
+    const input = new Input(DEFAULT_KEYMAP);
+    input.keyDown('Pad2LB');
+    input.keyDown('Pad2A');
+    input.beginStep();
+    expect(input.justPressed('P2_LEFT')).toBe(true);
+    expect(input.justPressed('P2_ACTION')).toBe(true);
+    expect(input.justPressed('P1_LEFT')).toBe(false);
+  });
+
+  it('player 2 hints name pad buttons only when a second pad is connected', () => {
+    expect(new Prompts(() => 'pad', () => null, () => 1).run(1)).toBe('LEFT+RIGHT');
+    expect(new Prompts(() => 'pad', () => null, () => 2).run(1)).toBe('LB+RB');
+  });
+
+  it('Start pauses (and still confirms in menus)', () => {
+    const input = new Input(DEFAULT_KEYMAP);
+    input.keyDown('PadStart');
+    input.beginStep();
+    expect(input.justPressed('PAUSE')).toBe(true);
+    expect(input.justPressed('CONFIRM')).toBe(true);
+  });
+});
