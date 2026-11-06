@@ -10,7 +10,7 @@ type DifficultyName = string;
 type TeamName = string;
 
 /** Bumped whenever the message format changes, so old and new games don't mix. */
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 /** Messages bigger than this are dropped (a runner's state is ~200 bytes). */
 export const MAX_MESSAGE_BYTES = 2048;
 
@@ -89,14 +89,39 @@ export type GameMessage =
   | { k: 'landed'; n: number; mark: number | null } // the official mark for attempt n
   | { k: 'foul'; n: number; reason: string } // attempt n was a foul
   | { k: 'ack' } // nothing to say; just confirming what I've received
+  | { k: 'rejoin' } // I reloaded the page and I'm back: please tell me where the match is
+  | { k: 'sync'; s: SeriesSnapshot } // the match so far, for a player who rejoined
   | { k: 'bye' }; // I'm leaving the match on purpose
+
+/** A match's standings, enough to carry on from (see Championship.snapshot). */
+export interface SeriesSnapshot {
+  index: number; // the event to play next
+  state: 'playing' | 'gameOver' | 'complete';
+  totals: { name: string; playerIndex: number; total: number }[];
+  eliminated: number[];
+}
+
+/** Is this a well-formed match snapshot? (It arrives from the other player.) */
+export function isSeriesSnapshot(x: unknown): x is SeriesSnapshot {
+  if (typeof x !== 'object' || x === null) return false;
+  const s = x as Record<string, unknown>;
+  const okState = s.state === 'playing' || s.state === 'gameOver' || s.state === 'complete';
+  const okTotals =
+    Array.isArray(s.totals) &&
+    s.totals.length <= 8 &&
+    s.totals.every(
+      (t) => typeof t?.name === 'string' && t.name.length <= 3 && Number.isInteger(t?.playerIndex) && Number.isFinite(t?.total),
+    );
+  const okOut = Array.isArray(s.eliminated) && s.eliminated.every((i) => i === 0 || i === 1);
+  return Number.isInteger(s.index) && (s.index as number) >= 0 && (s.index as number) < 20 && okState && okTotals && okOut;
+}
 
 /** The part of a field-event attempt before letting go. */
 export type FieldRunPhase = 'ready' | 'runup' | 'hold';
 
 const GAME_KINDS = new Set([
   'hello', 'setup', 'ready', 'begin', 'early', 'phase', 'state',
-  'field', 'release', 'landed', 'foul', 'ack', 'bye',
+  'field', 'release', 'landed', 'foul', 'ack', 'rejoin', 'sync', 'bye',
 ]);
 
 /**

@@ -78,12 +78,35 @@ export class RoomConnection {
   private received = 0;
   private everOpen = false;
 
+  /** Called whenever the seat or message counters change (saved so a reload can resume). */
+  onCounters: ((c: ResumeInfo) => void) | null = null;
+
   constructor(
     readonly code: string,
     private readonly baseUrl: string = ROOMS_URL,
     private readonly env: ConnectionEnv = browserEnv,
+    /** Coming back after a page reload: the same seat, carrying on the numbering. */
+    resume?: ResumeInfo,
   ) {
-    this.ws = this.open();
+    if (resume) {
+      this.slot = resume.slot;
+      this.nextSeq = resume.nextSeq;
+      this.received = resume.received;
+      this.outbox.push(...resume.outbox);
+      this.everOpen = true;
+    }
+    this.ws = this.open(resume?.slot);
+  }
+
+  /** The seat and counters, for saving. */
+  get resumeInfo(): ResumeInfo | null {
+    if (this.slot === null) return null;
+    return { slot: this.slot, nextSeq: this.nextSeq, received: this.received, outbox: this.outbox.map((m) => ({ ...m })) };
+  }
+
+  private countersChanged(): void {
+    const info = this.resumeInfo;
+    if (info) this.onCounters?.(info);
   }
 
   private open(slot?: number): SocketLike {
@@ -143,6 +166,7 @@ export class RoomConnection {
         this.everOpen = true;
         this.state = 'open';
         this.slot = m.slot;
+        this.countersChanged();
         this.peerHere = m.others > 0;
         if (this.peerHere) this.peerLeft = false;
         this.resendUnconfirmed();
@@ -184,6 +208,7 @@ export class RoomConnection {
       // A gap means an earlier one was lost in a drop; it'll be resent, in order.
       if (env.seq > this.received + 1) return;
       this.received = env.seq;
+      this.countersChanged();
       this.sendRaw({ data: { k: 'ack' } });
     }
     if (env.data.k === 'ack') return;
@@ -193,7 +218,9 @@ export class RoomConnection {
 
   /** The other player has everything up to `upTo`: stop keeping those. */
   private confirmed(upTo: number): void {
+    const before = this.outbox.length;
     while (this.outbox.length && this.outbox[0].seq <= upTo) this.outbox.shift();
+    if (this.outbox.length !== before) this.countersChanged();
   }
 
   private resendUnconfirmed(): void {
@@ -208,6 +235,7 @@ export class RoomConnection {
     }
     const seq = this.nextSeq++;
     this.outbox.push({ seq, data });
+    this.countersChanged();
     this.sendRaw({ data, seq });
   }
 
@@ -256,6 +284,15 @@ export class RoomConnection {
       // already closed
     }
   }
+}
+
+/** What a reloaded page needs to take its seat back and carry on the numbering. */
+export interface ResumeInfo {
+  slot: 0 | 1;
+  nextSeq: number;
+  received: number;
+  /** Messages the other player hadn't confirmed yet (sent again once back). */
+  outbox: { seq: number; data: GameMessage }[];
 }
 
 /** Our "hello" message. */

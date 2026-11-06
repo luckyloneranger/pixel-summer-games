@@ -7,6 +7,11 @@ import { SceneManager } from './scene-manager';
 import { TitleScene } from '../scenes/title';
 import { DisconnectedScene } from '../scenes/disconnected';
 import { onlineStatus } from '../net/status';
+import { clearRejoin, loadRejoin } from '../net/rejoin';
+import { RejoinScene } from '../scenes/rejoin';
+import { EventIntroScene } from '../scenes/event-intro';
+import type { Championship } from '../game/championship';
+import type { OnlineMatch } from '../game/session';
 import { DEBUG } from '../game/tuning';
 import { Session } from '../game/session';
 import { SaveStore } from './storage';
@@ -92,6 +97,9 @@ export class Game {
 
   start(): void {
     this.scenes.push(new TitleScene(this));
+    // Reloaded in the middle of an online match: go straight back into it.
+    const rejoin = loadRejoin();
+    if (rejoin) this.scenes.push(new RejoinScene(this, rejoin));
     startLoop(
       this.clock,
       (dt) => this.update(dt),
@@ -158,11 +166,42 @@ export class Game {
     this.onlineBanner = null;
     const online = this.session?.online;
     if (!online || this.scenes.has('DISCONNECTED')) return;
-    if (this.session?.series?.state !== 'playing') return; // match finished: leaving is fine
-    const peer = this.session.players[1 - online.localIndex]?.initials ?? 'YOUR FRIEND';
+    const series = this.session?.series;
+    if (series?.state !== 'playing') {
+      clearRejoin(); // match finished: nothing to come back to
+      return;
+    }
+    if (online.conn.state === 'closed') clearRejoin();
+    this.answerRejoin(online, series);
+    const peer = this.session!.players[1 - online.localIndex]?.initials ?? 'YOUR FRIEND';
     const status = onlineStatus(online.conn, peer);
-    if (status.over) this.scenes.push(new DisconnectedScene(this, status.over));
-    else this.onlineBanner = status.banner;
+    if (status.over) {
+      clearRejoin();
+      this.scenes.push(new DisconnectedScene(this, status.over));
+    } else this.onlineBanner = status.banner;
+  }
+
+  /**
+   * The friend reloaded their page and is back: send them the standings, and
+   * restart the event in progress from its intro card (its half-run state is
+   * gone on their side). On a results screen the event is already scored, so
+   * nothing needs restarting.
+   */
+  private answerRejoin(online: OnlineMatch, series: Championship): void {
+    if (!online.conn.take('rejoin').length) return;
+    online.conn.send({ k: 'sync', s: series.snapshot() });
+    if (this.scenes.top?.name === 'PAUSE') this.scenes.pop();
+    const top = this.scenes.top?.name;
+    if (top === 'EVENT' || top === 'INTRO') {
+      this.scenes.replace(new EventIntroScene(this, this.session!, series.currentEvent));
+      this.showToast(`${this.session!.players[1 - online.localIndex]?.initials ?? 'FRIEND'} IS BACK`);
+    }
+  }
+
+  /** A short note in the corner (sound on/off, a friend rejoining). */
+  showToast(text: string): void {
+    this.toastText = text;
+    this.toastTime = AUDIO.TOAST_TIME;
   }
 
   /** Blips for menu screens, based on the keys pressed this step. */

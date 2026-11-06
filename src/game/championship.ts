@@ -1,4 +1,5 @@
 import type { Difficulty, EventId, EventResult } from '../events/event';
+import type { SeriesSnapshot } from '../net/protocol';
 import { qualifies, scoreResults } from './scoring';
 
 /** Championship order (SPEC section 6, decathlon order since the high jump joined in Phase 10). */
@@ -48,6 +49,21 @@ export class Championship {
   ) {
     // Humans start on the table with 0, even before they score.
     for (let i = 0; i < players; i++) this.totals.set(keyOf(i, ''), { name: '', playerIndex: i, total: 0 });
+  }
+
+  /** Where the series is, to send to a player who rejoined after reloading the page. */
+  snapshot(): SeriesSnapshot {
+    return { index: this.index, state: this.state, totals: [...this.totals.values()], eliminated: [...this.eliminated] };
+  }
+
+  /** Carry on from a snapshot (the rejoining player's side). */
+  restore(s: SeriesSnapshot): void {
+    this.index = Math.min(s.index, this.events.length);
+    this.state = s.state;
+    this.totals.clear();
+    for (const t of s.totals) this.totals.set(keyOf(t.playerIndex, t.name), { ...t });
+    this.eliminated.clear();
+    for (const i of s.eliminated) this.eliminated.add(i);
   }
 
   get currentEvent(): EventId {

@@ -188,3 +188,39 @@ async function sameResults(a: Page, b: Page): Promise<void> {
   expect(ra).toEqual(rb);
   expect(ra.length).toBeGreaterThanOrEqual(4); // two players + CPUs
 }
+
+test('online: reloading the page mid-race rejoins the match', async ({ browser, playwright, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit starves the second window of frames');
+  test.setTimeout(180_000);
+  const guestBrowser = await playwright[browserName].launch();
+  const host = await player(browser);
+  const guest = await player(guestBrowser);
+  await startMatch(host.page, guest.page, 2); // 100 M
+  for (const p of [host.page, guest.page]) {
+    await expect.poll(async () => (await status(p)).state, { timeout: 15_000 }).toBe('STATE running');
+  }
+  // A few strides, then the guest's page reloads.
+  for (let i = 0; i < 10; i++) {
+    await Promise.all([host.page.keyboard.press(i % 2 ? 'KeyA' : 'KeyD'), guest.page.keyboard.press(i % 2 ? 'KeyA' : 'KeyD')]);
+    await host.page.waitForTimeout(60);
+  }
+  await guest.page.reload();
+  // Straight back in: both games return to the 100 m intro card, the match still on.
+  await expect.poll(() => sceneOf(guest.page), { timeout: 20_000 }).toBe('INTRO');
+  await expect.poll(() => sceneOf(host.page), { timeout: 20_000 }).toBe('INTRO');
+  for (const p of [host.page, guest.page]) await press(p, 'Enter');
+  for (const p of [host.page, guest.page]) {
+    await expect.poll(async () => (await status(p)).state, { timeout: 15_000 }).toBe('STATE running');
+  }
+  for (let i = 0; i < 600; i++) {
+    const [h, g] = [await sceneOf(host.page), await sceneOf(guest.page)];
+    if (h === 'RESULTS' && g === 'RESULTS') break;
+    expect([h, g]).not.toContain('DISCONNECTED');
+    const key = i % 2 ? 'KeyA' : 'KeyD';
+    await Promise.all([host.page.keyboard.press(key), guest.page.keyboard.press(key)]);
+    await host.page.waitForTimeout(50);
+  }
+  for (const p of [host.page, guest.page]) await expect.poll(() => sceneOf(p), { timeout: 20_000 }).toBe('RESULTS');
+  await sameResults(host.page, guest.page);
+  await guestBrowser.close();
+});

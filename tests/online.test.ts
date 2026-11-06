@@ -340,7 +340,7 @@ describe('RoomConnection', () => {
     c.send({ k: 'early' }); // sent while away: kept
     f.wait(1000);
     expect(f.urls[1]).toBe('ws://x/room/ABCD?slot=1');
-    expect(c.reconnectSecondsLeft()).toBeCloseTo(9);
+    expect(c.reconnectSecondsLeft()).toBeCloseTo(NET.RECONNECT_WINDOW - 1);
     f.sock.serverSays({ t: 'welcome', slot: 1, others: 1 });
     expect(c.state).toBe('open');
     expect(relayed(f.sock)).toEqual([{ t: 'relay', data: { k: 'early' }, seq: 1, ack: 0 }]);
@@ -351,7 +351,7 @@ describe('RoomConnection', () => {
     const c = new RoomConnection('ABCD', 'ws://x', f.env);
     f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
     f.sock.drop();
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < NET.RECONNECT_WINDOW + 2; i++) {
       f.wait(1000);
       if (c.state === 'reconnecting') f.sock.drop(); // the server is still unreachable
     }
@@ -476,7 +476,7 @@ describe('online status banner', () => {
     expect(onlineStatus(c, 'BOB')).toEqual({ banner: null, over: null });
     f.sock.serverSays({ t: 'left' });
     f.wait(2500);
-    expect(onlineStatus(c, 'BOB').banner).toBe('WAITING FOR BOB TO RECONNECT 8');
+    expect(onlineStatus(c, 'BOB').banner).toBe(`WAITING FOR BOB TO RECONNECT ${Math.ceil(NET.RECONNECT_WINDOW - 2.5)}`);
     f.sock.serverSays({ t: 'joined' });
     expect(onlineStatus(c, 'BOB').banner).toBeNull();
     f.sock.serverSays({ t: 'left' });
@@ -489,7 +489,7 @@ describe('online status banner', () => {
     const c = new RoomConnection('ABCD', 'ws://x', f.env);
     f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
     f.sock.drop();
-    expect(onlineStatus(c, 'BOB').banner).toBe('RECONNECTING... 10');
+    expect(onlineStatus(c, 'BOB').banner).toBe(`RECONNECTING... ${NET.RECONNECT_WINDOW}`);
     f.wait(1000);
     f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
     f.sock.serverSays({ t: 'relay', data: { k: 'bye' }, seq: 1 });
@@ -545,4 +545,76 @@ describe('online hammer', () => {
       expect(ann.attempts).toContain(null); // the planned foul
     });
   }
+});
+
+import { Championship } from '../src/game/championship';
+import { isSeriesSnapshot } from '../src/net/protocol';
+import { clearRejoin, loadRejoin, saveRejoin, type KeyValueStore, type RejoinRecord } from '../src/net/rejoin';
+
+describe('rejoin after a page reload', () => {
+  it('a series snapshot carries the standings across', () => {
+    const a = new Championship('normal', false, 2, ['dash100', 'longJump'], false);
+    a.record([
+      { playerIndex: 0, name: 'ANN', mark: 10.5, foul: false, disqualified: false, points: 0 },
+      { playerIndex: 1, name: 'BOB', mark: 11.2, foul: false, disqualified: false, points: 0 },
+    ]);
+    const snap = JSON.parse(JSON.stringify(a.snapshot())); // as it travels
+    expect(isSeriesSnapshot(snap)).toBe(true);
+    const b = new Championship('normal', false, 2, ['dash100', 'longJump'], false);
+    b.restore(snap);
+    expect(b.index).toBe(1);
+    expect(b.currentEvent).toBe('longJump');
+    expect(b.standings()).toEqual(a.standings());
+  });
+
+  it('rejects a junk snapshot', () => {
+    expect(isSeriesSnapshot({ index: -1, state: 'playing', totals: [], eliminated: [] })).toBe(false);
+    expect(isSeriesSnapshot({ index: 0, state: 'won', totals: [], eliminated: [] })).toBe(false);
+    expect(isSeriesSnapshot({ index: 0, state: 'playing', totals: [{ name: 'TOOLONG', playerIndex: 0, total: 1 }], eliminated: [] })).toBe(false);
+  });
+
+  it('the reconnection takes the same seat and carries on the numbering', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env, {
+      slot: 1,
+      nextSeq: 7,
+      received: 4,
+      outbox: [{ seq: 6, data: { k: 'ready', event: 2 } }],
+    });
+    expect(f.urls[0]).toBe('ws://x/room/ABCD?slot=1');
+    f.sock.serverSays({ t: 'welcome', slot: 1, others: 1 });
+    // The unconfirmed message goes again, and the next one carries on from 7.
+    c.send({ k: 'rejoin' });
+    expect(relayed(f.sock).map((m) => m.seq)).toEqual([6, 7]);
+    // Messages from before the reload are recognised as repeats.
+    f.sock.serverSays({ t: 'relay', data: { k: 'early' }, seq: 4 });
+    f.sock.serverSays({ t: 'relay', data: { k: 'sync', s: { index: 1, state: 'playing', totals: [], eliminated: [] } }, seq: 5 });
+    expect(c.take('early')).toHaveLength(0);
+    expect(c.take('sync')).toHaveLength(1);
+  });
+
+  it('reports its counters as they change, so they can be saved', () => {
+    const f = fakeEnv();
+    const c = new RoomConnection('ABCD', 'ws://x', f.env);
+    const seen: number[] = [];
+    c.onCounters = (info) => seen.push(info.nextSeq);
+    f.sock.serverSays({ t: 'welcome', slot: 0, others: 1 });
+    c.send({ k: 'early' });
+    expect(seen.at(-1)).toBe(2);
+    expect(c.resumeInfo!.outbox).toHaveLength(1);
+  });
+
+  it('remembers the match for a short while only', () => {
+    const data = new Map<string, string>();
+    const store: KeyValueStore = { getItem: (k) => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: (k) => void data.delete(k) };
+    const rec: RejoinRecord = {
+      code: 'ABCD', slot: 0, nextSeq: 3, received: 2, outbox: [], players: [{ initials: 'ANN', team: 'red' }, { initials: 'BOB', team: 'blue' }],
+      events: ['dash100'], difficulty: 'normal', seed: 1, localIndex: 0, savedAt: 1_000_000,
+    };
+    saveRejoin(rec, store);
+    expect(loadRejoin(1_000_000 + 5_000, store)?.code).toBe('ABCD');
+    expect(loadRejoin(1_000_000 + 120_000, store)).toBeNull(); // too old
+    clearRejoin(store);
+    expect(loadRejoin(1_000_000, store)).toBeNull();
+  });
 });

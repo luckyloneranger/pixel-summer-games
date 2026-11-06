@@ -4,6 +4,7 @@ import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import type { Difficulty, EventId } from '../events/event';
 import { RoomConnection, helloMessage } from '../net/connection';
+import { saveRejoin } from '../net/rejoin';
 import { PROTOCOL_VERSION, makeRoomCode } from '../net/protocol';
 import { EVENT_NAMES } from '../game/scoring';
 import { CHAMPIONSHIP_EVENTS, ONLINE_EVENTS } from '../game/championship';
@@ -145,6 +146,14 @@ export class LobbyScene implements Scene {
     const g = this.game;
     const session = new Session('versus', players, difficulty, false, events, { conn: this.conn, localIndex, seed });
     g.session = session;
+    // Remember the match for this tab, so a page reload can rejoin it.
+    const record = { code: this.code, players, events, difficulty, seed, localIndex, savedAt: Date.now() };
+    const save = () => {
+      const info = this.conn.resumeInfo;
+      if (info) saveRejoin({ ...record, ...info, savedAt: Date.now() });
+    };
+    this.conn.onCounters = save;
+    save();
     g.scenes.replace(new EventIntroScene(g, session, session.series!.currentEvent));
   }
 
