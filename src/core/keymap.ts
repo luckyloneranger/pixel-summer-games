@@ -10,6 +10,8 @@ export type Action =
   | 'P2_RIGHT'
   | 'P2_ACTION'
   | 'P1_CHORD'
+  | 'P1_MASH'
+  | 'P2_MASH'
   | 'PAUSE'
   | 'MENU_UP'
   | 'MENU_DOWN'
@@ -26,16 +28,20 @@ export type Action =
 export type KeyMap = Record<Action, string[]>;
 
 // Codes starting with "Touch" come from the on-screen buttons (ui/touch-controls.ts),
-// and "Pad" from a gamepad (core/gamepad.ts): LB/RB or X/Y to run, A to act, B back.
+// and "Pad" from a gamepad (core/gamepad.ts): mash A to run (or alternate LB/RB or X/Y),
+// B to act. In menus A confirms and B goes back; in an event Start or Select pauses.
 export const DEFAULT_KEYMAP: KeyMap = {
   P1_LEFT: ['KeyA', 'TouchLeft', 'PadLB', 'PadX'],
   P1_RIGHT: ['KeyD', 'TouchRight', 'PadRB', 'PadY'],
-  P1_ACTION: ['KeyW', 'Space', 'TouchAction', 'PadA', 'PadRT'],
+  P1_ACTION: ['KeyW', 'Space', 'TouchAction', 'PadB', 'PadRT'],
   P2_LEFT: ['ArrowLeft', 'Pad2LB', 'Pad2X'],
   P2_RIGHT: ['ArrowRight', 'Pad2RB', 'Pad2Y'],
-  P2_ACTION: ['ArrowUp', 'Pad2A', 'Pad2RT'],
+  P2_ACTION: ['ArrowUp', 'Pad2B', 'Pad2RT'],
   P1_CHORD: ['TouchChord'], // both run pads at once (touch): the hurdles' jump
-  PAUSE: ['PadStart', 'Pad2Start'], // Start pauses an event (it also confirms in menus)
+  P1_MASH: ['PadA'], // each press is a run tap, no alternating needed (gamepad)
+  P2_MASH: ['Pad2A'],
+  // Pauses an event. Not the pad's B, which is the action button there.
+  PAUSE: ['Escape', 'KeyP', 'TouchBack', 'TouchPause', 'PadStart', 'PadSelect', 'Pad2Start', 'Pad2Select'],
   MENU_UP: ['ArrowUp', 'KeyW', 'TouchUp', 'PadUp'],
   MENU_DOWN: ['ArrowDown', 'KeyS', 'TouchDown', 'PadDown'],
   MENU_LEFT: ['ArrowLeft', 'KeyA', 'TouchLeft', 'PadLeft'],

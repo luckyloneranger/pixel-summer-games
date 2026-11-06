@@ -1,4 +1,4 @@
-import { ASSIST, RUNNER } from '../game/tuning';
+import { ASSIST, GAMEPAD, RUNNER } from '../game/tuning';
 
 export type RunKey = 'left' | 'right';
 export type RunnerConfig = typeof RUNNER;
@@ -36,14 +36,15 @@ export class TapRunner {
   /**
    * Register a run-key press. Returns true if it was a valid (alternating) tap.
    * With `gain` false (e.g. in the air) the tap keeps your rhythm but adds no speed.
+   * `strength` scales the speed boost (a gamepad mash press is worth a bit more).
    */
-  tap(key: RunKey, gain = true): boolean {
+  tap(key: RunKey, gain = true, strength = 1): boolean {
     if (key === this.lastKey) return false;
     this.lastKey = key;
     this.taps++;
     this.tapTimes.push(this.time);
     if (gain && this.canAccelerate) {
-      this.speed += this.cfg.TAP_IMPULSE * (1 - this.speed / this.cfg.AIM_SPEED);
+      this.speed += this.cfg.TAP_IMPULSE * strength * (1 - this.speed / this.cfg.AIM_SPEED);
       this.speed = Math.min(this.speed, this.cfg.MAX_SPEED);
     }
     return true;
@@ -96,7 +97,9 @@ export class TapRunner {
  * pressed in the same instant, only the one the runner needs next counts,
  * so pressing both together isn't a shortcut.
  */
-export function applyRunPresses(runner: TapRunner, left: boolean, right: boolean, gain = true): boolean {
+export function applyRunPresses(runner: TapRunner, left: boolean, right: boolean, gain = true, mash = false): boolean {
+  // A gamepad mash press is always the key the runner needs next.
+  if (mash && !left && !right) return runner.tap(runner.nextKey ?? 'left', gain, GAMEPAD.MASH_SCALE);
   if (left && right) return runner.tap(runner.nextKey ?? 'left', gain);
   if (left) return runner.tap('left', gain);
   if (right) return runner.tap('right', gain);

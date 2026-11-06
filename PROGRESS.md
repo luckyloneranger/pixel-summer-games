@@ -475,7 +475,10 @@ Built in one go at the user's request, instead of one sub-phase at a time.
   - A starter with the pistol (smoke at GO).
   - A field judge with a white or red flag.
   - Rain at the triple jump and wind at the javelin; both are looks only and never change a mark.
-- **Tests:** 380 unit tests and 4 browser tests.
+- **Follow-up from play-testing:**
+  - The swimming ghost now swims; it used to show running frames.
+  - **Gamepad:** mash A to run and press B to jump or throw, like old 8-bit pads. Each A press is worth 1.3 key taps, so about 7 presses a second matches about 9 alternating key taps. LB/RB still work. Start or Select pauses, since B is now the action button. OK is ignored for 0.6 s after an event ends and on the results screen, so mashing doesn't skip past.
+- **Tests:** 383 unit tests and 4 browser tests.
 
 **Known issues / notes**
 - The replay is offline only. Online, both screens would need to show it at the same moment.

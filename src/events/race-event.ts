@@ -373,7 +373,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
         for (const lane of this.humans) {
           if (lane.disqualified || lane.remote) continue;
           const k = this.keysOf(input, lane);
-          if (!k.left && !k.right) continue;
+          if (!k.left && !k.right && !k.mash) continue;
           if (this.runsStart) {
             this.falseStart(lane);
             return;
@@ -449,7 +449,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       // A player's presses always keep their left/right rhythm; they only add speed when allowed.
       let tapped = lane.cpu
         ? lane.cpu.update(r, sinceGo, allowed)
-        : applyRunPresses(r, left, right, allowed);
+        : applyRunPresses(r, left, right, allowed, keys.mash);
       // Assist run: holding a run key builds speed (only when taps could).
       if (!lane.cpu && this.ctx.assist && keys.runHeld && allowed && r.assist(dt)) tapped = true;
       // The press happened some time during this step, so count the whole step.
@@ -706,8 +706,12 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     if (x < -ATHLETE_W || x > r.width) return;
     const footY = LAYOUT.TRACK_TOP + this.player.laneNumber * LAYOUT.LANE_HEIGHT - 3;
     this.ghostSprites ??= new AthleteSprites(this.player.look, true);
-    const pose = pos > 0 ? RUN_CYCLE[Math.floor(pos / ANIMATION.STRIDE_PER_FRAME) % RUN_CYCLE.length] : 'set';
-    r.image(this.ghostSprites.get(pose), x, footY - ATHLETE_H + 1);
+    r.image(this.ghostSprites.get(this.ghostPose(pos)), x, footY - ATHLETE_H + 1);
+  }
+
+  /** The ghost's frame at `pos` m (the swim shows strokes instead of strides). */
+  protected ghostPose(pos: number): Pose {
+    return pos > 0 ? RUN_CYCLE[Math.floor(pos / ANIMATION.STRIDE_PER_FRAME) % RUN_CYCLE.length] : 'set';
   }
 
   private spritesFor(lane: Lane): AthleteSprites {
@@ -832,7 +836,7 @@ export function roundHundredths(seconds: number): number {
 }
 
 /** CPUs read no keys. */
-const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHeld: false, runHeld: false, chord: false };
+const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHeld: false, runHeld: false, chord: false, mash: false };
 
 /** Screen y of a lane's ground line (where feet and dust go). */
 function laneFootY(laneNumber: number): number {

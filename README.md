@@ -47,7 +47,7 @@ Everything (pixel art, font, music and sound effects) is original and generated 
 
 In a one-player game, both key sets work. Keys can be remapped in **Options → Controls**.
 
-**Gamepads**: LB and RB (or X and Y) to run, A for Action and OK, B to go back, Start to pause, the d-pad or left stick in menus. A second pad is player 2. Hints switch to pad buttons as soon as you press one.
+**Gamepads**: mash A to run (no need to alternate; LB and RB or X and Y in turn still work), B for Action, A for OK and B to go back in menus, Start or Select to pause, the d-pad or left stick in menus. A second pad is player 2. Hints switch to pad buttons as soon as you press one.
 
 **Phones and tablets** (held sideways): on-screen run pads, an ACTION button, pause and sound icons, and arrow / OK / BACK buttons in menus.
 

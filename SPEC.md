@@ -65,6 +65,8 @@ Every event uses the same two systems: alternate-tap running and a hold-and-rele
 | Back / pause | Esc or P | – | Pause icon |
 | Mute | M | – | Speaker icon |
 
+Gamepad (changed after Phase 18 at the user's request, in the style of old 8-bit pads): mash A to run, where every press counts and is worth `GAMEPAD.MASH_SCALE` (1.3) key taps, because one thumb on one button is slower than two keys. Alternating LB/RB or X/Y still works. B is Action, Start or Select pauses an event, and in menus A confirms and B goes back. For `ANIMATION.SKIP_GUARD` (0.6 s) after an event ends, and on the results screen, OK is ignored, so a player still mashing A doesn't skip past.
+
 In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1\_RIGHT, P1\_ACTION and so on) so they can be remapped in Options. Only the six gameplay keys can be remapped; Enter, Esc, P, M and the backtick key stay reserved for menus, pause, mute and debug (decided in Phase 8b). Touch buttons stay visible on touch devices (two thumbs on both run pads = jump in the hurdles; field events have a wide ACTION area), hide when a physical key is pressed, and ignore new touches for a moment after leaving an event's buttons, so a finger still tapping a run pad can't hit a menu button. On menu screens the buttons sit in one bar along the bottom edge (← ↑ ↓ → on the left, BACK and OK on the right) so they never cover the menu. On the title and demo, a tap anywhere starts.
 
 **Hints match the device in use** (decided in Phase 12b). Every on-screen hint is built from one place (`src/ui/prompts.ts`). With a keyboard it names the keys, following any keys changed in Options ("RUN A+D  HOLD W", "PRESS ENTER", "ESC: BACK"). On a phone it names the buttons ("RUN ← →  HOLD ACTION", "TAP OK", "TAP TO START"). Hints switch the moment the player changes device. Screens that continue use the OK button on a phone, not a tap anywhere, so fingers still mashing ← → can't skip the results. Versus, two-player Championship and changing keys show "NEEDS A KEYBOARD" on a phone.
@@ -435,6 +437,7 @@ Build in this order. Get the feel of the running right with plain boxes before a
 - Moments: an instant replay of the best jump or throw in slow motion after an offline field event (not the triple jump; OK skips); a sepia photo-finish picture of the top two in a close race; confetti on a new record; confetti and fireworks on the podium (fireworks off with reduce flashing).
 - Stadium life: signs and big flags in the crowd, the crowd on its feet for a big moment (the last 20 m of a race a human leads, or a flight heading past the qualifying mark), a starter who raises the pistol at SET (smoke at GO), and a field judge who raises a white flag for a fair attempt or a red one for a foul. Weather is looks only: rain at the triple jump, wind at the javelin.
 - The palette stays at 36 colours; everything new is built from it.
+- Follow-up: the swim's ghost swims (it used running frames), and the gamepad controls changed to mash A to run and B to act (see section 4).
 
 ## 10. Testing, quality and definition of done
 

@@ -27,17 +27,22 @@ export class Prompts {
     return this.mode() === 'pad';
   }
 
-  /** The two run keys: "A+D" (player 1), "LEFT+RIGHT" (player 2), or "← →". */
+  /** Is this player on a gamepad? (Player 2 has one only if two are connected.) */
+  private onPad(player: number): boolean {
+    return this.pad && (player === 0 || this.padCount() >= 2);
+  }
+
+  /** The run keys: "A+D" (player 1), "LEFT+RIGHT" (player 2), "← →", or the pad's mash button "A". */
   run(player = 0): string {
     if (this.touch) return '← →';
-    if (this.pad && (player === 0 || this.padCount() >= 2)) return 'LB+RB'; // player 2 has a pad only if two are connected
+    if (this.onPad(player)) return 'A';
     const p = player === 1 ? 'P2' : 'P1';
     return `${this.key(`${p}_LEFT`)}+${this.key(`${p}_RIGHT`)}`;
   }
 
-  /** The jump / throw key: "W", "UP", or the ACTION button. */
+  /** The jump / throw key: "W", "UP", the ACTION button, or the pad's B. */
   action(player = 0): string {
-    if (this.pad && (player === 0 || this.padCount() >= 2)) return 'A';
+    if (this.onPad(player)) return 'B';
     return this.touch ? 'ACTION' : this.key(player === 1 ? 'P2_ACTION' : 'P1_ACTION');
   }
 
@@ -100,6 +105,7 @@ export class Prompts {
   eventHint(id: EventId, player = 0): string {
     const run = this.run(player);
     const act = this.action(player);
+    if (this.onPad(player)) return padEventHint(id);
     switch (id) {
       case 'dash100':
         return this.touch ? 'TAP ← AND → IN TURN TO RUN' : `ALTERNATE ${run} TO RUN`;
@@ -125,6 +131,29 @@ export class Prompts {
   private key(action: string): string {
     const keys = (this.controls() ?? defaultControls())[action] ?? defaultControls()[action];
     return keyName(keys[0]);
+  }
+}
+
+/** Gamepad: mash A to run, B to jump or throw. */
+function padEventHint(id: EventId): string {
+  switch (id) {
+    case 'dash100':
+      return 'MASH A TO RUN';
+    case 'swim50':
+      return 'MASH A TO SWIM';
+    case 'longJump':
+    case 'highJump':
+      return 'MASH A  HOLD B, LET GO TO JUMP';
+    case 'javelin':
+      return 'MASH A  HOLD B, THEN LET GO';
+    case 'poleVault':
+      return 'MASH A  HOLD B, LET GO';
+    case 'hurdles110':
+      return 'MASH A  TAP B TO JUMP';
+    case 'tripleJump':
+      return 'JUMP, THEN TAP B AS YOU LAND';
+    case 'hammer':
+      return 'MASH A TO SPIN  B IN THE GREEN';
   }
 }
 

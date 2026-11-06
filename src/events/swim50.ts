@@ -35,6 +35,13 @@ export class Swim50Event extends RaceEvent {
     return lane.finishTime !== null && this.winnerNow !== lane ? 'swim1' : SWIM_CYCLE[frame];
   }
 
+  /** The ghost swims too: on the block, the dive, then strokes. */
+  protected ghostPose(pos: number): Pose {
+    if (pos <= 0) return 'set';
+    if (pos < DIVE_DISTANCE) return 'dive';
+    return SWIM_CYCLE[Math.floor(pos / STROKE_EVERY) % SWIM_CYCLE.length];
+  }
+
   /** The pool: deck, water with ripples, lane ropes, the start and finish walls. */
   protected drawSurface(r: Renderer, cameraPx: number, waveFrame: number, toScreen: (m: number) => number): void {
     this.stadium.drawStands(r, cameraPx, ANIMATION.CROWD_PARALLAX, waveFrame);

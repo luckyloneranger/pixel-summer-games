@@ -2,7 +2,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import { qualifyingMark } from '../game/scoring';
-import { AUDIO, CPU_FIELD, EFFECTS, HAMMER, NET } from '../game/tuning';
+import { AUDIO, CPU_FIELD, EFFECTS, HAMMER, NET, GAMEPAD } from '../game/tuning';
 import { Stadium, STADIUM_THEMES } from '../gfx/backgrounds';
 import { drawGroundShadow } from '../gfx/effects';
 import { PALETTE } from '../gfx/palette';
@@ -160,9 +160,12 @@ export class HammerEvent implements AthleticsEvent {
       case 'ready':
       case 'spin': {
         // Each tap of the key opposite to the last one speeds the spin up.
-        const key = keys.left ? 'left' : keys.right ? 'right' : null;
+        // A gamepad mash press always counts as the opposite key, worth a bit more.
+        const mashed = keys.mash && !keys.left && !keys.right;
+        const key = keys.left ? 'left' : keys.right ? 'right' : mashed ? (this.lastKey === 'left' ? 'right' : 'left') : null;
         if (key && key !== this.lastKey) {
-          this.spin = Math.min(1, this.spin + HAMMER.SPIN_IMPULSE * (1 - this.spin * 0.5));
+          const strength = mashed ? GAMEPAD.MASH_SCALE : 1;
+          this.spin = Math.min(1, this.spin + HAMMER.SPIN_IMPULSE * strength * (1 - this.spin * 0.5));
           this.lastKey = key;
           if (this.phase === 'ready') this.enter('spin');
         }

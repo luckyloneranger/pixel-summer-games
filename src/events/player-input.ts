@@ -9,6 +9,8 @@ export interface PlayerKeys {
   runHeld: boolean; // either run key held down (assist run)
   /** Both on-screen run pads pressed at once (touch): the hurdles use it as a jump. */
   chord: boolean;
+  /** The gamepad's mash button (A): a run tap without alternating. */
+  mash: boolean;
 }
 
 /**
@@ -24,8 +26,9 @@ export function keysFor(input: InputSnapshot, playerIndex: number, solo: boolean
     action: (p1 && input.justPressed('P1_ACTION')) || (p2 && input.justPressed('P2_ACTION')),
     actionHeld: (p1 && input.isDown('P1_ACTION')) || (p2 && input.isDown('P2_ACTION')),
     chord: p1 && input.justPressed('P1_CHORD'),
+    mash: (p1 && input.justPressed('P1_MASH')) || (p2 && input.justPressed('P2_MASH')),
     runHeld:
-      (p1 && (input.isDown('P1_LEFT') || input.isDown('P1_RIGHT'))) ||
-      (p2 && (input.isDown('P2_LEFT') || input.isDown('P2_RIGHT'))),
+      (p1 && (input.isDown('P1_LEFT') || input.isDown('P1_RIGHT') || input.isDown('P1_MASH'))) ||
+      (p2 && (input.isDown('P2_LEFT') || input.isDown('P2_RIGHT') || input.isDown('P2_MASH'))),
   };
 }

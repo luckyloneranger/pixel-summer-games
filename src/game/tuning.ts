@@ -37,6 +37,9 @@ export const TITLE = {
 /** Gamepads. */
 export const GAMEPAD = {
   STICK: 0.5, // how far (0-1) the left stick must be pushed to count as a d-pad press
+  // Mashing one button (A) is slower than alternating two keys, so each mash
+  // press is worth this many keyboard taps: ~7 presses/s matches ~9 key taps/s.
+  MASH_SCALE: 1.3, // × a tap's speed boost
 };
 
 /** Instant replay of the best jump or throw, after a field event (offline). */
@@ -131,6 +134,7 @@ export const ANIMATION = {
   CROWD_PARALLAX: 0.35, // crowd scroll speed relative to the track (0-1)
   WAVE_FRAME_TIME: 0.25, // s per frame of the crowd wave
   RESULTS_DELAY: 2.0, // s after the race ends before the results screen
+  SKIP_GUARD: 0.6, // s after an event ends before OK skips on (so mashing A to run doesn't skip it)
 };
 
 /** Hold-and-release angle meter (long jump, javelin). */

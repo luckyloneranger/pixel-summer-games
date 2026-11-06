@@ -30,18 +30,21 @@ describe('gamepad', () => {
     expect(log.at(-1)).toBe('-PadRB');
   });
 
-  it('LB and RB run, A acts and confirms, B goes back', () => {
+  it('A mashes to run and confirms, B acts and goes back, LB and RB still run', () => {
     const input = new Input(DEFAULT_KEYMAP);
     input.keyDown('PadLB');
     input.beginStep();
     expect(input.justPressed('P1_LEFT')).toBe(true);
     input.keyDown('PadA');
     input.beginStep();
-    expect(input.justPressed('P1_ACTION')).toBe(true);
+    expect(input.justPressed('P1_MASH')).toBe(true);
     expect(input.justPressed('CONFIRM')).toBe(true);
+    expect(input.justPressed('P1_ACTION')).toBe(false);
     input.keyDown('PadB');
     input.beginStep();
+    expect(input.justPressed('P1_ACTION')).toBe(true);
     expect(input.justPressed('BACK')).toBe(true);
+    expect(input.justPressed('PAUSE')).toBe(false); // B mid-event jumps; it doesn't pause
   });
 
   it('changing keyboard keys keeps the pad buttons', () => {
@@ -52,11 +55,12 @@ describe('gamepad', () => {
 
   it('hints name the pad buttons while it is in use', () => {
     const p = new Prompts(() => 'pad');
-    expect(p.run()).toBe('LB+RB');
-    expect(p.action()).toBe('A');
+    expect(p.run()).toBe('A');
+    expect(p.action()).toBe('B');
     expect(p.pressOk()).toBe('PRESS A');
     expect(p.backTo()).toBe('B: BACK');
-    expect(p.eventHint('longJump')).toBe('RUN LB+RB  HOLD A, LET GO TO JUMP');
+    expect(p.eventHint('longJump')).toBe('MASH A  HOLD B, LET GO TO JUMP');
+    expect(p.eventHint('dash100')).toBe('MASH A TO RUN');
     expect(p.run(1)).toBe('LEFT+RIGHT'); // player 2 is still on the keyboard
   });
 });
@@ -71,15 +75,17 @@ describe('two gamepads', () => {
     const input = new Input(DEFAULT_KEYMAP);
     input.keyDown('Pad2LB');
     input.keyDown('Pad2A');
+    input.keyDown('Pad2B');
     input.beginStep();
     expect(input.justPressed('P2_LEFT')).toBe(true);
+    expect(input.justPressed('P2_MASH')).toBe(true);
     expect(input.justPressed('P2_ACTION')).toBe(true);
     expect(input.justPressed('P1_LEFT')).toBe(false);
   });
 
   it('player 2 hints name pad buttons only when a second pad is connected', () => {
     expect(new Prompts(() => 'pad', () => null, () => 1).run(1)).toBe('LEFT+RIGHT');
-    expect(new Prompts(() => 'pad', () => null, () => 2).run(1)).toBe('LB+RB');
+    expect(new Prompts(() => 'pad', () => null, () => 2).run(1)).toBe('A');
   });
 
   it('Start pauses (and still confirms in menus)', () => {
@@ -88,5 +94,39 @@ describe('two gamepads', () => {
     input.beginStep();
     expect(input.justPressed('PAUSE')).toBe(true);
     expect(input.justPressed('CONFIRM')).toBe(true);
+  });
+});
+
+describe('mashing A to run', () => {
+  it('every press counts, with no need to alternate', async () => {
+    const { TapRunner, applyRunPresses } = await import('../src/events/tap-runner');
+    const r = new TapRunner();
+    expect(applyRunPresses(r, false, false, true, true)).toBe(true);
+    expect(applyRunPresses(r, false, false, true, true)).toBe(true);
+    expect(r.taps).toBe(2);
+  });
+
+  it('about 7 presses a second on a pad keeps up with about 9 alternating key taps', async () => {
+    const { TapRunner, applyRunPresses } = await import('../src/events/tap-runner');
+    const run = (rate: number, mash: boolean) => {
+      const r = new TapRunner();
+      const dt = 1 / 60;
+      let next = 0;
+      let left = true;
+      for (let t = 0; t < 6; t += dt) {
+        if (t >= next) {
+          next += 1 / rate;
+          if (mash) applyRunPresses(r, false, false, true, true);
+          else applyRunPresses(r, left, !left);
+          left = !left;
+        }
+        r.update(dt);
+      }
+      return r.speed;
+    };
+    const keys = run(9, false);
+    const pad = run(7, true);
+    expect(Math.abs(pad - keys) / keys).toBeLessThan(0.08);
+    expect(run(7, false)).toBeLessThan(keys * 0.95); // without the boost a pad would lag
   });
 });

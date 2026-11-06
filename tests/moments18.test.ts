@@ -79,3 +79,14 @@ describe('fireworks', () => {
     expect(launched).toBeGreaterThanOrEqual(Math.floor(10 / FIREWORKS.EVERY));
   });
 });
+
+describe('swimming ghost', () => {
+  it('swims rather than runs', async () => {
+    const { Swim50Event } = await import('../src/events/swim50');
+    const { RUN_CYCLE } = await import('../src/gfx/sprites/athlete');
+    const e = new Swim50Event() as unknown as { ghostPose(pos: number): string };
+    expect(e.ghostPose(0)).toBe('set');
+    expect(e.ghostPose(1)).toBe('dive');
+    for (const pos of [5, 12, 30, 49]) expect(RUN_CYCLE as readonly string[]).not.toContain(e.ghostPose(pos));
+  });
+});

@@ -25,18 +25,20 @@ function pages(p: Prompts): Page[] {
   const act = p.action();
   const basics = p.touch
     ? ['ACTION JUMPS AND THROWS.', 'TWO PLAYERS ON ONE DEVICE', 'NEED A KEYBOARD.']
-    : [`${act} IS THE ACTION ${p.pad ? "BUTTON" : "KEY"}.`, `PLAYER 2: ${p.run(1)} AND ${p.action(1)}.`, 'PHONES: USE THE ON-SCREEN PADS.'];
+    : [`${act} IS THE ACTION KEY.`, `PLAYER 2: ${p.run(1)} AND ${p.action(1)}.`, 'PHONES: USE THE ON-SCREEN PADS.'];
   return [
     {
       title: 'THE BASICS',
       pose: 'run',
-      lines: [
-        `TAP ${run} IN TURN TO RUN.`,
-        'THE FASTER YOU TAP, THE FASTER',
-        'YOU GO. THE SAME ONE TWICE',
-        'OR HOLDING ONE DOES NOTHING.',
-        ...basics,
-      ],
+      lines: p.pad
+        ? ['MASH A TO RUN: THE FASTER YOU', 'PRESS, THE FASTER YOU GO.', '(LB AND RB IN TURN WORK TOO.)', 'B JUMPS AND THROWS.', 'START PAUSES AN EVENT.', `PLAYER 2: ${p.run(1)} AND ${p.action(1)}.`]
+        : [
+            `TAP ${run} IN TURN TO RUN.`,
+            'THE FASTER YOU TAP, THE FASTER',
+            'YOU GO. THE SAME ONE TWICE',
+            'OR HOLDING ONE DOES NOTHING.',
+            ...basics,
+          ],
     },
     {
       title: '100 M DASH',

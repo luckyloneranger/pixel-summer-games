@@ -71,7 +71,8 @@ export class EventPlayScene implements Scene {
   }
 
   update(dt: number, input: InputSnapshot): void {
-    if (input.justPressed('BACK') || input.justPressed('PAUSE')) {
+    // PAUSE, not BACK: the pad's B is the action button during an event.
+    if (input.justPressed('PAUSE')) {
       this.game.scenes.push(new PauseScene(this.game, this, !!this.session.online));
       return;
     }
@@ -83,14 +84,15 @@ export class EventPlayScene implements Scene {
     if (this.replayT !== null) {
       // The instant replay: Enter skips it.
       this.replayT += dt;
-      if (this.replayDone || input.justPressed('CONFIRM')) this.showResults(this.event.getResults());
+      if (this.replayDone || (input.justPressed('CONFIRM') && this.replayT >= ANIMATION.SKIP_GUARD)) this.showResults(this.event.getResults());
       return;
     }
     this.event.update(dt, input);
     if (!this.event.isFinished()) return;
     // Let the finish breathe for a moment (Enter skips), then the replay (if any), then results.
     this.finishedFor += dt;
-    if (this.finishedFor >= ANIMATION.RESULTS_DELAY || input.justPressed('CONFIRM')) {
+    const skip = input.justPressed('CONFIRM') && this.finishedFor >= ANIMATION.SKIP_GUARD;
+    if (this.finishedFor >= ANIMATION.RESULTS_DELAY || skip) {
       if (!this.session.online && this.event.hasReplay?.()) this.replayT = 0;
       else this.showResults(this.event.getResults());
     }

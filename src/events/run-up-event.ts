@@ -265,7 +265,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     switch (this.phase) {
       case 'ready':
       case 'runup':
-        if (applyRunPresses(this.runner, left, right)) this.phase = 'runup';
+        if (applyRunPresses(this.runner, left, right, true, keys.mash)) this.phase = 'runup';
         if (this.assist && keys.runHeld && this.runner.assist(dt)) this.phase = 'runup';
         // The meter only starts once you're moving, so you can't get stuck at a standstill.
         if (actionPressed && this.runner.speed > 0) {

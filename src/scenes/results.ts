@@ -11,7 +11,7 @@ import { submitMark, type Ranks } from '../net/leaderboard';
 import { awardsForBests, awardsForEvent, awardsForMatch } from '../game/achievements';
 import { EVENT_KIND, EVENT_NAMES, scoreResults } from '../game/scoring';
 import type { Session } from '../game/session';
-import { RECORDS } from '../game/tuning';
+import { ANIMATION, RECORDS } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import { blink, drawHeader } from '../ui/widgets';
 import { EventIntroScene } from './event-intro';
@@ -123,6 +123,8 @@ export class ResultsScene implements Scene {
     this.time += dt;
     this.confetti = updateConfetti(this.confetti, dt, this.game.renderer.height);
     const g = this.game;
+    // A moment before OK counts, so a gamepad player still mashing A doesn't skip past.
+    if (this.time < ANIMATION.SKIP_GUARD) return;
     const series = this.session.series;
     if (!series) {
       // Practice: try again, or back to the event list.
