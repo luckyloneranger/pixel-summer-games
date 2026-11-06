@@ -25,6 +25,7 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 14 – Ghost runner, awards, weekly leaderboard | 🔍 Ready for review |
 | 15 – Triple jump, pole vault, hammer, 50 m swim | 🔍 Ready for review |
 | 16 – Gamepad, new title tune, fixes | 🔍 Ready for review |
+| 17 – Touch, pads, online rejoin, leaderboard checks, all-nine | 🔍 Ready for review |
 
 ## Phase 0 – Setup and skeleton
 
@@ -410,5 +411,42 @@ Built in one go at the user's request, instead of one sub-phase at a time.
 - The leaderboard's anti-cheat is basic: limits and a rate limit. A determined cheater could still post a believable fake mark.
 - Reloading mid-match still counts as leaving an online match.
 - A gamepad's Start button confirms. Pause with B or Select.
+
+**Next:** Phase 17.
+
+## Phase 17 – Improvements (planned and built in one go)
+
+**Done**
+- **17a Touch:**
+  - In the hurdles, tap both run pads together to jump. Two thumbs are enough.
+  - Field events give ACTION the whole middle of the lower screen.
+  - Tap a row in the main, online, practice, options and pause menus.
+- **17b Gamepad:** a second pad drives player 2, and Start pauses an event.
+- **17c Online:**
+  - The hammer works online.
+  - "WATCHING ANN" shows during the other player's attempt.
+  - **Rejoin after a reload:** the game reconnects to the same seat and gets the standings, and the event in progress restarts from its intro card. A browser test reloads the guest mid-race and finishes the race.
+  - Message format 3; the reconnect window grows from 10 to 15 s.
+- **17d Leaderboard:**
+  - Race marks must include the run, which the server checks.
+  - New all-time table, and your weekly and all-time rank on the results screen.
+  - Checked against the local server: ranks come back, a worse mark never replaces a best, and a 100 m without its run is refused.
+- **17e Gameplay:**
+  - A flag marks your last take-off.
+  - New CLASSIC 5 / ALL 9 championship choice, with its own high-score table.
+  - Fixed a leftover "ALL FOUR" label in Versus.
+  - **Balance from scripted tapping:** the hammer was a little hard, and its green sector lasted only about 44 ms at top spin. It's now about 57 ms, 7 taps/s qualifies and about 8.6 taps/s beats the CPUs. The swim award was too easy.
+- **17f Housekeeping:**
+  - The run-up events and the hammer share one message-sync file (`attempt-sync.ts`) instead of two copies.
+  - The race's track painting moved to `track-markings.ts`.
+  - One more attempt at the online browser test in WebKit (bringing each window to the front).
+- **Tests:** 348 unit tests and 4 browser tests (desktop, phone, online, online rejoin).
+
+**Known issues / notes**
+- Feel-based tuning still needs your play-test notes from a real phone.
+- **Rejoin:** a reload during an event restarts that event for both players.
+- **Leaderboard runs:** only solo offline races record a run, so two-player and online race marks aren't sent.
+- The hammer's green sector is still a tight timing window at full spin. Tune `HAMMER.MAX_TURN_RATE` and `HAMMER.SECTOR` after playing.
+- **File sizes:** `race-event.ts` (about 790 lines) and `run-up-event.ts` (about 610) are still large. The cuts made were the safe ones; splitting further would mean opening up much of their private state.
 
 **Next:** waiting for approval.

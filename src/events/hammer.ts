@@ -25,10 +25,7 @@ import { FieldAttempts, floorCentimetres } from './field-attempts';
 import { keysFor } from './player-input';
 import { Projectile } from './projectile';
 import { watching } from './run-up-event';
-import type { GameMessage } from '../net/protocol';
-
-/** The other player's throw, as it arrives. */
-type HammerMessage = Extract<GameMessage, { k: 'field' | 'release' | 'landed' | 'foul' }>;
+import { AttemptSync, type AttemptMessage as HammerMessage } from './attempt-sync';
 
 export type HammerPhase = 'ready' | 'spin' | 'flight' | 'landed' | 'foul' | 'finished';
 
@@ -79,7 +76,7 @@ export class HammerEvent implements AthleticsEvent {
   private net: NetLink | null = null;
   /** Number of the throw in progress across both players (0 = the first). */
   attemptNo = 0;
-  private readonly netQueue: HammerMessage[] = [];
+  private sync: AttemptSync | null = null;
   private sendTimer = 0; // s since the spin was last sent
   private pendingMark: number | null | undefined; // the official mark, if it came before our replay landed
 
@@ -88,7 +85,7 @@ export class HammerEvent implements AthleticsEvent {
     this.effects = ctx.effects ?? NO_EFFECTS;
     this.prompts = ctx.prompts ?? KEYBOARD_PROMPTS;
     this.net = ctx.net ?? null;
-    this.netQueue.length = 0;
+    this.sync = ctx.net ? new AttemptSync(ctx.net) : null;
     this.assist = ctx.assist ?? false;
     this.stadium.theme = STADIUM_THEMES[this.id];
     this.throwers = ctx.players.map((p, i) => ({
@@ -256,29 +253,24 @@ export class HammerEvent implements AthleticsEvent {
     this.net.send({ k: 'field', n: this.attemptNo, x: this.angle, speed: this.spin, angle: 0, phase: 'runup' });
   }
 
-  /** Work through the other game's messages in order, catching up a throw if we're behind. */
+  /** Work through the other game's messages about throws, in order. */
   private receiveNet(): void {
-    this.netQueue.push(...this.net!.take('field', 'release', 'landed', 'foul'));
-    while (this.netQueue.length) {
-      const m = this.netQueue[0];
-      if (m.n < this.attemptNo) {
-        this.netQueue.shift();
-        continue;
-      }
-      if (m.n > this.attemptNo) {
-        if (this.phase === 'flight' && this.pendingMark !== undefined) this.land(this.pendingMark);
-        const done = this.phase === 'landed' || this.phase === 'foul';
-        if (done && !this.throwers.every((t) => t.record.done)) {
-          this.startAttempt();
-          continue;
-        }
-        if (m.k === 'field') this.netQueue.shift();
-        else break;
-        continue;
-      }
-      this.netQueue.shift();
-      if (!this.localTurn) this.applyRemote(m);
-    }
+    this.sync!.process({
+      attemptNo: () => this.attemptNo,
+      catchUp: () => this.catchUp(),
+      apply: (m) => {
+        if (!this.localTurn) this.applyRemote(m);
+      },
+    });
+  }
+
+  /** Finish the current throw so the next can start; false if its result isn't in yet. */
+  private catchUp(): boolean {
+    if (this.phase === 'flight' && this.pendingMark !== undefined) this.land(this.pendingMark);
+    const done = this.phase === 'landed' || this.phase === 'foul';
+    if (!done || this.throwers.every((t) => t.record.done)) return false;
+    this.startAttempt();
+    return true;
   }
 
   private applyRemote(m: HammerMessage): void {

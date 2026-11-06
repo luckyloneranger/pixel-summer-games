@@ -65,7 +65,7 @@ Every event uses the same two systems: alternate-tap running and a hold-and-rele
 | Back / pause | Esc or P | – | Pause icon |
 | Mute | M | – | Speaker icon |
 
-In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1\_RIGHT, P1\_ACTION and so on) so they can be remapped in Options. Only the six gameplay keys can be remapped; Enter, Esc, P, M and the backtick key stay reserved for menus, pause, mute and debug (decided in Phase 8b). Touch buttons stay visible on touch devices, hide when a physical key is pressed, and ignore new touches for a moment after leaving an event's buttons, so a finger still tapping a run pad can't hit a menu button. On menu screens the buttons sit in one bar along the bottom edge (← ↑ ↓ → on the left, BACK and OK on the right) so they never cover the menu. On the title and demo, a tap anywhere starts.
+In 1-player games, both key sets work. Map keys to logical actions (P1\_LEFT, P1\_RIGHT, P1\_ACTION and so on) so they can be remapped in Options. Only the six gameplay keys can be remapped; Enter, Esc, P, M and the backtick key stay reserved for menus, pause, mute and debug (decided in Phase 8b). Touch buttons stay visible on touch devices (two thumbs on both run pads = jump in the hurdles; field events have a wide ACTION area), hide when a physical key is pressed, and ignore new touches for a moment after leaving an event's buttons, so a finger still tapping a run pad can't hit a menu button. On menu screens the buttons sit in one bar along the bottom edge (← ↑ ↓ → on the left, BACK and OK on the right) so they never cover the menu. On the title and demo, a tap anywhere starts.
 
 **Hints match the device in use** (decided in Phase 12b). Every on-screen hint is built from one place (`src/ui/prompts.ts`). With a keyboard it names the keys, following any keys changed in Options ("RUN A+D  HOLD W", "PRESS ENTER", "ESC: BACK"). On a phone it names the buttons ("RUN ← →  HOLD ACTION", "TAP OK", "TAP TO START"). Hints switch the moment the player changes device. Screens that continue use the OK button on a phone, not a tap anywhere, so fingers still mashing ← → can't skip the results. Versus, two-player Championship and changing keys show "NEEDS A KEYBOARD" on a phone.
 
@@ -416,6 +416,15 @@ Build in this order. Get the feel of the running right with plain boxes before a
 - A new original title tune, and a short fanfare on each event's intro card (pitched per event).
 - Fixes: the lobby's "close room" note sat under the phone control bar; high jumps and vaults now land on the mat's top, so CLEARED appears on time.
 - Not done: reloading mid-match still counts as leaving (rejoining would need the whole match kept on the server).
+
+**Phase 17 – Improvements** (planned and built in one go at the user's request)
+
+- Touch: in the hurdles, both run pads pressed together (within 0.05 s, `TOUCH.CHORD_WINDOW`) is a jump, so two thumbs are enough. Field events give ACTION the whole middle of the lower screen. List menus (main, online, practice, options, pause) take a tap on a row.
+- Gamepads: a second pad drives player 2; Start pauses an event (and still confirms in menus).
+- Online: the hammer is playable online (spin streamed like a run-up); "WATCHING ANN" shows during the other player's attempt; reloading the page mid-match rejoins it. The tab keeps the room, seat, message counters and unconfirmed messages; the reloaded game reconnects to the same seat, asks for the standings (`rejoin` / `sync`, message format 3), and the event in progress restarts from its intro card on both screens. The reconnect window is 15 s.
+- Leaderboard: race marks must come with the run (positions every 0.05 s); the server checks it against the game's top speed, the distance and the time. An all-time best table; the reply gives weekly and all-time ranks, shown on the results screen; High Scores shows ALL TIME.
+- Gameplay: a flag marks your last take-off in the run-up events. The championship can be CLASSIC 5 or ALL 9, with its own high-score table. Balance from scripted tapping: hammer top spin 1.7 turns/s, spin impulse 0.078, drain 0.16, qualify 63 m; the swim award needs under 21.50 s.
+- Feel-based tuning waits for the user's play-test on a real phone.
 
 ## 10. Testing, quality and definition of done
 

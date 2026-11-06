@@ -22,10 +22,8 @@ import type { Look } from '../gfx/sprite';
 import type { NetLink } from './event';
 import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
 import { NET } from '../game/tuning';
-import type { GameMessage } from '../net/protocol';
 
-/** Field-event messages from the other player's game. */
-type FieldMessage = Extract<GameMessage, { k: 'field' | 'release' | 'landed' | 'foul' }>;
+import { AttemptSync, type AttemptMessage as FieldMessage } from './attempt-sync';
 
 /** A human taking part: their attempts and how they look. */
 export interface FieldCompetitor {
@@ -99,7 +97,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected prompts: Prompts = KEYBOARD_PROMPTS;
   /** Number of the attempt in progress (0 = first of the event). */
   attemptNo = 0;
-  private readonly netQueue: FieldMessage[] = [];
+  private sync: AttemptSync | null = null;
   private sendTimer = 0; // s since the last run-up update was sent
   /** Official mark for the remote attempt, if it arrived before our replay landed. */
   private pendingMark: { mark: number | null } | null = null;
@@ -130,7 +128,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.stadium.theme = STADIUM_THEMES[this.id];
     this.net = ctx.net ?? null;
     this.prompts = ctx.prompts ?? KEYBOARD_PROMPTS;
-    this.netQueue.length = 0;
+    this.sync = ctx.net ? new AttemptSync(ctx.net) : null;
     this.competitors = ctx.players.map((p, i) => ({
       playerIndex: p.index ?? i,
       name: p.initials,
@@ -317,26 +315,15 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.net!.send({ k: 'field', n: this.attemptNo, x: this.athleteX, speed: this.runner.speed, angle: this.meter.angle, phase: p });
   }
 
-  /** Work through the other game's messages, in order. */
+  /** Work through the other game's messages about attempts, in order. */
   private receiveNet(): void {
-    this.netQueue.push(...this.net!.take('field', 'release', 'landed', 'foul'));
-    while (this.netQueue.length) {
-      const m = this.netQueue[0];
-      if (m.n < this.attemptNo) {
-        this.netQueue.shift(); // old news
-        continue;
-      }
-      if (m.n > this.attemptNo) {
-        // They've moved on to the next attempt: catch up if we can.
-        if (!this.catchUp()) {
-          if (m.k === 'field') this.netQueue.shift();
-          else break; // wait for this attempt's result first
-        }
-        continue;
-      }
-      this.netQueue.shift();
-      if (!this.localTurn) this.applyRemote(m);
-    }
+    this.sync!.process({
+      attemptNo: () => this.attemptNo,
+      catchUp: () => this.catchUp(),
+      apply: (m) => {
+        if (!this.localTurn) this.applyRemote(m);
+      },
+    });
   }
 
   /** Finish the current attempt now so the next one can start. False if its result isn't known yet. */

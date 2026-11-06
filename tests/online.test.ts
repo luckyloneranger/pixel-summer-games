@@ -618,3 +618,28 @@ describe('rejoin after a page reload', () => {
     expect(loadRejoin(1_000_000, store)).toBeNull();
   });
 });
+
+import { AttemptSync, type AttemptMessage } from '../src/events/attempt-sync';
+
+describe('attempt sync (shared by the field events and the hammer)', () => {
+  it('drops old news, applies the current attempt, and catches up for the next', () => {
+    const inbox: GameMessage[] = [
+      { k: 'field', n: 0, x: 0, speed: 1, angle: 0, phase: 'runup' }, // old
+      { k: 'landed', n: 1, mark: 7 }, // current
+      { k: 'field', n: 2, x: 0, speed: 1, angle: 0, phase: 'runup' }, // next attempt
+    ];
+    const net: NetLink = { localIndex: 0, isHost: true, send: () => {}, take: () => inbox.splice(0) as never };
+    let attempt = 1;
+    const applied: AttemptMessage[] = [];
+    new AttemptSync(net).process({
+      attemptNo: () => attempt,
+      catchUp: () => {
+        attempt++;
+        return true;
+      },
+      apply: (m) => applied.push(m),
+    });
+    expect(applied.map((m) => `${m.k}${m.n}`)).toEqual(['landed1', 'field2']);
+    expect(attempt).toBe(2);
+  });
+});

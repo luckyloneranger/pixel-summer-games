@@ -2,7 +2,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import { ANIMATION, RACE_START, RUNNER } from '../game/tuning';
-import { LAYOUT, STADIUM_THEMES, Stadium, TRACK_BOTTOM } from '../gfx/backgrounds';
+import { LAYOUT, STADIUM_THEMES, Stadium } from '../gfx/backgrounds';
 import { PALETTE } from '../gfx/palette';
 import type { Look } from '../gfx/sprite';
 import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
@@ -14,6 +14,7 @@ import { keysFor, type PlayerKeys } from './player-input';
 import type { NetLink } from './event';
 import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
 import { GhostRecorder, ghostPosition } from '../game/ghost';
+import { drawTrackMarkings } from './track-markings';
 import type { RunnerState, StartPhase } from '../net/protocol';
 import { NET } from '../game/tuning';
 import { DustPuffs, DustTrail, drawGroundShadow, drawSpeedLines } from '../gfx/effects';
@@ -53,8 +54,6 @@ export interface RaceConfig {
 export const PLAYER_LANE = 2; // player 1 runs in lane 2
 export const PLAYER2_LANE = 3; // player 2 runs in lane 3
 const MESSAGE_Y = 36; // px, big messages under the scoreboard
-const MARKER_EVERY = 10; // m between distance markers
-const LANE_LABELS = ['', '1', '2', '3', '4'];
 export const PLACE_LABELS = ['1ST', '2ND', '3RD', '4TH'];
 
 /**
@@ -99,11 +98,8 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   private setWait = 0; // s, random gap between SET and GO for this start
   protected readonly stadium = new Stadium();
   private readonly sprites = new Map<Lane, AthleteSprites>();
-  private readonly markerLabels: string[];
 
   constructor(protected readonly cfg: RaceConfig) {
-    this.markerLabels = [];
-    for (let m = 0; m < cfg.DISTANCE; m += MARKER_EVERY) this.markerLabels.push(String(m));
   }
 
   // ------------------------------------------------ hooks for subclasses
@@ -127,7 +123,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   /** The stadium and the track (swimming draws a pool instead). */
   protected drawSurface(r: Renderer, cameraPx: number, waveFrame: number, toScreen: (m: number) => number): void {
     this.stadium.drawBackground(r, cameraPx, ANIMATION.CROWD_PARALLAX, waveFrame);
-    this.drawTrackMarkings(r, toScreen);
+    drawTrackMarkings(r, toScreen, this.cfg.DISTANCE, this.lanes.map((l) => l.laneNumber));
   }
 
   /** Drawn just after each athlete (swimming adds the waterline over them). */
@@ -641,41 +637,6 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
 
   private leader(): L {
     return this.racers.reduce((a, b) => (b.runner.position > a.runner.position ? b : a));
-  }
-
-  private drawTrackMarkings(r: Renderer, toScreen: (m: number) => number): void {
-    const trackH = TRACK_BOTTOM - LAYOUT.TRACK_TOP;
-    // Lane numbers painted behind the start line.
-    const numbersX = toScreen(-2);
-    if (numbersX > -8) {
-      for (const lane of this.lanes) {
-        const y = LAYOUT.TRACK_TOP + (lane.laneNumber - 1) * LAYOUT.LANE_HEIGHT + 4;
-        r.text(LANE_LABELS[lane.laneNumber], numbersX, y, PALETTE.WHITE, 'center');
-      }
-    }
-    // Start line, and a marker every 10 m with a board on the grass.
-    for (let m = 0; m < this.cfg.DISTANCE; m += MARKER_EVERY) {
-      const x = toScreen(m);
-      if (x < -20 || x > r.width + 20) continue;
-      r.rect(x, LAYOUT.TRACK_TOP, m === 0 ? 2 : 1, trackH, PALETTE.WHITE);
-      if (m > 0) {
-        const label = this.markerLabels[m / MARKER_EVERY];
-        const w = label.length * 8 + 2;
-        r.rect(x - w / 2, LAYOUT.TRACK_TOP - 11, w, 9, PALETTE.WHITE);
-        r.text(label, x, LAYOUT.TRACK_TOP - 10, PALETTE.INK, 'center');
-      }
-    }
-    // Chequered finish line.
-    const fx = toScreen(this.cfg.DISTANCE);
-    if (fx > -10 && fx < r.width + 10) {
-      for (let y = 0; y < trackH; y += 2) {
-        const even = (y / 2) % 2 === 0;
-        r.rect(fx, LAYOUT.TRACK_TOP + y, 2, 2, even ? PALETTE.WHITE : PALETTE.INK);
-        r.rect(fx + 2, LAYOUT.TRACK_TOP + y, 2, 2, even ? PALETTE.INK : PALETTE.WHITE);
-      }
-      r.rect(fx - 23, LAYOUT.TRACK_TOP - 11, 50, 9, PALETTE.YELLOW);
-      r.text('FINISH', fx + 2, LAYOUT.TRACK_TOP - 10, PALETTE.INK, 'center');
-    }
   }
 
   /** Pick the animation frame from the athlete's state (drawing only). */
