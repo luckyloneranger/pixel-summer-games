@@ -92,7 +92,7 @@ export class HammerEvent implements AthleticsEvent {
       playerIndex: p.index ?? i,
       name: p.initials,
       record: new FieldAttempts(HAMMER.ATTEMPTS),
-      sprites: new AthleteSprites(playerLook(p.team)),
+      sprites: new AthleteSprites(playerLook(p.team), false, 1, STADIUM_THEMES.hammer),
     }));
     this.qualifyMark = qualifyingMark(this.id, ctx.difficulty);
     this.cpus = cpuLineup(ctx.players.map((p) => p.team)).map((a) => ({
@@ -371,7 +371,7 @@ export class HammerEvent implements AthleticsEvent {
 
   private drawThrower(r: Renderer): void {
     const cx = CIRCLE_X;
-    drawGroundShadow(r, cx, GROUND_Y, 0, PALETTE.GREEN_DARK);
+    drawGroundShadow(r, cx, GROUND_Y, 0, PALETTE.GREEN_DARK, 1, STADIUM_THEMES.hammer === 'sunset');
     const swinging = this.phase === 'ready' || this.phase === 'spin';
     // The hammer on its wire swings round an ellipse; behind the thrower it's hidden by them.
     const hands = { x: cx, y: GROUND_Y - 14 };

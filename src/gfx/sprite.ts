@@ -1,4 +1,4 @@
-import { PALETTE, lighter } from './palette';
+import { PALETTE, darker, lighter } from './palette';
 
 /** Colours that change per athlete: team kit, skin tone and hair. */
 export interface Look {
@@ -80,12 +80,18 @@ export function mapToPixels(map: readonly string[], look: Look): Pixels {
  * edge (light from above), then a dark outline round the whole figure so it
  * stands out from any background.
  */
-export function shadePixels(px: Pixels): Pixels {
+export function shadePixels(px: Pixels, light: SpriteLight = 'day'): Pixels {
   const h = px.length;
   const w = px[0]?.length ?? 0;
   const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? null : px[y][x]);
+  // Night: floodlights from above leave the lower body a shade darker.
+  const nightFrom = Math.floor(h * NIGHT_SHADE_FROM);
   const lit = px.map((row, y) =>
-    row.map((c, x) => (c !== null && at(x, y - 1) === null && c !== OUTLINE ? lighter(c) : c)),
+    row.map((c, x) => {
+      if (c === null || c === OUTLINE) return c;
+      if (at(x, y - 1) === null) return light === 'sunset' ? PALETTE.PEACH : lighter(c); // top edge: warm low sun at sunset
+      return light === 'night' && y >= nightFrom ? darker(c) : c;
+    }),
   );
   return lit.map((row, y) =>
     row.map((c, x) => {
@@ -103,6 +109,10 @@ export function shadePixels(px: Pixels): Pixels {
 export function ghostPixels(px: Pixels): Pixels {
   return px.map((row, y) => row.map((c, x) => (c !== null && (x + y) % 2 === 0 ? PALETTE.CLOUD : null)));
 }
+
+/** The light an athlete stands in (the stadium's time of day). */
+export type SpriteLight = 'day' | 'sunset' | 'night';
+const NIGHT_SHADE_FROM = 0.55; // of the sprite's height: below this is darker at night
 
 /** The outline colour round shaded sprites. */
 export const OUTLINE = PALETTE.INK;
@@ -124,8 +134,8 @@ function pixelsToCanvas(px: Pixels): HTMLCanvasElement {
 }
 
 /** Turn a pixel map into a small canvas, once, at load time. `shaded` adds highlights and an outline. */
-export function buildSprite(map: readonly string[], look: Look, shaded = false, ghost = false): HTMLCanvasElement {
+export function buildSprite(map: readonly string[], look: Look, shaded = false, ghost = false, light: SpriteLight = 'day'): HTMLCanvasElement {
   const px = mapToPixels(map, look);
   if (ghost) return pixelsToCanvas(ghostPixels(shadePixels(px)));
-  return pixelsToCanvas(shaded ? shadePixels(px) : px);
+  return pixelsToCanvas(shaded ? shadePixels(px, light) : px);
 }

@@ -62,8 +62,15 @@ export class DustTrail {
 }
 
 /** A soft shadow on the ground under an athlete: smaller the higher they are. Draw it before the athlete. */
-export function drawGroundShadow(r: Renderer, cx: number, groundY: number, liftPx: number, colour: string, scale = 1): void {
+export function drawGroundShadow(r: Renderer, cx: number, groundY: number, liftPx: number, colour: string, scale = 1, long = false): void {
   const w = Math.max(4, EFFECTS.SHADOW_WIDTH * scale - Math.round(liftPx / 4));
+  if (long) {
+    // Low sun on the right: the shadow stretches away to the left.
+    const len = Math.round(w * EFFECTS.SUNSET_SHADOW);
+    r.rect(cx - len + w / 2, groundY, len, 1, colour);
+    r.rect(cx - len + w / 2 + 3, groundY + 1, Math.max(2, len - 8), 1, colour);
+    return;
+  }
   r.rect(cx - w / 2, groundY, w, 1, colour);
   r.rect(cx - w / 2 + 2, groundY + 1, Math.max(2, w - 4), 1, colour);
 }

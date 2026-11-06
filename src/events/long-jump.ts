@@ -87,7 +87,7 @@ export class LongJumpEvent extends RunUpFieldEvent {
     const lift = flying ? Math.round(this.flight.y * ppm) : 0;
     const top = GROUND_Y - this.spriteH + 1 - lift;
     const inPit = this.athleteX >= this.pit.start && this.athleteX <= this.pit.end;
-    drawGroundShadow(r, x, GROUND_Y, lift, inPit ? PALETTE.GOLD : PALETTE.ORANGE_DARK, this.spriteScale);
+    drawGroundShadow(r, x, GROUND_Y, lift, inPit ? PALETTE.GOLD : PALETTE.ORANGE_DARK, this.spriteScale, this.stadium.theme === 'sunset');
     const note = this.phase === 'flight' ? this.flightNote() : '';
     if (note) r.text(note, x, top - 10, PALETTE.YELLOW, 'center');
     if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x - this.spriteW / 2, top, this.runner.speedFraction, this.clock, this.spriteScale);

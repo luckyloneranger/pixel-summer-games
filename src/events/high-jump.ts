@@ -235,7 +235,7 @@ export class HighJumpEvent extends RunUpFieldEvent {
       const centre = GROUND_Y - this.flight.y * ppm;
       bottom = Math.min(floor + 1, Math.round(centre + this.spriteH / 2));
     }
-    drawGroundShadow(r, x + this.spriteW / 2, floor, Math.max(0, floor - bottom), onMat ? PALETTE.NAVY : PALETTE.ORANGE_DARK, this.spriteScale);
+    drawGroundShadow(r, x + this.spriteW / 2, floor, Math.max(0, floor - bottom), onMat ? PALETTE.NAVY : PALETTE.ORANGE_DARK, this.spriteScale, this.stadium.theme === 'sunset');
     if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x, bottom - this.spriteH, this.runner.speedFraction, this.clock, this.spriteScale);
     r.image(this.athleteSprites().get(this.pose(onMat)), x, bottom - this.spriteH);
   }

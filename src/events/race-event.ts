@@ -617,7 +617,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       const lift = this.liftFor(lane);
       const y = footY - ATHLETE_H + 1 - lift;
       if (this.onLand) {
-        drawGroundShadow(r, x + ATHLETE_W / 2, footY, lift, PALETTE.ORANGE_DARK);
+        drawGroundShadow(r, x + ATHLETE_W / 2, footY, lift, PALETTE.ORANGE_DARK, 1, this.stadium.theme === 'sunset');
         if (lane.playerIndex >= 0 && this.phase === 'running') drawSpeedLines(r, x, y, lane.runner.speedFraction, this.clock);
       }
       r.image(this.spritesFor(lane).get(this.poseFor(lane)), x, y);
@@ -692,7 +692,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   private spritesFor(lane: Lane): AthleteSprites {
     let s = this.sprites.get(lane);
     if (!s) {
-      s = new AthleteSprites(lane.look);
+      s = new AthleteSprites(lane.look, false, 1, this.stadium.theme);
       this.sprites.set(lane, s);
     }
     return s;

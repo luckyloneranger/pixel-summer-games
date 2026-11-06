@@ -66,4 +66,32 @@ export function lighter(colour: string): string {
   return LIGHTER[colour] ?? colour;
 }
 
+/** The next darker shade of a colour, for night shading (itself if there's none). */
+const DARKER: Record<string, string> = {
+  [PALETTE.RED_LIGHT]: PALETTE.RED,
+  [PALETTE.RED]: PALETTE.RED_DARK,
+  [PALETTE.SKY]: PALETTE.BLUE,
+  [PALETTE.BLUE]: PALETTE.NAVY,
+  [PALETTE.GREEN_LIGHT]: PALETTE.GREEN,
+  [PALETTE.GREEN]: PALETTE.GREEN_DARK,
+  [PALETTE.YELLOW_LIGHT]: PALETTE.YELLOW,
+  [PALETTE.YELLOW]: PALETTE.GOLD,
+  [PALETTE.PURPLE_LIGHT]: PALETTE.PURPLE,
+  [PALETTE.PURPLE]: PALETTE.NAVY,
+  [PALETTE.SKIN_PALE]: PALETTE.SKIN_LIGHT,
+  [PALETTE.SKIN_LIGHT]: PALETTE.SKIN,
+  [PALETTE.SKIN]: PALETTE.SKIN_DARK,
+  [PALETTE.SKIN_DARK]: PALETTE.BROWN,
+  [PALETTE.BROWN_LIGHT]: PALETTE.BROWN,
+  [PALETTE.WHITE]: PALETTE.GREY_LIGHT,
+  [PALETTE.CLOUD]: PALETTE.GREY_LIGHT,
+  [PALETTE.GREY_LIGHT]: PALETTE.GREY,
+  [PALETTE.ORANGE_LIGHT]: PALETTE.ORANGE,
+  [PALETTE.ORANGE]: PALETTE.ORANGE_DARK,
+};
+
+export function darker(colour: string): string {
+  return DARKER[colour] ?? colour;
+}
+
 export type Colour = (typeof PALETTE)[keyof typeof PALETTE];

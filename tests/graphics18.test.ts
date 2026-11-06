@@ -84,3 +84,27 @@ describe('menu art', () => {
     }
   });
 });
+
+import { mapToPixels, shadePixels } from '../src/gfx/sprite';
+import { makeLook } from '../src/gfx/sprites/athlete';
+import { darker } from '../src/gfx/palette';
+
+describe('time-of-day light on athletes', () => {
+  const px = mapToPixels(F.stand, makeLook('red', 'medium', PALETTE.BROWN));
+  const day = shadePixels(px, 'day');
+  it('sunset warms the top edges', () => {
+    const sunset = shadePixels(px, 'sunset');
+    expect(sunset.flat()).toContain(PALETTE.PEACH);
+    expect(day.flat()).not.toContain(PALETTE.PEACH);
+  });
+  it('night darkens the lower body only', () => {
+    const night = shadePixels(px, 'night');
+    expect(night.slice(0, 10)).toEqual(day.slice(0, 10)); // head and shoulders as by day
+    expect(night.slice(14)).not.toEqual(day.slice(14));
+    for (const c of night.flat()) if (c) expect(allowed.has(c)).toBe(true);
+  });
+  it('every darker shade is in the palette', () => {
+    for (const c of Object.values(PALETTE)) expect(allowed.has(darker(c))).toBe(true);
+  });
+});
+const allowed = new Set<string>(Object.values(PALETTE));

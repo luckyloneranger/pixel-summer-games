@@ -65,6 +65,8 @@ export const SKY_COLOURS: Record<StadiumTheme, string[]> = {
 };
 
 const PYLON_EVERY = 160; // px between floodlight towers on the roof
+const POOL_W = 120; // px, a floodlight's pool of light on the field
+const POOL_H = 40;
 const FLAG_EVERY = 64; // px between flags along the front wall
 const FLAG_COLOURS = [PALETTE.RED, PALETTE.BLUE, PALETTE.GREEN, PALETTE.YELLOW, PALETTE.PURPLE];
 /** Each event's time of day. */
@@ -87,6 +89,7 @@ const FLASHES = 5; // camera flashes in the crowd per frame when they're on
 export class Stadium {
   private crowdFrames: HTMLCanvasElement[] | null = null;
   private grassTile: HTMLCanvasElement | null = null;
+  private poolImage: HTMLCanvasElement | null = null;
   /** Time of day (each event sets its own). */
   theme: StadiumTheme = 'night';
   /** Seconds, for waving flags, drifting clouds and twinkling stars. */
@@ -140,6 +143,36 @@ export class Stadium {
     for (let y = grassTop; y < r.height; y += tile.height) {
       for (let x = gx; x < r.width; x += tile.width) r.image(tile, x, y);
     }
+    // Night: pools of floodlight on the field, under each light tower.
+    if (this.theme === 'night') {
+      const pool = this.lightPool();
+      const every = PYLON_EVERY * 2;
+      const px = -(Math.floor(cameraPx) % every) - every;
+      for (let x = px; x < r.width + every; x += every) r.image(pool, x, grassTop + 6);
+    }
+  }
+
+  /** A soft oval of light, dithered (denser in the middle) so it needs no see-through colour. */
+  private lightPool(): HTMLCanvasElement {
+    if (!this.poolImage) {
+      const w = POOL_W;
+      const h = POOL_H;
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      if (!ctx) throw new Error('Canvas 2D is not supported in this browser.');
+      ctx.fillStyle = PALETTE.GREEN_LIGHT;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const d = ((x - w / 2) / (w / 2)) ** 2 + ((y - h / 2) / (h / 2)) ** 2; // 0 middle, 1 edge
+          const dense = d < 0.35 ? (x + y) % 2 === 0 : d < 1 ? (x % 2 === 0 && y % 2 === 0) : false;
+          if (dense) ctx.fillRect(x, y, 1, 1);
+        }
+      }
+      this.poolImage = c;
+    }
+    return this.poolImage;
   }
 
   /** The sky down to the top of the stand: a dithered gradient, then sun, clouds or stars. */

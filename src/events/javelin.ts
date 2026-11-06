@@ -90,7 +90,7 @@ export class JavelinEvent extends RunUpFieldEvent {
     }
     const athlete = at(this.athleteX, 0);
     const top = athlete.sy - ATHLETE_H + 1;
-    drawGroundShadow(r, athlete.sx, athlete.sy, 0, PALETTE.ORANGE_DARK);
+    drawGroundShadow(r, athlete.sx, athlete.sy, 0, PALETTE.ORANGE_DARK, 1, this.stadium.theme === 'sunset');
     if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, athlete.sx - ATHLETE_W / 2, top, this.runner.speedFraction, this.clock);
     r.image(this.athleteSprites().get(this.pose()), athlete.sx - ATHLETE_W / 2, athlete.sy - ATHLETE_H + 1);
     const thrown = this.phase === 'flight' || this.phase === 'landed';

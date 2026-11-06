@@ -551,7 +551,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   protected athleteSprites(): AthleteSprites {
     const c = this.current;
-    c.sprites ??= new AthleteSprites(c.look, false, this.spriteScale);
+    c.sprites ??= new AthleteSprites(c.look, false, this.spriteScale, this.stadium.theme);
     return c.sprites;
   }
 

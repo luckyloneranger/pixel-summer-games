@@ -3,7 +3,7 @@
 // (rows 0-14) plus a leg pose (rows 15-23).
 
 import { PALETTE } from '../palette';
-import { buildSprite, scale2x, type Look } from '../sprite';
+import { buildSprite, scale2x, type Look, type SpriteLight } from '../sprite';
 
 export const ATHLETE_W = 16; // px
 export const ATHLETE_H = 24; // px
@@ -658,13 +658,15 @@ export class AthleteSprites {
     private readonly look: Look,
     private readonly ghost = false,
     readonly scale: 1 | 2 = 1,
+    /** The light they stand in: warm rims at sunset, darker legs at night. */
+    readonly light: SpriteLight = 'day',
   ) {}
 
   get(pose: Pose): HTMLCanvasElement {
     let img = this.frames.get(pose);
     if (!img) {
       const map = withHair(ATHLETE_FRAMES[pose], this.look.hairStyle ?? 'short', pose);
-      img = buildSprite(this.scale === 2 ? scale2x(map) : map, this.look, true, this.ghost);
+      img = buildSprite(this.scale === 2 ? scale2x(map) : map, this.look, true, this.ghost, this.light);
       this.frames.set(pose, img);
     }
     return img;

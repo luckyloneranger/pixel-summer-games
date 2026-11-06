@@ -338,6 +338,7 @@ export const EFFECTS = {
   ATTRACT_DELAY: 15, // s of no input on the title before the demo race starts
   // Phase 13 graphics
   SHADOW_WIDTH: 12, // px, ground shadow width under a standing athlete
+  SUNSET_SHADOW: 2.4, // times longer the shadows are at sunset (stretching left, away from the sun)
   SPEED_LINES_FROM: 0.85, // fraction of top speed where speed lines appear
   SLOW_MO: 0.4, // game speed during a big-jump highlight (offline only)
   HIGHLIGHT_TIME: 1.1, // s (real time) a big-jump highlight lasts
