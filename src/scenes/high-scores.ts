@@ -26,11 +26,17 @@ const SHORT_NAMES: Record<EventId, string> = {
 };
 
 /** The two tables kept in this browser. */
-export type ScoreTable = 'championship' | 'versus';
+export type ScoreTable = 'championship' | 'versus' | 'allNine';
 /** What the screen can show: those, or the weekly online board. */
 type View = ScoreTable | 'week' | 'alltime';
-const TABLES: View[] = ['championship', 'versus', 'week', 'alltime'];
-const TABLE_NAMES: Record<View, string> = { championship: 'CHAMPIONSHIP', versus: 'VERSUS', week: 'ONLINE WEEK', alltime: 'ALL TIME' };
+const TABLES: View[] = ['championship', 'allNine', 'versus', 'week', 'alltime'];
+const TABLE_NAMES: Record<View, string> = {
+  championship: 'CHAMPIONSHIP',
+  allNine: 'ALL NINE',
+  versus: 'VERSUS',
+  week: 'ONLINE WEEK',
+  alltime: 'ALL TIME',
+};
 const ONLINE_VIEWS: readonly View[] = ['week', 'alltime'];
 /** Events on the weekly board, in menu order. */
 const BOARD_LIST = ALL_EVENTS.filter((id) => onBoard(id));

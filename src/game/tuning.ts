@@ -175,10 +175,10 @@ export const POLE_VAULT = {
 export const HAMMER = {
   ATTEMPTS: 3,
   GRAVITY: 9.81, // m/s²
-  SPIN_IMPULSE: 0.09, // spin (0-1 of the top rate) added by one alternate tap
-  SPIN_DRAIN: 0.12, // spin lost per second
+  SPIN_IMPULSE: 0.078, // spin (0-1 of the top rate) added by one alternate tap
+  SPIN_DRAIN: 0.16, // spin lost per second
   MIN_TURN_RATE: 0.6, // turns per second when barely spinning
-  MAX_TURN_RATE: 2.2, // turns per second at full spin
+  MAX_TURN_RATE: 1.7, // turns per second at full spin (the green sector then lasts ~57 ms)
   MAX_TURNS: 5, // still holding after this many turns = foul
   RELEASE_SPEED: 28.5, // m/s of the hammer at full spin
   RELEASE_ANGLE: 42, // degrees: the hammer's take-off angle
@@ -255,7 +255,7 @@ export const SCORING = {
   hurdles110: { ZERO: 20.0, PAR: 13.0, QUALIFY: 15.5 }, // s
   tripleJump: { ZERO: 10.0, PAR: 17.5, QUALIFY: 15.0 }, // m
   poleVault: { ZERO: 3.5, PAR: 6.0, QUALIFY: 5.2 }, // m
-  hammer: { ZERO: 30.0, PAR: 80.0, QUALIFY: 66.0 }, // m
+  hammer: { ZERO: 30.0, PAR: 80.0, QUALIFY: 63.0 }, // m
   swim50: { ZERO: 35.0, PAR: 21.5, QUALIFY: 25.0 }, // s
   PAR_POINTS: 1000, // points at the PAR mark
   MAX_POINTS: 1200, // points cap for beating PAR

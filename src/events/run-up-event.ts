@@ -94,6 +94,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   // Online: the device whose player is up runs the attempt and reports it;
   // the other device replays it. Attempts are numbered across all players.
   private net: NetLink | null = null;
+  /** Where each athlete last took off (m from the line), for the marker flag. */
+  private readonly lastTakeoff = new Map<number, number>();
   protected prompts: Prompts = KEYBOARD_PROMPTS;
   /** Number of the attempt in progress (0 = first of the event). */
   attemptNo = 0;
@@ -437,6 +439,9 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   /** Take off from `takeoffX` (both for our own jump and a replayed one). */
   private launch(speed: number, angle: number): void {
+    // Remember where this athlete took off (not the triple jump's later bounces): next
+    // time a flag marks the spot, to aim for or beat.
+    if (this.phase !== 'flight') this.lastTakeoff.set(this.current.playerIndex, this.takeoffX);
     this.flight.launch(this.takeoffX, this.launchHeight(), speed, angle);
     this.onRelease();
     // A jump or throw heading for the qualifying mark gets a slow-motion highlight.
@@ -506,6 +511,18 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   // ------------------------------------------------ shared drawing helpers
 
   abstract render(r: Renderer): void;
+
+  /** Where the athlete up now took off last time (m), during their run-up; null otherwise. */
+  protected get takeoffMarker(): number | null {
+    if (this.phase !== 'ready' && this.phase !== 'runup' && this.phase !== 'hold') return null;
+    return this.lastTakeoff.get(this.current.playerIndex) ?? null;
+  }
+
+  /** A small flag beside the runway at screen x, standing on groundY: last time's take-off. */
+  protected drawTakeoffFlag(r: Renderer, x: number, groundY: number): void {
+    r.rect(x, groundY - 10, 1, 10, PALETTE.GREY_LIGHT);
+    r.rect(x + 1, groundY - 10, 4, 3, PALETTE.CYAN);
+  }
 
   /** "RUN A+D  HOLD W" for whoever is up (keys or buttons). */
   protected runHoldHint(): string {

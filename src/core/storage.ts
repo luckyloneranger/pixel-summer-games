@@ -27,11 +27,13 @@ export interface SaveData {
     ghost: boolean;
     /** Send new personal bests to the weekly online leaderboard (off until the player turns it on). */
     leaderboard: boolean;
+    /** Championship with all nine events instead of the classic five. */
+    allNine: boolean;
     assist: boolean;
     /** Remapped gameplay keys, or null for the defaults. */
     controls: Controls | null;
   };
-  highScores: { championship: HighScore[]; versus: HighScore[] };
+  highScores: { championship: HighScore[]; versus: HighScore[]; allNine: HighScore[] };
   personalBests: PersonalBests;
   /** Each race's best run, for the ghost runner (positions, see game/ghost.ts). */
   ghosts: Partial<Record<EventId, number[]>>;
@@ -62,10 +64,11 @@ export function defaultSave(): SaveData {
       crt: false,
       ghost: true,
       leaderboard: false,
+      allNine: false,
       assist: false,
       controls: null,
     },
-    highScores: { championship: [], versus: [] },
+    highScores: { championship: [], versus: [], allNine: [] },
     personalBests: {},
     ghosts: {},
     achievements: {},
@@ -104,6 +107,7 @@ export class SaveStore {
         highScores: {
           championship: parsed.highScores?.championship ?? [],
           versus: parsed.highScores?.versus ?? [],
+          allNine: parsed.highScores?.allNine ?? [],
         },
         personalBests: { ...parsed.personalBests },
         ghosts: { ...parsed.ghosts },

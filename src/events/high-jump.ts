@@ -139,6 +139,8 @@ export class HighJumpEvent extends RunUpFieldEvent {
     this.drawRunwayAndMat(r, toScreen);
     this.dust.render(r, toScreen);
     this.drawUprights(r, toScreen);
+    const marker = this.takeoffMarker;
+    if (marker !== null) this.drawTakeoffFlag(r, toScreen(marker), GROUND_Y);
     this.drawAthlete(r, toScreen);
     this.drawExtras(r, toScreen);
     this.drawBar(r, toScreen);

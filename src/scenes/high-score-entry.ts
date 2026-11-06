@@ -20,7 +20,8 @@ interface PendingEntry {
  * top 10 enters their initials (one after the other), then the table shows.
  */
 export function finishSeries(game: Game, session: Session): void {
-  const table: ScoreTable = session.mode === 'versus' ? 'versus' : 'championship';
+  // Nine-event totals get their own table: they're far higher than five-event ones.
+  const table: ScoreTable = session.mode === 'versus' ? 'versus' : (session.series?.events.length ?? 5) > 5 ? 'allNine' : 'championship';
   const scores = game.store.data.highScores[table];
   const local = session.online?.localIndex;
   session.online?.conn.close(); // the match is over

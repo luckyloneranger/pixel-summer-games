@@ -34,6 +34,8 @@ export class PlayerSetupScene implements Scene {
   private readonly teams: TeamKit[];
   private difficulty: Difficulty;
   private events: EventId | 'all';
+  /** Championship: all nine events instead of the classic five. */
+  private allNine: boolean;
   private sprites: AthleteSprites[] = [];
 
   constructor(
@@ -46,6 +48,7 @@ export class PlayerSetupScene implements Scene {
     this.teams = [s.team, s.p2Team === s.team ? cycle(TEAMS, s.team, 1) : s.p2Team];
     this.difficulty = s.difficulty;
     this.events = s.versusEvent;
+    this.allNine = s.allNine;
     this.refreshSprites();
   }
 
@@ -55,7 +58,7 @@ export class PlayerSetupScene implements Scene {
     if (this.mode === 'championship') rows.push('PLAYERS');
     rows.push('P1 NAME', 'P1 TEAM');
     if (this.players === 2) rows.push('P2 NAME', 'P2 TEAM');
-    if (this.mode === 'versus') rows.push('EVENTS');
+    rows.push('EVENTS'); // championship: classic five or all nine; versus: all or one
     rows.push('DIFFICULTY', 'START');
     return rows;
   }
@@ -98,7 +101,8 @@ export class PlayerSetupScene implements Scene {
         if (this.teams[0] === this.teams[1]) this.changeTeam(1, 1);
       } else if (row === 'P1 TEAM') this.changeTeam(0, step);
       else if (row === 'P2 TEAM') this.changeTeam(1, step);
-      else if (row === 'EVENTS') this.events = cycle(VERSUS_EVENTS, this.events, step);
+      else if (row === 'EVENTS' && this.mode === 'versus') this.events = cycle(VERSUS_EVENTS, this.events, step);
+      else if (row === 'EVENTS') this.allNine = !this.allNine;
       else if (row === 'DIFFICULTY') this.difficulty = cycle(DIFFICULTIES, this.difficulty, step);
     }
     if (!input.justPressed('CONFIRM')) return;
@@ -116,13 +120,22 @@ export class PlayerSetupScene implements Scene {
     s.p2Initials = this.names[1].value;
     s.p2Team = this.teams[1];
     s.difficulty = this.difficulty;
-    if (this.mode === 'championship') s.players = this.players;
-    else s.versusEvent = this.events;
+    if (this.mode === 'championship') {
+      s.players = this.players;
+      s.allNine = this.allNine;
+    } else s.versusEvent = this.events;
     g.store.save();
 
     const players = [{ initials: s.initials, team: s.team }];
     if (this.players === 2) players.push({ initials: s.p2Initials, team: s.p2Team });
-    const events = this.mode === 'versus' && this.events !== 'all' ? [this.events] : CHAMPIONSHIP_EVENTS;
+    const events =
+      this.mode === 'versus'
+        ? this.events === 'all'
+          ? CHAMPIONSHIP_EVENTS
+          : [this.events]
+        : this.allNine
+          ? ALL_EVENTS
+          : CHAMPIONSHIP_EVENTS;
     const session = new Session(this.mode, players, s.difficulty, s.casual, events);
     g.session = session;
     g.scenes.replace(new EventIntroScene(g, session, session.series!.currentEvent));
@@ -178,7 +191,8 @@ export class PlayerSetupScene implements Scene {
         break;
       }
       case 'EVENTS':
-        r.text(`< ${this.events === 'all' ? 'ALL FOUR' : EVENT_NAMES[this.events]} >`, x - 24, y, PALETTE.WHITE);
+        if (this.mode === 'championship') r.text(`< ${this.allNine ? 'ALL 9' : 'CLASSIC 5'} >`, x - 24, y, PALETTE.WHITE);
+        else r.text(`< ${this.events === 'all' ? 'CLASSIC 5' : EVENT_NAMES[this.events]} >`, x - 24, y, PALETTE.WHITE);
         break;
       case 'DIFFICULTY':
         r.text(`< ${this.difficulty} >`, x, y, PALETTE.WHITE);

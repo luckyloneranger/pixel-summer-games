@@ -36,7 +36,7 @@ export class Session {
     readonly online: OnlineMatch | null = null,
   ) {
     if (mode === 'championship') {
-      this.series = new Championship(difficulty, casual, players.length);
+      this.series = new Championship(difficulty, casual, players.length, events);
     } else if (mode === 'versus') {
       this.series = new Championship(difficulty, false, players.length, events, false);
     } else {

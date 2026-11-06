@@ -25,7 +25,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: 'hopStepJump', name: 'HOP STEP JUMP', detail: 'TRIPLE JUMP 16.50 M OR MORE' },
   { id: 'skyHigh', name: 'SKY HIGH', detail: 'POLE VAULT 5.80 M OR MORE' },
   { id: 'ironSpin', name: 'IRON SPIN', detail: 'HAMMER THROW 75.00 M OR MORE' },
-  { id: 'makingWaves', name: 'MAKING WAVES', detail: '50 M FREESTYLE UNDER 22.50 S' },
+  { id: 'makingWaves', name: 'MAKING WAVES', detail: '50 M FREESTYLE UNDER 21.50 S' },
   { id: 'champion', name: 'CHAMPION', detail: 'COMPLETE A CHAMPIONSHIP' },
   { id: 'ironAthlete', name: 'IRON ATHLETE', detail: 'COMPLETE A CHAMPIONSHIP ON HARD' },
   { id: 'rivals', name: 'FRIENDLY RIVALS', detail: 'FINISH A VERSUS MATCH' },
@@ -43,7 +43,7 @@ const MARK_AWARDS: readonly [string, EventId, number, 'under' | 'over'][] = [
   ['hopStepJump', 'tripleJump', 16.5, 'over'],
   ['skyHigh', 'poleVault', 5.8, 'over'],
   ['ironSpin', 'hammer', 75, 'over'],
-  ['makingWaves', 'swim50', 22.5, 'under'],
+  ['makingWaves', 'swim50', 21.5, 'under'],
 ];
 
 /** What happened in one event, from this player's point of view. */

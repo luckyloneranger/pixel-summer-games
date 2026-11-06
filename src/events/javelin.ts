@@ -83,6 +83,11 @@ export class JavelinEvent extends RunUpFieldEvent {
     this.dust.render(r, (m) => at(m, 0).sx);
 
     // Athlete, carrying the javelin until it's thrown.
+    const marker = this.takeoffMarker;
+    if (marker !== null) {
+      const m = at(marker, 0);
+      this.drawTakeoffFlag(r, m.sx, m.sy);
+    }
     const athlete = at(this.athleteX, 0);
     const top = athlete.sy - ATHLETE_H + 1;
     drawGroundShadow(r, athlete.sx, athlete.sy, 0, PALETTE.ORANGE_DARK);

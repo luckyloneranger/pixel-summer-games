@@ -76,6 +76,8 @@ export class LongJumpEvent extends RunUpFieldEvent {
     this.drawRunwayAndPit(r, toScreen);
     this.dust.render(r, toScreen);
 
+    const marker = this.takeoffMarker;
+    if (marker !== null) this.drawTakeoffFlag(r, toScreen(marker), GROUND_Y);
     const x = toScreen(this.athleteX);
     const flying = this.phase === 'flight' || this.phase === 'landed';
     const lift = flying ? Math.round(this.flight.y * ppm) : 0;
