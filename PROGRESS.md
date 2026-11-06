@@ -22,10 +22,10 @@ Phase checklist for Pixel Summer Games. See `SPEC.md` section 9 for what each ph
 | 12 – A more fun title screen | ✅ Approved |
 | 12b – Hints that match the device | ✅ Approved |
 | 13 – Graphics quality (13a–13d) | ✅ Approved |
-| 14 – Ghost runner, awards, weekly leaderboard | 🔍 Ready for review |
-| 15 – Triple jump, pole vault, hammer, 50 m swim | 🔍 Ready for review |
-| 16 – Gamepad, new title tune, fixes | 🔍 Ready for review |
-| 17 – Touch, pads, online rejoin, leaderboard checks, all-nine | 🔍 Ready for review |
+| 14 – Ghost runner, awards, weekly leaderboard | ✅ Approved |
+| 15 – Triple jump, pole vault, hammer, 50 m swim | ✅ Approved |
+| 16 – Gamepad, new title tune, fixes | ✅ Approved |
+| 17 – Touch, pads, online rejoin, leaderboard checks, all-nine | ✅ Approved |
 
 ## Phase 0 – Setup and skeleton
 
@@ -449,4 +449,4 @@ Built in one go at the user's request, instead of one sub-phase at a time.
 - The hammer's green sector is still a tight timing window at full spin. Tune `HAMMER.MAX_TURN_RATE` and `HAMMER.SECTOR` after playing.
 - **File sizes:** `race-event.ts` (about 790 lines) and `run-up-event.ts` (about 610) are still large. The cuts made were the safe ones; splitting further would mean opening up much of their private state.
 
-**Next:** waiting for approval.
+**Next:** to be chosen with the user.
