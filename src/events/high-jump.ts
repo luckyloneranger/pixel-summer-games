@@ -2,7 +2,7 @@ import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import { ANIMATION, CPU_FIELD, HIGH_JUMP } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { ATHLETE_H, ATHLETE_W, type Pose } from '../gfx/sprites/athlete';
+import { type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import type { AttemptTracker } from './field-attempts';
 import { HeightAttempts } from './height-attempts';
@@ -17,6 +17,7 @@ export interface HeightEventConfig extends RunUpConfig {
   MAT_START: number; // m
   MAT_END: number; // m
   LAND_HEIGHT: number; // m, top of the landing mat (where a jump that reaches it comes down)
+  SPRITE_SCALE: 1 | 2; // 2 = big athletes
   BAR_FALL_TIME: number; // s
   PIXELS_PER_METER: number;
   CAMERA_LEAD: number; // px
@@ -55,6 +56,15 @@ export class HighJumpEvent extends RunUpFieldEvent {
     cpuRange: Record<Difficulty, readonly number[]> = CPU_FIELD.HIGH_JUMP,
   ) {
     super(hcfg, cpuRange);
+  }
+
+  protected get spriteScale(): 1 | 2 {
+    return this.hcfg.SPRITE_SCALE;
+  }
+
+  /** Screen y of the mat's top: its real height at this event's scale. */
+  private get matTop(): number {
+    return GROUND_Y - Math.round(this.hcfg.LAND_HEIGHT * this.hcfg.PIXELS_PER_METER);
   }
 
   /** Height of the uprights (m): a little above the top bar. */
@@ -156,7 +166,7 @@ export class HighJumpEvent extends RunUpFieldEvent {
     );
     this.drawMessages(r, this.runHoldHint(), false);
     if (this.phase === 'landed') this.drawResult(r);
-    if (this.phase === 'hold') this.drawAngle(r, toScreen(this.athleteX), GROUND_Y - 12);
+    if (this.phase === 'hold') this.drawAngle(r, toScreen(this.athleteX), GROUND_Y - 12 * this.spriteScale);
   }
 
   /** Anything drawn with the athlete (the pole vault's pole). */
@@ -178,9 +188,9 @@ export class HighJumpEvent extends RunUpFieldEvent {
     const matR = toScreen(this.hcfg.MAT_END);
     // The mat squashes down for a moment when the jumper lands on it.
     const squash = this.phase === 'landed' && this.phaseTimer < MAT_SQUASH_TIME ? 2 : 0;
-    r.rect(matL, MAT_TOP + squash, matR - matL, GROUND_Y - MAT_TOP + 2 - squash, PALETTE.BLUE);
-    r.rect(matL, MAT_TOP + squash, matR - matL, 2, PALETTE.SKY);
-    r.rect(matL, MAT_TOP + 5, matR - matL, 1, PALETTE.NAVY);
+    r.rect(matL, this.matTop + squash, matR - matL, GROUND_Y - this.matTop + 2 - squash, PALETTE.BLUE);
+    r.rect(matL, this.matTop + squash, matR - matL, 2, PALETTE.SKY);
+    r.rect(matL, this.matTop + 5, matR - matL, 1, PALETTE.NAVY);
     // Distance-to-line boards on the run-up.
     for (let m = 5; m < this.hcfg.RUNWAY; m += 5) {
       const sx = toScreen(-m);
@@ -208,26 +218,26 @@ export class HighJumpEvent extends RunUpFieldEvent {
     let y = GROUND_Y - Math.round(this.jumpBar * ppm);
     if (this.knockedAt >= 0) {
       const t = Math.min(1, (this.clock - this.knockedAt) / this.hcfg.BAR_FALL_TIME);
-      y = Math.round(y + (MAT_TOP - 2 - y) * t * t); // falls faster and faster
+      y = Math.round(y + (this.matTop - 2 - y) * t * t); // falls faster and faster
     }
     for (let i = 0; i < 14; i += 2) r.rect(x - 7 + i, y, 2, 2, (i / 2) % 2 === 0 ? PALETTE.WHITE : PALETTE.RED);
   }
 
   private drawAthlete(r: Renderer, toScreen: (m: number) => number): void {
     const ppm = this.hcfg.PIXELS_PER_METER;
-    const x = toScreen(this.athleteX) - ATHLETE_W / 2;
+    const x = toScreen(this.athleteX) - this.spriteW / 2;
     const flying = this.phase === 'flight' || this.phase === 'landed';
     const onMat = this.athleteX >= this.hcfg.MAT_START && this.athleteX <= this.hcfg.MAT_END;
-    const floor = onMat ? MAT_TOP + 1 : GROUND_Y;
+    const floor = onMat ? this.matTop + 1 : GROUND_Y;
     let bottom = GROUND_Y + 1;
     if (flying) {
       // The body's centre follows the flight; the sprite is drawn around it.
       const centre = GROUND_Y - this.flight.y * ppm;
-      bottom = Math.min(floor + 1, Math.round(centre + ATHLETE_H / 2));
+      bottom = Math.min(floor + 1, Math.round(centre + this.spriteH / 2));
     }
-    drawGroundShadow(r, x + ATHLETE_W / 2, floor, Math.max(0, floor - bottom), onMat ? PALETTE.NAVY : PALETTE.ORANGE_DARK);
-    if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x, bottom - ATHLETE_H, this.runner.speedFraction, this.clock);
-    r.image(this.athleteSprites().get(this.pose(onMat)), x, bottom - ATHLETE_H);
+    drawGroundShadow(r, x + this.spriteW / 2, floor, Math.max(0, floor - bottom), onMat ? PALETTE.NAVY : PALETTE.ORANGE_DARK, this.spriteScale);
+    if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x, bottom - this.spriteH, this.runner.speedFraction, this.clock, this.spriteScale);
+    r.image(this.athleteSprites().get(this.pose(onMat)), x, bottom - this.spriteH);
   }
 
   protected pose(onMat: boolean): Pose {
@@ -260,7 +270,6 @@ export class HighJumpEvent extends RunUpFieldEvent {
 const RUNWAY_TOP = 138;
 const RUNWAY_H = 12;
 const GROUND_Y = RUNWAY_TOP + 10; // where feet touch the ground
-const MAT_TOP = GROUND_Y - 9; // top surface of the landing mat
 const FLOP_FROM = 0.6; // m before the bar where the athlete turns into the arched flop
 const RESULT_DELAY = 0.3; // s after landing before CLEARED / MISS shows
 const MAT_SQUASH_TIME = 0.2; // s the mat stays squashed after a landing

@@ -62,8 +62,8 @@ export class DustTrail {
 }
 
 /** A soft shadow on the ground under an athlete: smaller the higher they are. Draw it before the athlete. */
-export function drawGroundShadow(r: Renderer, cx: number, groundY: number, liftPx: number, colour: string): void {
-  const w = Math.max(4, EFFECTS.SHADOW_WIDTH - Math.round(liftPx / 4));
+export function drawGroundShadow(r: Renderer, cx: number, groundY: number, liftPx: number, colour: string, scale = 1): void {
+  const w = Math.max(4, EFFECTS.SHADOW_WIDTH * scale - Math.round(liftPx / 4));
   r.rect(cx - w / 2, groundY, w, 1, colour);
   r.rect(cx - w / 2 + 2, groundY + 1, Math.max(2, w - 4), 1, colour);
 }
@@ -88,8 +88,8 @@ export function speedLines(speedFraction: number, t: number): SpeedLine[] {
 }
 
 /** Draw speed lines behind an athlete whose sprite's left edge is at `left` and top at `top`. */
-export function drawSpeedLines(r: Renderer, left: number, top: number, speedFraction: number, t: number): void {
+export function drawSpeedLines(r: Renderer, left: number, top: number, speedFraction: number, t: number, scale = 1): void {
   for (const l of speedLines(speedFraction, t)) {
-    r.rect(left - l.dx - l.length, top + l.y, l.length, 1, PALETTE.CLOUD);
+    r.rect(left - (l.dx + l.length) * scale, top + l.y * scale, l.length * scale, 1, PALETTE.CLOUD);
   }
 }

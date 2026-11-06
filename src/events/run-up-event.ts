@@ -3,7 +3,7 @@ import type { Renderer } from '../core/renderer';
 import { ANIMATION, RUNNER } from '../game/tuning';
 import { STADIUM_THEMES, Stadium } from '../gfx/backgrounds';
 import { PALETTE } from '../gfx/palette';
-import { AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
+import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
 import { AngleMeter } from './angle-meter';
 import { cpuFieldMarks, cpuLineup, playerLook } from './cpu';
 import { qualifyingMark } from '../game/scoring';
@@ -536,9 +536,22 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     return RUN_CYCLE[Math.floor(this.runner.position / ANIMATION.STRIDE_PER_FRAME) % RUN_CYCLE.length];
   }
 
+  /** 2 = big athletes (the jumps' closer camera); 1 = the usual size. */
+  protected get spriteScale(): 1 | 2 {
+    return 1;
+  }
+
+  /** The athlete sprite's size on screen (px). */
+  protected get spriteW(): number {
+    return ATHLETE_W * this.spriteScale;
+  }
+  protected get spriteH(): number {
+    return ATHLETE_H * this.spriteScale;
+  }
+
   protected athleteSprites(): AthleteSprites {
     const c = this.current;
-    c.sprites ??= new AthleteSprites(c.look);
+    c.sprites ??= new AthleteSprites(c.look, false, this.spriteScale);
     return c.sprites;
   }
 

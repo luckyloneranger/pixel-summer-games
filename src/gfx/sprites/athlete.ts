@@ -3,7 +3,7 @@
 // (rows 0-14) plus a leg pose (rows 15-23).
 
 import { PALETTE } from '../palette';
-import { buildSprite, type Look } from '../sprite';
+import { buildSprite, scale2x, type Look } from '../sprite';
 
 export const ATHLETE_W = 16; // px
 export const ATHLETE_H = 24; // px
@@ -653,16 +653,18 @@ export function makeLook(kit: TeamKit, skin: SkinTone, hair: string, hairStyle: 
 export class AthleteSprites {
   private readonly frames = new Map<Pose, HTMLCanvasElement>();
 
-  /** `ghost` builds see-through pale copies (the ghost runner). */
+  /** `ghost` builds see-through pale copies (the ghost runner); `scale` 2 builds big ones (Scale2x). */
   constructor(
     private readonly look: Look,
     private readonly ghost = false,
+    readonly scale: 1 | 2 = 1,
   ) {}
 
   get(pose: Pose): HTMLCanvasElement {
     let img = this.frames.get(pose);
     if (!img) {
-      img = buildSprite(withHair(ATHLETE_FRAMES[pose], this.look.hairStyle ?? 'short', pose), this.look, true, this.ghost);
+      const map = withHair(ATHLETE_FRAMES[pose], this.look.hairStyle ?? 'short', pose);
+      img = buildSprite(this.scale === 2 ? scale2x(map) : map, this.look, true, this.ghost);
       this.frames.set(pose, img);
     }
     return img;

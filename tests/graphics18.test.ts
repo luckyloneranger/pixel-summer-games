@@ -31,3 +31,23 @@ describe('Phase 18 animation', () => {
     expect(mid.x).toBeLessThan(20); // bowed back from the straight line (x 20 there)
   });
 });
+
+import { scale2x } from '../src/gfx/sprite';
+import { ATHLETE_FRAMES as F } from '../src/gfx/sprites/athlete';
+
+describe('Scale2x (big athletes)', () => {
+  it('doubles the size and keeps the characters', () => {
+    const big = scale2x(F.stand);
+    expect(big).toHaveLength(48);
+    expect(big.every((r) => r.length === 32)).toBe(true);
+    expect(new Set(big.join(''))).toEqual(new Set(F.stand.join('')));
+  });
+
+  it('smooths a diagonal edge instead of making 2x2 steps', () => {
+    // A diagonal line of k: plain doubling would give square steps.
+    const big = scale2x(['k..', '.k.', '..k']);
+    expect(big[0]).toBe('kk....');
+    expect(big[1]).toBe('kkk...'); // the corner fills in towards the next pixel
+    expect(big[2]).toBe('.kkk..');
+  });
+});

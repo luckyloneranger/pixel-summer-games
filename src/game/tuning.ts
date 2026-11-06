@@ -122,8 +122,9 @@ export const LONG_JUMP = {
   RESULT_TIME: 2.5, // s the mark (or FOUL) stays up before the next attempt
   TAPE_TIME: 1.0, // s for the tape measure to run out
   PUFF_TIME: 0.5, // s the sand puff lasts
-  PIXELS_PER_METER: 14, // px per m when drawing
+  PIXELS_PER_METER: 24, // px per m when drawing (a close camera for the big athletes)
   CAMERA_LEAD: 110, // px, athlete's distance from the left edge of the screen
+  SPRITE_SCALE: 2 as 1 | 2, // athletes drawn at double size (Scale2x), also in the triple jump
 };
 
 /** CPU field-event marks, drawn from a range per difficulty (no run-up simulated). */
@@ -169,6 +170,7 @@ export const POLE_VAULT = {
   BAR_FALL_TIME: 0.6, // s for a knocked bar to fall
   PIXELS_PER_METER: 14, // px per m (a 6.2 m bar still fits under the scoreboard)
   CAMERA_LEAD: 120, // px from the left edge to the athlete
+  SPRITE_SCALE: 1 as 1 | 2, // normal-size athletes: big ones wouldn't fit under a 6 m bar
 };
 
 /** Hammer throw: spin by tapping left and right, let go in the sector. */
@@ -356,8 +358,9 @@ export const HIGH_JUMP = {
   LAND_HEIGHT: 0.6, // m, top of the mat: jumps landing on it come down here (not at the ground)
   RESULT_TIME: 2.0, // s the result stays up before the next jump
   BAR_FALL_TIME: 0.5, // s for a knocked bar to fall onto the mat
-  PIXELS_PER_METER: 14, // px per m when drawing (same scale as the long jump)
+  PIXELS_PER_METER: 24, // px per m when drawing (same close camera as the long jump)
   CAMERA_LEAD: 150, // px, athlete's distance from the left edge of the screen
+  SPRITE_SCALE: 2 as 1 | 2, // athletes drawn at double size
 };
 
 /** Online play. */

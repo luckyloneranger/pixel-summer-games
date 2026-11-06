@@ -1,7 +1,7 @@
 import type { Renderer } from '../core/renderer';
 import { ANIMATION, CPU_FIELD, LONG_JUMP } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { ATHLETE_H, ATHLETE_W, type Pose, celebrationFor } from '../gfx/sprites/athlete';
+import { type Pose, celebrationFor } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { floorCentimetres } from './field-attempts';
 import { RunUpFieldEvent, type RunUpConfig } from './run-up-event';
@@ -29,6 +29,10 @@ export class LongJumpEvent extends RunUpFieldEvent {
     protected readonly pit = { start: LONG_JUMP.PIT_START, end: LONG_JUMP.PIT_END, runwayToPit: false },
   ) {
     super(cfg, cpuRange);
+  }
+
+  protected get spriteScale(): 1 | 2 {
+    return LONG_JUMP.SPRITE_SCALE;
   }
 
   /** A word above the athlete in the air (the triple jump's HOP / STEP / JUMP). */
@@ -81,15 +85,15 @@ export class LongJumpEvent extends RunUpFieldEvent {
     const x = toScreen(this.athleteX);
     const flying = this.phase === 'flight' || this.phase === 'landed';
     const lift = flying ? Math.round(this.flight.y * ppm) : 0;
-    const top = GROUND_Y - ATHLETE_H + 1 - lift;
+    const top = GROUND_Y - this.spriteH + 1 - lift;
     const inPit = this.athleteX >= this.pit.start && this.athleteX <= this.pit.end;
-    drawGroundShadow(r, x, GROUND_Y, lift, inPit ? PALETTE.GOLD : PALETTE.ORANGE_DARK);
+    drawGroundShadow(r, x, GROUND_Y, lift, inPit ? PALETTE.GOLD : PALETTE.ORANGE_DARK, this.spriteScale);
     const note = this.phase === 'flight' ? this.flightNote() : '';
     if (note) r.text(note, x, top - 10, PALETTE.YELLOW, 'center');
-    if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x - ATHLETE_W / 2, top, this.runner.speedFraction, this.clock);
-    r.image(this.athleteSprites().get(this.pose()), x - ATHLETE_W / 2, top);
+    if (this.phase === 'runup' || this.phase === 'hold') drawSpeedLines(r, x - this.spriteW / 2, top, this.runner.speedFraction, this.clock, this.spriteScale);
+    r.image(this.athleteSprites().get(this.pose()), x - this.spriteW / 2, top);
 
-    if (this.phase === 'hold' || this.phase === 'flight') this.drawAngle(r, x, GROUND_Y - 12);
+    if (this.phase === 'hold' || this.phase === 'flight') this.drawAngle(r, x, GROUND_Y - 12 * this.spriteScale);
     if (this.phase === 'landed') this.drawLanding(r, toScreen);
 
     const best = this.record.best;
