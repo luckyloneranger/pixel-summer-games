@@ -31,7 +31,7 @@ describe('every event is wired up', () => {
       expect(KEYBOARD_PROMPTS.eventHint(id).length).toBeLessThanOrEqual(36);
       expect(pointsFor(id, SCORING[id].PAR)).toBe(1000);
     }
-    expect(ONLINE_EVENTS).not.toContain('hammer');
+    expect(ONLINE_EVENTS).toContain('hammer'); // online since Phase 17
     expect(ALL_EVENTS).toHaveLength(9);
   });
 });

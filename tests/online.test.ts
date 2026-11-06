@@ -514,3 +514,35 @@ describe('RoomConnection with a new friend', () => {
     expect(relayed(f.sock).some((m) => m.data.k === 'ready')).toBe(false); // not resent to them
   });
 });
+
+import { HammerEvent, sectorOffset } from '../src/events/hammer';
+
+describe('online hammer', () => {
+  for (const lag of [0, 6, 40]) {
+    it(`with ${lag * 17} ms of lag: both games agree on every throw`, () => {
+      const link = linkedPair(lag);
+      const host = new HammerEvent();
+      const guest = new HammerEvent();
+      host.init({ players: PLAYERS, difficulty: 'normal', rng: new Rng(9), net: link.host });
+      guest.init({ players: PLAYERS, difficulty: 'normal', rng: new Rng(9), net: link.guest });
+      // Whoever's up spins for a while, then lets go near the middle of the sector
+      // (every third throw they hold on too long instead: a foul).
+      const drive = (g: HammerEvent, i: number) => {
+        if (!g.localTurn || (g.phase !== 'ready' && g.phase !== 'spin')) return NOTHING;
+        const throwNo = g.attemptNo;
+        if (g.turns > 1.5 && throwNo % 3 !== 2 && Math.abs(sectorOffset(g.angle)) < 6) return pressed('P1_ACTION');
+        return i % 4 === 0 ? pressed(i % 8 ? 'P1_LEFT' : 'P1_RIGHT') : NOTHING;
+      };
+      for (let i = 0; i < 60 * 200 && !(host.isFinished() && guest.isFinished()); i++) {
+        host.update(STEP, drive(host, i));
+        guest.update(STEP, drive(guest, i));
+        link.tick();
+      }
+      expect(host.isFinished() && guest.isFinished()).toBe(true);
+      expect(fieldSummary(guest.getResults())).toEqual(fieldSummary(host.getResults()));
+      const ann = host.getResults().find((r) => r.name === 'ANN')!;
+      expect(ann.attempts!.some((m) => m !== null)).toBe(true);
+      expect(ann.attempts).toContain(null); // the planned foul
+    });
+  }
+});

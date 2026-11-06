@@ -2,7 +2,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import { qualifyingMark } from '../game/scoring';
-import { AUDIO, CPU_FIELD, EFFECTS, HAMMER } from '../game/tuning';
+import { AUDIO, CPU_FIELD, EFFECTS, HAMMER, NET } from '../game/tuning';
 import { Stadium, STADIUM_THEMES } from '../gfx/backgrounds';
 import { drawGroundShadow } from '../gfx/effects';
 import { PALETTE } from '../gfx/palette';
@@ -18,11 +18,17 @@ import {
   type EventContext,
   type EventId,
   type EventResult,
+  type NetLink,
   type SoundSink,
 } from './event';
 import { FieldAttempts, floorCentimetres } from './field-attempts';
 import { keysFor } from './player-input';
 import { Projectile } from './projectile';
+import { watching } from './run-up-event';
+import type { GameMessage } from '../net/protocol';
+
+/** The other player's throw, as it arrives. */
+type HammerMessage = Extract<GameMessage, { k: 'field' | 'release' | 'landed' | 'foul' }>;
 
 export type HammerPhase = 'ready' | 'spin' | 'flight' | 'landed' | 'foul' | 'finished';
 
@@ -69,10 +75,20 @@ export class HammerEvent implements AthleticsEvent {
   private prompts: Prompts = KEYBOARD_PROMPTS;
   private readonly stadium = new Stadium();
 
+  // Online: the thrower's device runs the throw and reports it; the other replays it.
+  private net: NetLink | null = null;
+  /** Number of the throw in progress across both players (0 = the first). */
+  attemptNo = 0;
+  private readonly netQueue: HammerMessage[] = [];
+  private sendTimer = 0; // s since the spin was last sent
+  private pendingMark: number | null | undefined; // the official mark, if it came before our replay landed
+
   init(ctx: EventContext): void {
     this.sound = ctx.sound ?? SILENT;
     this.effects = ctx.effects ?? NO_EFFECTS;
     this.prompts = ctx.prompts ?? KEYBOARD_PROMPTS;
+    this.net = ctx.net ?? null;
+    this.netQueue.length = 0;
     this.assist = ctx.assist ?? false;
     this.stadium.theme = STADIUM_THEMES[this.id];
     this.throwers = ctx.players.map((p, i) => ({
@@ -116,7 +132,15 @@ export class HammerEvent implements AthleticsEvent {
     this.lastKey = null;
     this.lastMark = null;
     this.foulReason = '';
+    this.attemptNo = this.throwers.reduce((n, t) => n + t.record.marks.length, 0);
+    this.sendTimer = NET.SNAPSHOT_EVERY;
+    this.pendingMark = undefined;
     this.enter('ready');
+  }
+
+  /** Is the throw in progress run on this device? (Always, offline.) */
+  get localTurn(): boolean {
+    return !this.net || this.current.playerIndex === this.net.localIndex;
   }
 
   private enter(phase: HammerPhase): void {
@@ -129,7 +153,12 @@ export class HammerEvent implements AthleticsEvent {
     this.phaseTimer += dt;
     this.stadium.time = this.clock;
     this.stadium.flashes = this.phase === 'landed' && (this.lastMark ?? 0) >= this.qualifyMark && !this.effects.calm;
-    const keys = keysFor(input, this.current.playerIndex, this.throwers.length === 1);
+    if (this.net) this.receiveNet();
+    if (!this.localTurn) {
+      this.spectate(dt);
+      return;
+    }
+    const keys = keysFor(input, this.current.playerIndex, this.throwers.length === 1 || this.net !== null);
     switch (this.phase) {
       case 'ready':
       case 'spin': {
@@ -149,6 +178,7 @@ export class HammerEvent implements AthleticsEvent {
         const before = Math.floor(this.turns);
         this.angle += turnRate(this.spin) * Math.PI * 2 * dt;
         if (Math.floor(this.turns) > before) this.sound.play('footstep', this.spin);
+        this.sendSpin(dt);
         if (keys.action) {
           this.release();
           return;
@@ -177,14 +207,28 @@ export class HammerEvent implements AthleticsEvent {
       this.foul('OUTSIDE THE SECTOR');
       return;
     }
-    this.flight.launch(0, HAMMER.RELEASE_HEIGHT, HAMMER.RELEASE_SPEED * this.spin, HAMMER.RELEASE_ANGLE);
+    const speed = HAMMER.RELEASE_SPEED * this.spin;
+    this.net?.send({ k: 'release', n: this.attemptNo, x: this.offset, speed, angle: HAMMER.RELEASE_ANGLE });
+    this.launch(this.offset, speed);
+  }
+
+  /** Let go: our own throw, or the other player's replayed. */
+  private launch(offset: number, speed: number): void {
+    this.offset = offset;
+    this.flight.launch(0, HAMMER.RELEASE_HEIGHT, speed, HAMMER.RELEASE_ANGLE);
     this.sound.play('whoosh');
     if (markFor(this.flight.landingX, this.offset) >= this.qualifyMark) this.effects.highlight();
     this.enter('flight');
   }
 
-  private land(): void {
-    this.lastMark = markFor(this.flight.x, this.offset);
+  /** Record the landing. `official` is the other player's mark when replaying their throw. */
+  private land(official?: number | null): void {
+    this.lastMark = official !== undefined ? official : markFor(this.flight.x, this.offset);
+    if (official === undefined) this.net?.send({ k: 'landed', n: this.attemptNo, mark: this.lastMark });
+    if (this.lastMark === null) {
+      this.foul('FOUL');
+      return;
+    }
     this.current.record.record(this.lastMark);
     this.sound.play('thud');
     this.effects.shake(EFFECTS.SHAKE_LAND);
@@ -193,10 +237,91 @@ export class HammerEvent implements AthleticsEvent {
   }
 
   private foul(reason: string): void {
+    if (this.localTurn) this.net?.send({ k: 'foul', n: this.attemptNo, reason });
     this.foulReason = reason;
     this.current.record.record(null);
     this.sound.play('buzzer');
     this.enter('foul');
+  }
+
+  // ---------------------------------------------------------------- online
+
+  /** Send the spin a few times a second (only the latest matters). */
+  private sendSpin(dt: number): void {
+    if (!this.net) return;
+    this.sendTimer += dt;
+    if (this.sendTimer < NET.SNAPSHOT_EVERY) return;
+    this.sendTimer = 0;
+    // The field message's x is the hammer's angle and speed its spin.
+    this.net.send({ k: 'field', n: this.attemptNo, x: this.angle, speed: this.spin, angle: 0, phase: 'runup' });
+  }
+
+  /** Work through the other game's messages in order, catching up a throw if we're behind. */
+  private receiveNet(): void {
+    this.netQueue.push(...this.net!.take('field', 'release', 'landed', 'foul'));
+    while (this.netQueue.length) {
+      const m = this.netQueue[0];
+      if (m.n < this.attemptNo) {
+        this.netQueue.shift();
+        continue;
+      }
+      if (m.n > this.attemptNo) {
+        if (this.phase === 'flight' && this.pendingMark !== undefined) this.land(this.pendingMark);
+        const done = this.phase === 'landed' || this.phase === 'foul';
+        if (done && !this.throwers.every((t) => t.record.done)) {
+          this.startAttempt();
+          continue;
+        }
+        if (m.k === 'field') this.netQueue.shift();
+        else break;
+        continue;
+      }
+      this.netQueue.shift();
+      if (!this.localTurn) this.applyRemote(m);
+    }
+  }
+
+  private applyRemote(m: HammerMessage): void {
+    const spinning = this.phase === 'ready' || this.phase === 'spin';
+    switch (m.k) {
+      case 'field':
+        if (!spinning) return;
+        this.angle = m.x;
+        this.spin = m.speed;
+        if (this.phase === 'ready') this.enter('spin');
+        return;
+      case 'release':
+        if (spinning) this.launch(m.x, m.speed);
+        return;
+      case 'landed':
+        if (this.phase === 'flight' && this.flight.landed) this.land(m.mark);
+        else this.pendingMark = m.mark;
+        return;
+      case 'foul':
+        if (this.phase !== 'landed' && this.phase !== 'foul') this.foul(m.reason);
+        return;
+    }
+  }
+
+  /** Watch the other player's throw: keep the hammer turning between their updates. */
+  private spectate(dt: number): void {
+    switch (this.phase) {
+      case 'spin':
+        this.angle += turnRate(this.spin) * Math.PI * 2 * dt;
+        return;
+      case 'flight':
+        this.flight.update(dt);
+        if (this.flight.landed && this.pendingMark !== undefined) this.land(this.pendingMark);
+        return;
+      case 'landed':
+      case 'foul':
+        if (this.phaseTimer < HAMMER.RESULT_TIME) return;
+        if (this.throwers.every((t) => t.record.done)) this.enter('finished');
+        else this.startAttempt();
+        return;
+      default:
+        return;
+    }
   }
 
   isFinished(): boolean {
@@ -322,6 +447,8 @@ export class HammerEvent implements AthleticsEvent {
       band();
       r.text('FOUL', cx, y, PALETTE.RED, 'center', 2);
       r.text(this.foulReason, cx, y + 20, PALETTE.WHITE, 'center');
+    } else if (this.net && !this.localTurn) {
+      watching(r, this.current.name);
     }
   }
 }

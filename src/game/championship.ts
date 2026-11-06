@@ -7,8 +7,8 @@ export const CHAMPIONSHIP_EVENTS: readonly EventId[] = ['dash100', 'longJump', '
 /** Every event in the game (Practice, Versus and bests list them all). */
 export const ALL_EVENTS: readonly EventId[] = [...CHAMPIONSHIP_EVENTS, 'tripleJump', 'poleVault', 'hammer', 'swim50'];
 
-/** Events that can be played online (the hammer is offline only for now). */
-export const ONLINE_EVENTS: readonly EventId[] = ALL_EVENTS.filter((id) => id !== 'hammer');
+/** Events that can be played online (all of them since Phase 17). */
+export const ONLINE_EVENTS: readonly EventId[] = ALL_EVENTS;
 
 export interface Standing {
   name: string;

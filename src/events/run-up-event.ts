@@ -578,6 +578,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
         r.text(this.foulReason, cx, y + 20, PALETTE.WHITE, 'center');
         break;
       default:
+        // Online, during the other player's attempt: say whose it is.
+        if (this.net && !this.localTurn) watching(r, this.current.name);
         break;
     }
   }
@@ -594,4 +596,11 @@ function resultFor(playerIndex: number, name: string, marks: (number | null)[]):
     points: 0,
     attempts: [...marks],
   };
+}
+
+/** "WATCHING ANN" just under the scoreboard, during the other player's attempt online. */
+export function watching(r: Renderer, name: string): void {
+  const text = `WATCHING ${name}`;
+  r.rect(r.width / 2 - text.length * 4 - 4, 26, text.length * 8 + 8, 10, PALETTE.INK);
+  r.text(text, r.width / 2, 27, PALETTE.CYAN, 'center');
 }
