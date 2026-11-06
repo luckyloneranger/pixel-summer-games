@@ -107,6 +107,10 @@ export interface AthleticsEvent {
   debugLines?(): string[];
   /** Races: this run as a ghost to save, if the one human finished it (else null). */
   ghostRun?(): number[] | null;
+  /** Field events: is there a best attempt worth an instant replay? */
+  hasReplay?(): boolean;
+  /** Draw the replay `t` s in (slow motion); false once it has finished. */
+  renderReplay?(r: Renderer, t: number): boolean;
   /** How loud the crowd should be right now, 0-1. */
   crowdLevel?(): number;
 }

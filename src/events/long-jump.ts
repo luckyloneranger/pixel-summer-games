@@ -79,6 +79,7 @@ export class LongJumpEvent extends RunUpFieldEvent {
     this.stadium.drawStands(r, cameraPx, ANIMATION.CROWD_PARALLAX, this.waveFrame);
     this.drawRunwayAndPit(r, toScreen);
     this.dust.render(r, toScreen);
+    this.drawJudge(r, toScreen(0) - 8, RUNWAY_TOP - 1); // beside the board, across the runway
 
     const marker = this.takeoffMarker;
     if (marker !== null) this.drawTakeoffFlag(r, toScreen(marker), GROUND_Y);
@@ -95,6 +96,7 @@ export class LongJumpEvent extends RunUpFieldEvent {
 
     if (this.phase === 'hold' || this.phase === 'flight') this.drawAngle(r, x, GROUND_Y - 12 * this.spriteScale);
     if (this.phase === 'landed') this.drawLanding(r, toScreen);
+    this.stadium.drawWeather(r);
 
     const best = this.record.best;
     drawScoreboard(

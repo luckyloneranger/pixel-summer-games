@@ -18,6 +18,8 @@ import { EventIntroScene } from './event-intro';
 import { GameOverScene } from './game-over';
 import { PodiumScene } from './podium';
 import { VersusResultScene } from './versus-result';
+import { Rng } from '../core/rng';
+import { throwConfetti, updateConfetti, type Confetto } from '../game/title-show';
 
 const PLACES = ['1ST', '2ND', '3RD', '4TH', '5TH'];
 export const MEDAL_COLOURS = [PALETTE.YELLOW, PALETTE.GREY_LIGHT, PALETTE.ORANGE];
@@ -38,6 +40,8 @@ export class ResultsScene implements Scene {
   private readonly outcome: EventOutcome | null;
   private readonly newRecord: boolean;
   private time = 0;
+  /** Confetti for a new record. */
+  private confetti: Confetto[] = [];
   /** Where a new best came on the online boards, once the server answers. */
   private ranks: Ranks | null = null;
 
@@ -73,7 +77,10 @@ export class ResultsScene implements Scene {
 
     // A jingle for a new record, otherwise a fanfare for a medal.
     const medalled = this.humans.some((r) => this.medalPlace(r) >= 0);
-    if (this.newRecord) game.sfx('newRecord');
+    if (this.newRecord) {
+      game.sfx('newRecord');
+      this.confetti = throwConfetti(new Rng(eventId.length), game.renderer.width / 2, 0);
+    }
     else if (medalled) game.sfx('medal');
   }
 
@@ -114,6 +121,7 @@ export class ResultsScene implements Scene {
 
   update(dt: number, input: InputSnapshot): void {
     this.time += dt;
+    this.confetti = updateConfetti(this.confetti, dt, this.game.renderer.height);
     const g = this.game;
     const series = this.session.series;
     if (!series) {
@@ -143,6 +151,7 @@ export class ResultsScene implements Scene {
     else if (EVENT_KIND[this.eventId] === 'field') this.drawFieldTable(r);
     else this.drawRaceTable(r);
     this.drawFooter(r);
+    for (const c of this.confetti) r.rect(Math.round(c.x), Math.round(c.y), 2, 1, c.colour);
   }
 
   /** Columns: place, lane, name, time, points. */

@@ -28,6 +28,7 @@ Everything (pixel art, font, music and sound effects) is original and generated 
 - **Online**, 2 players on different devices: one creates a room and shares its 4-letter code, the other joins. Any event or all five; field events take turns and you watch your friend's attempts live. A short drop (up to 15 s) reconnects by itself, and reloading the page rejoins the match.
 - **How to Play**: a short guide to each event.
 - **Awards**: 17 awards for things like a sub-10 second 100 m or finishing a championship on Hard. An "AWARD!" banner appears when you earn one.
+- **Look and feel**: instant replays of your best jump or throw, photo finishes, fireworks on the podium, officials with flags and a starter's pistol, a crowd that stands up for big moments, day, sunset and night light, and rain or wind at some events.
 - **High Scores**: your top 10s and bests, plus (if you turn it on) the **weekly online top 10** for each event.
 
 ## Controls
@@ -92,9 +93,9 @@ Every gameplay number lives in [`src/game/tuning.ts`](src/game/tuning.ts), group
 ```
 src/
   core/    game loop, scenes, input and key maps, renderer, storage
-  events/  the four events, shared race and field-event rules, CPU runners
-  game/    tuning, scoring, championship, session, records
-  gfx/     palette, font, sprites, stadium, effects
+  events/  the nine events, shared race and field-event rules, CPU runners
+  game/    tuning, scoring, championship, session, records, awards, fireworks
+  gfx/     palette, fonts, sprites, icons, stadium, officials, effects
   audio/   synthesiser, sound effects, music
   scenes/  title, menus, setup, results, podium, high scores, options...
   ui/      scoreboard, menu widgets, touch controls

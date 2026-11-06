@@ -93,7 +93,8 @@ export function shadePixels(px: Pixels, light: SpriteLight = 'day'): Pixels {
       return light === 'night' && y >= nightFrom ? darker(c) : c;
     }),
   );
-  return lit.map((row, y) =>
+  const toned = light === 'sepia' ? lit.map((row) => row.map((c) => (c === null ? null : sepiaOf(c)))) : lit;
+  return toned.map((row, y) =>
     row.map((c, x) => {
       if (c !== null) return c;
       const touches = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)].some((n) => n !== null);
@@ -111,7 +112,17 @@ export function ghostPixels(px: Pixels): Pixels {
 }
 
 /** The light an athlete stands in (the stadium's time of day). */
-export type SpriteLight = 'day' | 'sunset' | 'night';
+export type SpriteLight = 'day' | 'sunset' | 'night' | 'sepia';
+
+/** Old-photo browns, darkest to lightest (the photo-finish image). */
+const SEPIA = [PALETTE.INK, PALETTE.BROWN, PALETTE.BROWN_LIGHT, PALETTE.GOLD, PALETTE.PEACH, PALETTE.CLOUD];
+
+/** A colour's place in the sepia ramp, by its brightness. */
+export function sepiaOf(colour: string): string {
+  const n = parseInt(colour.slice(1), 16);
+  const lum = (0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) / 255;
+  return SEPIA[Math.min(SEPIA.length - 1, Math.floor(lum * SEPIA.length))];
+}
 const NIGHT_SHADE_FROM = 0.55; // of the sprite's height: below this is darker at night
 
 /** The outline colour round shaded sprites. */

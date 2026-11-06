@@ -82,6 +82,36 @@ export const STADIUM_THEMES: Record<EventId, StadiumTheme> = {
   swim50: 'day',
 };
 
+/** Weather (looks only: it never changes a mark). */
+export type Weather = 'clear' | 'rain' | 'wind';
+export const STADIUM_WEATHER: Record<EventId, Weather> = {
+  dash100: 'clear',
+  longJump: 'clear',
+  hurdles110: 'clear',
+  javelin: 'wind',
+  highJump: 'clear',
+  tripleJump: 'rain',
+  poleVault: 'clear',
+  hammer: 'clear',
+  swim50: 'clear',
+};
+const RAIN_SKY = [PALETTE.GREY_DARK, PALETTE.GREY, PALETTE.GREY_LIGHT];
+const RAIN_DROPS = 90; // streaks on screen at once
+const RAIN_SPEED = 220; // px/s the rain falls
+const WIND_FLAP = 10; // flag flaps per second in the wind (4 when calm)
+const WIND_CLOUDS = 14; // px/s clouds drift in the wind (3 when calm)
+const EXCITED_FRAME_TIME = 0.15; // s per jump when the crowd is on its feet
+
+/** Held-up signs and big flags in the crowd tile: x px, crowd row, colours. */
+const BANNERS = [
+  { x: 14, row: 1, w: 16, colour: PALETTE.WHITE, stripe: PALETTE.RED },
+  { x: 58, row: 4, w: 12, colour: PALETTE.YELLOW, stripe: PALETTE.BLUE },
+];
+const FLAG_WAVERS = [
+  { x: 40, row: 2, colour: PALETTE.BLUE, stripe: PALETTE.WHITE },
+  { x: 84, row: 5, colour: PALETTE.RED, stripe: PALETTE.YELLOW },
+];
+
 const SKY_PARALLAX = 0.05; // the sky scrolls this much slower than the track
 const FLASHES = 5; // camera flashes in the crowd per frame when they're on
 
@@ -96,6 +126,10 @@ export class Stadium {
   time = 0;
   /** Camera flashes popping in the crowd (a big mark; off with reduce flashing). */
   flashes = false;
+  /** Rain or wind for this event (looks only). */
+  weather: Weather = 'clear';
+  /** The whole crowd on its feet, jumping (a close finish or a big jump in the air). */
+  excited = false;
 
   /** Crowd, front wall with boards, grass and the 4-lane track. */
   drawBackground(r: Renderer, cameraPx: number, crowdParallax: number, waveFrame: number): void {
@@ -118,10 +152,15 @@ export class Stadium {
     this.drawSky(r, standTop, cameraPx);
     // Crowd stand, scrolling slower than the track.
     const frames = this.crowd();
-    const img = frames[waveFrame % frames.length];
+    // On their feet: everyone up, bouncing between standing and arms up.
+    const jumping = Math.floor(this.time / EXCITED_FRAME_TIME) % 2;
+    const img = this.excited ? frames[jumping ? 2 : 1] : frames[waveFrame % 2];
     r.rect(0, standTop, r.width, LAYOUT.WALL_TOP - LAYOUT.STAND_TOP, PALETTE.NIGHT); // behind empty seats
     const shift = -Math.floor(cameraPx * crowdParallax) % CROWD_TILE_W;
-    for (let x = shift - CROWD_TILE_W; x < r.width; x += CROWD_TILE_W) r.image(img, x, standTop);
+    for (let x = shift - CROWD_TILE_W; x < r.width; x += CROWD_TILE_W) {
+      r.image(img, x, standTop);
+      this.drawCrowdProps(r, x, standTop);
+    }
     if (this.flashes) this.drawFlashes(r, standTop);
     this.drawRoof(r, standTop, cameraPx * crowdParallax);
 
@@ -177,7 +216,8 @@ export class Stadium {
 
   /** The sky down to the top of the stand: a dithered gradient, then sun, clouds or stars. */
   private drawSky(r: Renderer, bottom: number, cameraPx: number): void {
-    const colours = SKY_COLOURS[this.theme];
+    const raining = this.weather === 'rain';
+    const colours = raining ? RAIN_SKY : SKY_COLOURS[this.theme];
     drawGradient(r, 0, Math.max(bottom, 1), colours);
     const sx = -cameraPx * SKY_PARALLAX;
     if (this.theme === 'night') {
@@ -186,6 +226,14 @@ export class Stadium {
         const y = 2 + ((i * 7) % Math.max(1, bottom - 6));
         const on = Math.sin(this.time * 2 + i) > -0.4;
         r.rect(x, y, 1, 1, on ? PALETTE.WHITE : PALETTE.GREY_DARK);
+      }
+      return;
+    }
+    if (raining) {
+      // Low grey cloud from end to end, no sun.
+      for (let x = -((Math.floor(this.time * 2 - sx) % 24) + 24) % 24 - 24; x < r.width; x += 24) {
+        r.rect(x, 0, 20, 3, PALETTE.GREY_DARK);
+        r.rect(x + 6, 3, 14, 2, PALETTE.GREY_DARK);
       }
       return;
     }
@@ -199,12 +247,22 @@ export class Stadium {
     const cloud = this.theme === 'day' ? PALETTE.CLOUD : PALETTE.PEACH;
     for (let i = 0; i < 3; i++) {
       const span = r.width + 60;
-      const x = ((((i * 131 + this.time * 3 + sx) % span) + span) % span) - 40;
+      const drift = this.weather === 'wind' ? WIND_CLOUDS : 3;
+      const x = ((((i * 131 + this.time * drift + sx) % span) + span) % span) - 40;
       const y = 3 + i * 5;
       if (y + 4 > bottom) continue;
       r.rect(x, y + 2, 26, 3, cloud);
       r.rect(x + 5, y, 12, 3, cloud);
       r.rect(x + 14, y + 1, 8, 2, cloud);
+    }
+    // Wind: quick streaks blowing across the sky.
+    if (this.weather === 'wind') {
+      for (let i = 0; i < 4; i++) {
+        const span = r.width + 40;
+        const x = ((((i * 97 + this.time * 90) % span) + span) % span) - 20;
+        const y = 6 + ((i * 11) % Math.max(1, bottom - 8));
+        r.rect(x, y, 10, 1, PALETTE.WHITE);
+      }
     }
   }
 
@@ -223,13 +281,44 @@ export class Stadium {
 
   /** Little flags on poles along the front wall, flapping. */
   private drawFlags(r: Renderer, wallTop: number, cameraPx: number): void {
-    const flap = Math.floor(this.time * 4) % 2;
+    const flap = Math.floor(this.time * (this.weather === 'wind' ? WIND_FLAP : 4)) % 2;
     for (let x = -(Math.floor(cameraPx) % FLAG_EVERY) + 8, i = 0; x < r.width; x += FLAG_EVERY, i++) {
       const n = Math.floor((x + Math.floor(cameraPx)) / FLAG_EVERY);
       const colour = FLAG_COLOURS[((n % FLAG_COLOURS.length) + FLAG_COLOURS.length) % FLAG_COLOURS.length];
       r.rect(x, wallTop - 9, 1, 9, PALETTE.GREY_LIGHT); // pole
       r.rect(x + 1, wallTop - 9 + flap, 5, 2, colour);
       r.rect(x + 1, wallTop - 7, 4 + flap, 2, colour);
+    }
+  }
+
+  /** Signs held up and big flags waved in one crowd tile at x. */
+  private drawCrowdProps(r: Renderer, x: number, standTop: number): void {
+    const bob = Math.floor(this.time * 3) % 2;
+    for (const b of BANNERS) {
+      const y = standTop + b.row * ROW_H - 3 - bob;
+      r.rect(x + b.x + 2, y + 4, 1, 3, PALETTE.GREY_LIGHT); // sticks
+      r.rect(x + b.x + b.w - 3, y + 4, 1, 3, PALETTE.GREY_LIGHT);
+      r.rect(x + b.x, y, b.w, 5, b.colour);
+      r.rect(x + b.x + 2, y + 2, b.w - 4, 1, b.stripe);
+    }
+    const wave = Math.floor(this.time * (this.weather === 'wind' ? WIND_FLAP : 3)) % 2;
+    for (const f of FLAG_WAVERS) {
+      const y = standTop + f.row * ROW_H - 6;
+      r.rect(x + f.x, y, 1, 8, PALETTE.GREY_LIGHT); // the pole
+      const fx = wave ? x + f.x + 1 : x + f.x - 7; // swung right, then left
+      r.rect(fx, y, 7, 5, f.colour);
+      r.rect(fx, y + 2, 7, 1, f.stripe);
+    }
+  }
+
+  /** Rain in front of everything (call after the athletes); nothing in other weather. */
+  drawWeather(r: Renderer): void {
+    if (this.weather !== 'rain') return;
+    for (let i = 0; i < RAIN_DROPS; i++) {
+      const x = (hash(i * 31) + Math.floor(this.time * RAIN_SPEED * 0.25)) % (r.width + 20) - 10;
+      const y = (hash(i * 17 + 3) + Math.floor(this.time * RAIN_SPEED)) % (r.height + 10) - 5;
+      r.rect(x, y, 1, 3, PALETTE.CLOUD);
+      r.rect(x - 1, y + 3, 1, 1, PALETTE.GREY_LIGHT);
     }
   }
 
@@ -281,13 +370,14 @@ export class Stadium {
   private crowd(): HTMLCanvasElement[] {
     if (!this.crowdFrames) {
       const fans = layoutCrowd();
-      this.crowdFrames = [drawCrowdTile(fans, false), drawCrowdTile(fans, true)];
+      // Seated, the wave (every other fan up), and everyone up.
+      this.crowdFrames = [drawCrowdTile(fans, 'some'), drawCrowdTile(fans, 'some', true), drawCrowdTile(fans, 'all', true)];
     }
     return this.crowdFrames;
   }
 }
 
-function drawCrowdTile(fans: Fan[], wave: boolean): HTMLCanvasElement {
+function drawCrowdTile(fans: Fan[], who: 'some' | 'all', standing = false): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = CROWD_TILE_W;
   canvas.height = LAYOUT.WALL_TOP - LAYOUT.STAND_TOP;
@@ -299,7 +389,7 @@ function drawCrowdTile(fans: Fan[], wave: boolean): HTMLCanvasElement {
     c.fillRect(0, y + ROW_H - 2, canvas.width, 2);
   }
   for (const f of fans) {
-    const up = wave && f.waves ? 2 : 0;
+    const up = standing && (who === 'all' || f.waves) ? 2 : 0;
     const x = f.x;
     const y = f.y + 1 - up;
     c.fillStyle = f.skin;

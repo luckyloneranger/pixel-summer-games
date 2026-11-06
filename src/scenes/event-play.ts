@@ -6,7 +6,8 @@ import type { AthleticsEvent, EventId } from '../events/event';
 import { createEvent } from '../game/events';
 import { isBetter, qualifyingMark } from '../game/scoring';
 import type { Session } from '../game/session';
-import { ANIMATION } from '../game/tuning';
+import { ANIMATION, REPLAY } from '../game/tuning';
+import { PALETTE } from '../gfx/palette';
 import { PauseScene } from './pause';
 import { ResultsScene } from './results';
 import { Rng } from '../core/rng';
@@ -35,6 +36,8 @@ export class EventPlayScene implements Scene {
   readonly music = null;
   private readonly event: AthleticsEvent;
   private finishedFor = 0; // s since the event finished
+  private replayT: number | null = null; // s into the instant replay (null = not replaying)
+  private replayDone = false;
 
   constructor(
     private readonly game: Game,
@@ -77,12 +80,19 @@ export class EventPlayScene implements Scene {
       this.skipWithQualifyingMark();
       return;
     }
+    if (this.replayT !== null) {
+      // The instant replay: Enter skips it.
+      this.replayT += dt;
+      if (this.replayDone || input.justPressed('CONFIRM')) this.showResults(this.event.getResults());
+      return;
+    }
     this.event.update(dt, input);
     if (!this.event.isFinished()) return;
-    // Let the finish breathe for a moment (Enter skips), then show results.
+    // Let the finish breathe for a moment (Enter skips), then the replay (if any), then results.
     this.finishedFor += dt;
     if (this.finishedFor >= ANIMATION.RESULTS_DELAY || input.justPressed('CONFIRM')) {
-      this.showResults(this.event.getResults());
+      if (!this.session.online && this.event.hasReplay?.()) this.replayT = 0;
+      else this.showResults(this.event.getResults());
     }
   }
 
@@ -127,6 +137,15 @@ export class EventPlayScene implements Scene {
   }
 
   render(r: Renderer): void {
+    if (this.replayT !== null && this.event.renderReplay) {
+      this.replayDone = !this.event.renderReplay(r, this.replayT);
+      // Letterbox bars and a blinking REPLAY tag, like a TV replay.
+      r.rect(0, 0, r.width, REPLAY.BAR_H, PALETTE.BLACK);
+      r.rect(0, r.height - REPLAY.BAR_H, r.width, REPLAY.BAR_H, PALETTE.BLACK);
+      if (this.game.steady || Math.floor(this.replayT * 2) % 2 === 0) r.text('REPLAY', 6, 3, PALETTE.RED);
+      r.text(this.game.prompts.okTo('SKIP'), r.width - 6, r.height - 11, PALETTE.GREY_LIGHT, 'right');
+      return;
+    }
     this.event.render(r);
   }
 

@@ -449,4 +449,38 @@ Built in one go at the user's request, instead of one sub-phase at a time.
 - The hammer's green sector is still a tight timing window at full spin. Tune `HAMMER.MAX_TURN_RATE` and `HAMMER.SECTOR` after playing.
 - **File sizes:** `race-event.ts` (about 790 lines) and `run-up-event.ts` (about 610) are still large. The cuts made were the safe ones; splitting further would mean opening up much of their private state.
 
+**Next:** Phase 18.
+
+## Phase 18 – Graphics (planned and built in one go)
+
+**Done**
+- **18a Animation:**
+  - The hammer thrower turns with the ball, and the ball passes behind and in front.
+  - The javelin has a wind-up and a follow-through.
+  - Swimmers dive in and splash.
+  - The pole bends as the vaulter swings up.
+  - Each athlete celebrates their own way: arms up, a fist pump or a bow.
+- **18b Bigger athletes:** the long, triple and high jump show the athlete twice the size (32 × 48), with a closer camera.
+- **18c Menus:**
+  - A dim stadium pans behind the menus, which sit on framed panels.
+  - Event icons, medal icons, two-tone headings, and a small font for dates and notes.
+- **18d Lighting:** athletes are tinted for the time of day; long shadows at sunset; floodlight pools at night.
+- **18e Moments:**
+  - A slow-motion instant replay of your best jump or throw, offline. OK skips it, and the triple jump has none.
+  - A sepia photo-finish picture when the top two cross within 0.05 s.
+  - Confetti on a new record, and confetti plus fireworks on the podium. Fireworks are off with reduce flashing.
+- **18f Stadium life:**
+  - Signs and big flags in the crowd.
+  - The crowd stands up for a close finish you're leading, or a jump or throw heading past the qualifying mark.
+  - A starter with the pistol (smoke at GO).
+  - A field judge with a white or red flag.
+  - Rain at the triple jump and wind at the javelin; both are looks only and never change a mark.
+- **Tests:** 380 unit tests and 4 browser tests.
+
+**Known issues / notes**
+- The replay is offline only. Online, both screens would need to show it at the same moment.
+- The photo-finish picture places the pair by their time gap at top speed; it's an illustration, not a frame of the race.
+- Rain falls in front of the athlete, so in a dense moment it can make the jump slightly harder to read. Remove it from `STADIUM_WEATHER` if it bothers you.
+- The pole vault keeps small athletes so the 6 m bars fit on screen.
+
 **Next:** to be chosen with the user.

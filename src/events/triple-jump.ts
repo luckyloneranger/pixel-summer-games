@@ -59,6 +59,11 @@ export class TripleJumpEvent extends LongJumpEvent {
     return floorCentimetres(Math.max(0, landX));
   }
 
+  /** Three take-offs can't be replayed from one launch. */
+  protected get replayable(): boolean {
+    return false;
+  }
+
   protected flightNote(): string {
     return PHASE_NAMES[this.phaseNo] ?? '';
   }

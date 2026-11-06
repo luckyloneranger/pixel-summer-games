@@ -1,7 +1,8 @@
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import { ANIMATION, RUNNER } from '../game/tuning';
-import { STADIUM_THEMES, Stadium } from '../gfx/backgrounds';
+import { STADIUM_THEMES, STADIUM_WEATHER, Stadium } from '../gfx/backgrounds';
+import { Officials, flagFor } from '../gfx/officials';
 import { PALETTE } from '../gfx/palette';
 import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
 import { AngleMeter } from './angle-meter';
@@ -21,7 +22,7 @@ import { NO_EFFECTS, type EffectsSink } from './event';
 import type { Look } from '../gfx/sprite';
 import type { NetLink } from './event';
 import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
-import { NET } from '../game/tuning';
+import { NET, REPLAY } from '../game/tuning';
 
 import { AttemptSync, type AttemptMessage as FieldMessage } from './attempt-sync';
 
@@ -79,6 +80,9 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected phaseTimer = 0;
   protected clock = 0; // s since the event started (animations)
   protected readonly stadium = new Stadium();
+  private readonly officials = new Officials();
+  /** This flight is heading past the qualifying mark (the crowd gets up). */
+  private bigOne = false;
   private assist = false;
   protected effects: EffectsSink = NO_EFFECTS;
   protected readonly dust = new DustPuffs();
@@ -92,6 +96,10 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   // Online: the device whose player is up runs the attempt and reports it;
   // the other device replays it. Attempts are numbered across all players.
   private net: NetLink | null = null;
+  /** The best attempt by a human so far, to replay after the event. */
+  private best: { turn: number; takeoffX: number; speed: number; angle: number; mark: number } | null = null;
+  /** This attempt's take-off, until its mark is known. */
+  private launchInfo: { takeoffX: number; speed: number; angle: number } | null = null;
   /** Where each athlete last took off (m from the line), for the marker flag. */
   private readonly lastTakeoff = new Map<number, number>();
   protected prompts: Prompts = KEYBOARD_PROMPTS;
@@ -126,6 +134,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.effects = ctx.effects ?? NO_EFFECTS;
     this.dust.clear();
     this.stadium.theme = STADIUM_THEMES[this.id];
+    this.stadium.weather = STADIUM_WEATHER[this.id];
     this.net = ctx.net ?? null;
     this.prompts = ctx.prompts ?? KEYBOARD_PROMPTS;
     this.sync = ctx.net ? new AttemptSync(ctx.net) : null;
@@ -235,6 +244,7 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.dust.update(dt);
     this.stadium.time = this.clock;
     this.stadium.flashes = this.crowdWaves && !this.effects.calm;
+    this.stadium.excited = this.phase === 'flight' && this.bigOne;
     if (this.net) this.receiveNet();
     if (!this.localTurn) {
       this.spectate(dt);
@@ -428,12 +438,16 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   private launch(speed: number, angle: number): void {
     // Remember where this athlete took off (not the triple jump's later bounces): next
     // time a flag marks the spot, to aim for or beat.
-    if (this.phase !== 'flight') this.lastTakeoff.set(this.current.playerIndex, this.takeoffX);
+    if (this.phase !== 'flight') {
+      this.lastTakeoff.set(this.current.playerIndex, this.takeoffX);
+      this.launchInfo = { takeoffX: this.takeoffX, speed, angle };
+    }
     this.flight.launch(this.takeoffX, this.launchHeight(), speed, angle);
     this.onRelease();
     // A jump or throw heading for the qualifying mark gets a slow-motion highlight.
     const predicted = this.markFor(this.flight.landingX);
-    if (predicted !== null && predicted >= this.qualifyMark) this.effects.highlight();
+    this.bigOne = predicted !== null && predicted >= this.qualifyMark;
+    if (this.bigOne) this.effects.highlight();
     this.sound.play(this.releaseCue);
     this.enterPhase('flight');
   }
@@ -443,6 +457,10 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     this.lastMark = official !== undefined ? official : this.markFor(this.flight.x);
     if (official === undefined) this.net?.send({ k: 'landed', n: this.attemptNo, mark: this.lastMark });
     this.pendingMark = null;
+    // Remember the best single jump or throw for the replay.
+    if (this.launchInfo && this.lastMark !== null && (!this.best || this.lastMark > this.best.mark)) {
+      this.best = { turn: this.turn, ...this.launchInfo, mark: this.lastMark };
+    }
     this.record.record(this.lastMark);
     this.sound.play(this.landCue);
     this.onLand();
@@ -461,6 +479,43 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
 
   isFinished(): boolean {
     return this.phase === 'finished';
+  }
+
+  // ------------------------------------------------ instant replay
+
+  hasReplay(): boolean {
+    return this.best !== null && this.replayable;
+  }
+
+  /** Events made of a single flight can be replayed (not the triple jump's bounces). */
+  protected get replayable(): boolean {
+    return true;
+  }
+
+  /**
+   * Replay the best attempt in slow motion, after the event is over: the
+   * flight is relaunched and drawn at its time `t` x REPLAY.SPEED, then held
+   * on the landing for a moment. Changes only what's drawn (the event is done).
+   */
+  renderReplay(r: Renderer, t: number): boolean {
+    const b = this.best;
+    if (!b) return false;
+    this.turn = b.turn;
+    this.takeoffX = b.takeoffX;
+    this.flight.launch(b.takeoffX, this.launchHeight(), b.speed, b.angle);
+    this.onRelease();
+    const flightTime = t * REPLAY.SPEED;
+    this.flight.update(Math.min(flightTime, this.flight.flightTime));
+    if (flightTime < this.flight.flightTime) {
+      this.phase = 'flight';
+      this.phaseTimer = flightTime;
+    } else {
+      this.phase = 'landed';
+      this.lastMark = b.mark;
+      this.phaseTimer = (flightTime - this.flight.flightTime) / REPLAY.SPEED + REPLAY.SHOW_MARK_AFTER;
+    }
+    this.render(r);
+    return flightTime < this.flight.flightTime + REPLAY.HOLD * REPLAY.SPEED;
   }
 
   getResults(): EventResult[] {
@@ -509,6 +564,13 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
   protected drawTakeoffFlag(r: Renderer, x: number, groundY: number): void {
     r.rect(x, groundY - 10, 1, 10, PALETTE.GREY_LIGHT);
     r.rect(x + 1, groundY - 10, 4, 3, PALETTE.CYAN);
+  }
+
+  /** The field judge, feet at (x, feetY): white flag for a fair attempt, red for a foul. */
+  protected drawJudge(r: Renderer, x: number, feetY: number): void {
+    const decided = this.phaseTimer >= JUDGE_DELAY;
+    const signal = decided ? flagFor(this.phase, this.lastMark) : 'none';
+    this.officials.judge(r, x, feetY, signal, this.stadium.theme);
   }
 
   /** "RUN A+D  HOLD W" for whoever is up (keys or buttons). */
@@ -601,6 +663,8 @@ export abstract class RunUpFieldEvent implements AthleticsEvent {
     }
   }
 }
+
+const JUDGE_DELAY = 0.4; // s before the judge's flag goes up (they look first)
 
 function resultFor(playerIndex: number, name: string, marks: (number | null)[]): EventResult {
   const valid = marks.filter((m): m is number => m !== null);

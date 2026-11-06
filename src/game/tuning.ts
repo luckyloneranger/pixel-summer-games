@@ -39,6 +39,31 @@ export const GAMEPAD = {
   STICK: 0.5, // how far (0-1) the left stick must be pushed to count as a d-pad press
 };
 
+/** Instant replay of the best jump or throw, after a field event (offline). */
+export const REPLAY = {
+  SPEED: 0.45, // replay runs at this fraction of real time (slow motion)
+  HOLD: 1.4, // s (real time) the landing stays up before the results
+  SHOW_MARK_AFTER: 1.0, // s added so the landed mark is shown straight away
+  BAR_H: 14, // px, the letterbox bars at the top and bottom
+};
+
+/** The crowd and officials. */
+export const STADIUM_LIFE = {
+  RISE_LAST_M: 20, // m: the crowd stands for the last stretch of a race a human leads
+};
+
+/** Fireworks over the podium (off with "reduce flashing"). */
+export const FIREWORKS = {
+  EVERY: 0.7, // s between rockets
+  RISE_SPEED: 110, // px/s a rocket climbs
+  BURST_MIN_Y: 24, // px, highest a rocket bursts
+  BURST_MAX_Y: 70, // px, lowest a rocket bursts
+  SPARKS: 18, // sparks per burst
+  SPARK_SPEED: 45, // px/s, how fast sparks fly out
+  SPARK_LIFE: 1.1, // s a spark lasts
+  GRAVITY: 30, // px/s² pulling sparks down
+};
+
 /** Menu screens. */
 export const MENU_LOOK = {
   PAN_SPEED: 6, // px per second the stadium behind menus drifts

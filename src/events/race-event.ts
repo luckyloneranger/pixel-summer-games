@@ -2,7 +2,9 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Rng } from '../core/rng';
 import { ANIMATION, RACE_START, RUNNER } from '../game/tuning';
-import { LAYOUT, STADIUM_THEMES, Stadium } from '../gfx/backgrounds';
+import { LAYOUT, STADIUM_THEMES, STADIUM_WEATHER, Stadium } from '../gfx/backgrounds';
+import { Officials, type StarterStage } from '../gfx/officials';
+import { STADIUM_LIFE } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
 import type { Look } from '../gfx/sprite';
 import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, celebrationFor, type Pose } from '../gfx/sprites/athlete';
@@ -97,6 +99,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   protected phaseTimer = 0; // s spent in the current phase
   private setWait = 0; // s, random gap between SET and GO for this start
   protected readonly stadium = new Stadium();
+  private readonly officials = new Officials();
   private readonly sprites = new Map<Lane, AthleteSprites>();
 
   constructor(protected readonly cfg: RaceConfig) {
@@ -164,6 +167,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   init(ctx: EventContext): void {
     this.ctx = ctx;
     this.stadium.theme = STADIUM_THEMES[this.id];
+    this.stadium.weather = STADIUM_WEATHER[this.id];
     this.rng = ctx.rng;
     this.sound = ctx.sound ?? SILENT;
     this.net = ctx.net ?? null;
@@ -598,8 +602,11 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     const waveFrame = this.playerWon ? Math.floor(this.clock / ANIMATION.WAVE_FRAME_TIME) % 2 : 0;
     this.stadium.time = this.clock;
     this.stadium.flashes = this.playerWon && !(this.ctx.effects?.calm ?? true);
+    const leader = this.leader();
+    this.stadium.excited = crowdOnFeet(this.phase, leader.playerIndex >= 0, leader.runner.position, this.cfg.DISTANCE);
     this.drawSurface(r, cameraPx, waveFrame, toScreen);
     if (this.onLand) this.dust.render(r, toScreen);
+    this.drawStarter(r, toScreen);
 
     this.drawGhost(r, toScreen);
     // Top lane first, so lower lanes overlap the ones behind them.
@@ -624,6 +631,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       this.afterAthlete(r, lane, x, footY);
     }
 
+    this.stadium.drawWeather(r);
     const shown = this.player.finishTime ?? (this.phase === 'running' ? this.raceTime : 0);
     const humans = this.humans;
     if (humans.length <= 1) {
@@ -633,6 +641,19 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       drawScoreboard(r, this.name, this.timeText(shown), humans.map((l) => ({ label: l.name, fraction: l.runner.speedFraction })));
     }
     this.drawMessages(r);
+  }
+
+  /** The starter, just behind the line on the infield side: gun up at "set", smoke at the gun. */
+  private drawStarter(r: Renderer, toScreen: (m: number) => number): void {
+    const x = toScreen(STARTER_BEHIND);
+    if (x < -ATHLETE_W || x > r.width + ATHLETE_W) return;
+    const stage: StarterStage = this.phase === 'set' ? 'set' : this.phase === 'running' || this.phase === 'finished' ? 'fired' : 'idle';
+    this.officials.starter(r, x, this.starterFeetY, stage, this.raceTime, this.stadium.theme);
+  }
+
+  /** Where the starter stands (px): on the grass above the top lane. */
+  protected get starterFeetY(): number {
+    return LAYOUT.TRACK_TOP - 1;
   }
 
   private leader(): L {
@@ -698,6 +719,33 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     return s;
   }
 
+  /**
+   * The photo-finish image: an old-style brown photo of the line, with the
+   * first two placed by how far apart they crossed it (at top speed).
+   */
+  private drawPhoto(r: Renderer): void {
+    const [a, b] = this.standings();
+    if (!a || !b || a.finishTime === null || b.finishTime === null) return;
+    const x = r.width / 2 - PHOTO.W / 2;
+    const y = PHOTO.TOP;
+    r.rect(x - 2, y - 2, PHOTO.W + 4, PHOTO.H + 4, PALETTE.CLOUD); // white border
+    r.rect(x, y, PHOTO.W, PHOTO.H, PALETTE.BROWN_LIGHT);
+    const line = x + PHOTO.W / 2 + 10;
+    for (let yy = y; yy < y + PHOTO.H; yy += 2) r.rect(line, yy, 1, 1, PALETTE.PEACH); // the finish line
+    const gapPx = Math.min(40, (b.finishTime - a.finishTime) * PHOTO.PX_PER_SECOND);
+    // The winner on the top row (listed first below), drawn last so they're in front.
+    [b, a].forEach((lane) => {
+      const sx = line - ATHLETE_W + 4 - (lane === b ? gapPx : 0);
+      const sy = y + 6 + (lane === a ? 0 : 10);
+      this.photoSprites.get(lane.look) ?? this.photoSprites.set(lane.look, new AthleteSprites(lane.look, false, 1, 'sepia'));
+      r.image(this.photoSprites.get(lane.look)!.get('run0'), sx, sy);
+    });
+    r.textSmall(`${a.name} ${a.finishTime.toFixed(3)}`, x + 3, y + PHOTO.H - 13, PALETTE.CLOUD);
+    r.textSmall(`${b.name} ${b.finishTime.toFixed(3)}`, x + 3, y + PHOTO.H - 7, PALETTE.CLOUD);
+  }
+
+  private readonly photoSprites = new Map<object, AthleteSprites>();
+
   private drawMessages(r: Renderer): void {
     const cx = r.width / 2;
     const y = MESSAGE_Y;
@@ -705,6 +753,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
     if (this.photoFinish > 0) {
       r.rect(0, y - 4, r.width, 36, PALETTE.INK);
       r.text('PHOTO FINISH', cx, y + 4, PALETTE.YELLOW, 'center', 2);
+      this.drawPhoto(r);
       return;
     }
     const hasMessage = this.phase !== 'running' || this.raceTime < RACE_START.GO_TEXT_TIME;
@@ -788,4 +837,14 @@ const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHe
 /** Screen y of a lane's ground line (where feet and dust go). */
 function laneFootY(laneNumber: number): number {
   return LAYOUT.TRACK_TOP + laneNumber * LAYOUT.LANE_HEIGHT - 3;
+}
+
+/** The photo-finish image (screen px). */
+const PHOTO = { W: 96, H: 48, TOP: 74, PX_PER_SECOND: 300 };
+
+const STARTER_BEHIND = -3; // m: the starter stands this far behind the start line
+
+/** Does the crowd stand up? For the last stretch of a race that a human is leading. */
+export function crowdOnFeet(phase: RacePhase, humanLeads: boolean, leaderAt: number, distance: number): boolean {
+  return phase === 'running' && humanLeads && leaderAt >= distance - STADIUM_LIFE.RISE_LAST_M && leaderAt < distance;
 }

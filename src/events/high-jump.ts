@@ -148,12 +148,14 @@ export class HighJumpEvent extends RunUpFieldEvent {
     this.stadium.drawStands(r, cameraPx, ANIMATION.CROWD_PARALLAX, this.waveFrame);
     this.drawRunwayAndMat(r, toScreen);
     this.dust.render(r, toScreen);
+    this.drawJudge(r, toScreen(this.hcfg.MAT_END) + 14, RUNWAY_TOP - 1); // past the far end of the mat
     this.drawUprights(r, toScreen);
     const marker = this.takeoffMarker;
     if (marker !== null) this.drawTakeoffFlag(r, toScreen(marker), GROUND_Y);
     this.drawAthlete(r, toScreen);
     this.drawExtras(r, toScreen);
     this.drawBar(r, toScreen);
+    this.stadium.drawWeather(r);
 
     const best = this.record.best;
     drawScoreboard(

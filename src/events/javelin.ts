@@ -81,6 +81,8 @@ export class JavelinEvent extends RunUpFieldEvent {
     this.stadium.drawStands(r, cam.x, ANIMATION.CROWD_PARALLAX, this.waveFrame, cam.y);
     this.drawField(r, at, cam.y);
     this.dust.render(r, (m) => at(m, 0).sx);
+    const line = at(0, 0);
+    this.drawJudge(r, line.sx + 10, line.sy - (GROUND_Y - RUNWAY_TOP) - 1); // by the foul line, across the runway
 
     // Athlete, carrying the javelin until it's thrown.
     const marker = this.takeoffMarker;
@@ -107,6 +109,7 @@ export class JavelinEvent extends RunUpFieldEvent {
     } else if (this.phase === 'landed') {
       this.drawStuckJavelin(r, at);
     }
+    this.stadium.drawWeather(r);
 
     const best = this.record.best;
     drawScoreboard(

@@ -216,8 +216,8 @@ All graphics and sound are generated in code, so v1 needs no image or audio file
 - **Resolution:** draw everything at 320 × 180 pixels (16:9) on an offscreen canvas. Scale it up by the largest whole number that fits the window, centred with black bars. Turn image smoothing off (`imageSmoothingEnabled = false`, CSS `image-rendering: pixelated`) so pixels stay sharp.
 - **Palette:** one fixed palette of 36 original colours in `palette.ts` (24 until Phase 13), in the spirit of 8-bit consoles, arranged in light and dark shades for shading. Use no colours outside it. Blend with dithering (checkerboard rows), not with see-through colours. The only exception is the optional Retro TV filter, which darkens the finished picture.
 - **Sprites:** define them in code as pixel maps (arrays of strings, one character per palette colour). Turn them into small canvases at load time.
-- **Athlete:** 16 × 24 pixels (kept at this size in Phase 13 so four runners fit their 14-pixel lanes). Frames: 6-frame run cycle (with two passing frames), crouch, set, jump, throw, celebrate, stumble, flop, lie. Team colours come from swapping palette entries. Sprites get a dark outline and lighter top edges when built, plus a hair style (short, bun or long). A soft shadow sits on the ground under every athlete.
-- **Stadium:** crowd stand that scrolls slower than the track (parallax), with a 2-frame wave on big results. Track with lane lines and distance markers. Scoreboard panel at the top showing event, attempt, time or distance, and the speed meter.
+- **Athlete:** 16 × 24 pixels (kept at this size in Phase 13 so four runners fit their 14-pixel lanes; doubled to 32 × 48 with Scale2x in the long, triple and high jump from Phase 18). Frames: 6-frame run cycle (with two passing frames), crouch, set, jump, throw, celebrate, stumble, flop, lie. Team colours come from swapping palette entries. Sprites get a dark outline and lighter top edges when built, plus a hair style (short, bun or long). A soft shadow sits on the ground under every athlete.
+- **Stadium:** crowd stand that scrolls slower than the track (parallax), with a 2-frame wave on big results, signs and flags, and the whole crowd standing for big moments. Officials (starter, field judge), time-of-day light and looks-only weather (Phase 18). Track with lane lines and distance markers. Scoreboard panel at the top showing event, attempt, time or distance, and the speed meter.
 - **Font:** an 8 × 8 pixel bitmap font defined in code (preferred, no extra files). Alternative: "Press Start 2P", which is under the SIL Open Font License, bundled locally.
 - **Game feel:** dust puffs at high speed, sand splash, small screen shake on a hurdle hit, flashing "NEW RECORD!", camera that leads in the running direction. Shake and flashes can be turned off in Options.
 
@@ -425,6 +425,16 @@ Build in this order. Get the feel of the running right with plain boxes before a
 - Leaderboard: race marks must come with the run (positions every 0.05 s); the server checks it against the game's top speed, the distance and the time. An all-time best table; the reply gives weekly and all-time ranks, shown on the results screen; High Scores shows ALL TIME.
 - Gameplay: a flag marks your last take-off in the run-up events. The championship can be CLASSIC 5 or ALL 9, with its own high-score table. Balance from scripted tapping: hammer top spin 1.7 turns/s, spin impulse 0.078, drain 0.16, qualify 63 m; the swim award needs under 21.50 s.
 - Feel-based tuning waits for the user's play-test on a real phone.
+
+**Phase 18 – Graphics** (planned and built in one go at the user's request)
+
+- Animation: the hammer thrower turns with the ball (four facing poses, the ball passes behind and in front), the javelin has a wind-up and follow-through, swimmers dive in and splash, the pole bends as the vaulter swings up, and each athlete has their own celebration (arms up, fist pump or bow).
+- Bigger athletes: the long, triple and high jump draw the athlete at 32 × 48 (the 16 × 24 sprite doubled with the Scale2x rule, so edges stay smooth), with the camera closer (24 px per metre). The pole vault keeps 16 × 24 so the high bars fit.
+- Menus: a dim night stadium pans behind every menu, with framed panels, two-tone headings, 9 × 9 event icons, medal icons and a small 3 × 5 font for dates and notes.
+- Lighting: athletes take on the time of day (warm top edges at sunset, darker legs at night); long shadows at sunset; pools of floodlight on the field at night.
+- Moments: an instant replay of the best jump or throw in slow motion after an offline field event (not the triple jump; OK skips); a sepia photo-finish picture of the top two in a close race; confetti on a new record; confetti and fireworks on the podium (fireworks off with reduce flashing).
+- Stadium life: signs and big flags in the crowd, the crowd on its feet for a big moment (the last 20 m of a race a human leads, or a flight heading past the qualifying mark), a starter who raises the pistol at SET (smoke at GO), and a field judge who raises a white flag for a fair attempt or a red one for a foul. Weather is looks only: rain at the triple jump, wind at the javelin.
+- The palette stays at 36 colours; everything new is built from it.
 
 ## 10. Testing, quality and definition of done
 
