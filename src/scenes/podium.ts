@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { medalIcon } from '../gfx/sprites/icons';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -67,7 +68,7 @@ export class PodiumScene implements Scene {
       const sprite = this.sprites.get(s.playerIndex >= 0 ? `#${s.playerIndex}` : s.name)?.get(pose);
       if (sprite) r.image(sprite, b.x - ATHLETE_W / 2, top - ATHLETE_H);
       // Medal on a ribbon, name and total under the block.
-      r.rect(b.x - 2, top - ATHLETE_H + 9, 4, 4, MEDAL_COLOURS[b.place]);
+      r.image(medalIcon(b.place), b.x - 4, top - ATHLETE_H + 8); // the medal round their neck
       const colour = s.playerIndex >= 0 ? PALETTE.YELLOW : PALETTE.WHITE;
       r.text(s.name, b.x, GROUND + 3, colour, 'center');
       r.text(String(s.total), b.x, GROUND + 12, colour, 'center');

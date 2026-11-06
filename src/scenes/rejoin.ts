@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -76,7 +77,7 @@ export class RejoinScene implements Scene {
 
   render(r: Renderer): void {
     const cx = r.width / 2;
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'ONLINE MATCH');
     const friend = this.record.players[1 - this.record.localIndex]?.initials ?? 'YOUR FRIEND';
     if (this.error) {

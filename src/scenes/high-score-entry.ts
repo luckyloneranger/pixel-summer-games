@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -81,7 +82,7 @@ export class HighScoreEntryScene implements Scene {
 
   render(r: Renderer): void {
     const cx = r.width / 2;
-    r.clear(PALETTE.NIGHT);
+    drawBackdrop(r);
     drawHeader(r, 'NEW HIGH SCORE');
     if (this.session.players.length > 1) r.text(`PLAYER ${this.current.playerNumber}`, cx, 32, PALETTE.CYAN, 'center');
     r.text(String(this.current.score), cx, 46, PALETTE.YELLOW, 'center', 2);

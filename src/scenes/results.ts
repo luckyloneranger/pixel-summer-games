@@ -1,4 +1,6 @@
 import type { Game } from '../core/game';
+import { medalIcon } from '../gfx/sprites/icons';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -134,8 +136,9 @@ export class ResultsScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear(PALETTE.NIGHT);
+    drawBackdrop(r);
     drawHeader(r, EVENT_NAMES[this.eventId]);
+    drawPanel(r, 4, HEADER_Y - 6, 312, 21 + this.results.length * ROW_H);
     if (this.eventId === 'highJump' || this.eventId === 'poleVault') this.drawHeightTable(r);
     else if (EVENT_KIND[this.eventId] === 'field') this.drawFieldTable(r);
     else this.drawRaceTable(r);
@@ -201,6 +204,7 @@ export class ResultsScene implements Scene {
     const colour = isPlayer ? PALETTE.YELLOW : PALETTE.WHITE;
     const hasMark = !res.disqualified && res.mark !== null;
     r.text(hasMark ? PLACES[i] : '-', placeX, y, hasMark && i < 3 ? MEDAL_COLOURS[i] : colour);
+    if (hasMark && i < 3) r.image(medalIcon(i), placeX - 11, y - 2); // a medal for the top three
     return { y, colour };
   }
 

@@ -39,6 +39,11 @@ export const GAMEPAD = {
   STICK: 0.5, // how far (0-1) the left stick must be pushed to count as a d-pad press
 };
 
+/** Menu screens. */
+export const MENU_LOOK = {
+  PAN_SPEED: 6, // px per second the stadium behind menus drifts
+};
+
 /** Award banners. */
 export const AWARDS = {
   BANNER_TIME: 2.6, // s each "AWARD!" banner stays up

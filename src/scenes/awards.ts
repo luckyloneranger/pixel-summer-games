@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -30,8 +31,9 @@ export class AwardsScene implements Scene {
   render(r: Renderer): void {
     const have = this.game.store.data.achievements;
     const earned = ACHIEVEMENTS.filter((a) => a.id in have).length;
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'AWARDS');
+    drawPanel(r, 10, TOP - 5, 300, SHOWN * ROW_H + 8);
     r.text(`${earned}/${ACHIEVEMENTS.length}`, r.width - 12, 8, PALETTE.YELLOW, 'right');
     // Keep the selected row in view.
     const first = Math.min(Math.max(0, this.selected - SHOWN + 2), ACHIEVEMENTS.length - SHOWN);
@@ -46,7 +48,7 @@ export class AwardsScene implements Scene {
     const a = ACHIEVEMENTS[this.selected];
     r.text(a.detail, r.width / 2, TOP + SHOWN * ROW_H + 6, PALETTE.CYAN, 'center');
     const when = have[a.id];
-    if (when) r.text(`EARNED ${new Date(when).toISOString().slice(0, 10)}`, r.width / 2, TOP + SHOWN * ROW_H + 16, PALETTE.GREY_LIGHT, 'center');
+    if (when) r.textSmall(`EARNED ${new Date(when).toISOString().slice(0, 10)}`, r.width / 2, TOP + SHOWN * ROW_H + 17, PALETTE.GREY_LIGHT, 'center');
     r.text(this.game.prompts.backTo(), r.width / 2, 166, PALETTE.GREY_LIGHT, 'center');
   }
 }

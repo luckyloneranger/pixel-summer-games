@@ -1,4 +1,6 @@
 import type { Game } from '../core/game';
+import { eventIcon } from '../gfx/sprites/icons';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -57,16 +59,18 @@ export class EventSelectScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'PRACTICE');
+    drawPanel(r, 14, 27, 292, LIST_TOP + ALL_EVENTS.length * ROW_H + 16 - 27);
     r.text('EVENT', 40, 31, PALETTE.GREY);
     r.text('YOUR BEST', 200, 31, PALETTE.GREY);
     const bests = this.game.store.data.personalBests;
     ALL_EVENTS.forEach((id, i) => {
       const y = LIST_TOP + i * ROW_H;
       const selected = i === this.row;
-      if (selected) r.text('>', 26, y, PALETTE.YELLOW);
-      r.text(EVENT_NAMES[id], 40, y, selected ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
+      if (selected) r.text('>', 18, y, PALETTE.YELLOW);
+      r.image(eventIcon(id), 28, y - 2);
+      r.text(EVENT_NAMES[id], 44, y, selected ? PALETTE.WHITE : PALETTE.GREY_LIGHT);
       r.text(formatMark(id, bests[id] ?? null), 200, y, PALETTE.YELLOW);
     });
     const dy = LIST_TOP + ALL_EVENTS.length * ROW_H + 3;

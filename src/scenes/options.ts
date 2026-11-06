@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -119,8 +120,9 @@ export class OptionsScene implements Scene {
 
   render(r: Renderer): void {
     const s = this.game.store.data.settings;
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'OPTIONS');
+    drawPanel(r, 10, 25, 300, ROWS.length * ROW_H + 9);
     const onOff = (b: boolean) => (b ? 'ON' : 'OFF');
     const values: (string | number)[] = [
       onOff(s.casual),

@@ -31,9 +31,17 @@ export function cycle<T>(list: readonly T[], current: T, step: number): T {
 }
 
 /** Dark header bar with a big title. */
+/**
+ * The title bar on menu screens: a heavy two-tone title (white over gold)
+ * with a drop shadow, on a dark bar with a gold edge.
+ */
 export function drawHeader(r: Renderer, title: string): void {
   r.rect(0, 0, r.width, 24, PALETTE.INK);
-  r.text(title, r.width / 2, 4, PALETTE.WHITE, 'center', 2);
+  r.rect(0, 23, r.width, 1, PALETTE.GOLD);
+  const x = r.width / 2;
+  r.text(title, x + 1, 6, PALETTE.NAVY, 'center', 2); // shadow
+  r.text(title, x, 4, PALETTE.YELLOW, 'center', 2);
+  r.clipped(0, 0, r.width, 11, () => r.text(title, x, 4, PALETTE.WHITE, 'center', 2)); // top half white
 }
 
 export interface MenuItem {

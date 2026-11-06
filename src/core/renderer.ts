@@ -1,4 +1,5 @@
 import { EFFECTS } from '../game/tuning';
+import { SMALL_GLYPHS, SMALL_H, SMALL_ORDER, SMALL_W, smallGlyphIndex, smallTextWidth } from '../gfx/small-font';
 import { DISPLAY } from '../game/tuning';
 import { GLYPHS, GLYPH_ORDER, GLYPH_SIZE, glyphIndex, textWidth } from '../gfx/font';
 import { PALETTE } from '../gfx/palette';
@@ -138,6 +139,46 @@ export class Renderer {
     c.fillStyle = g;
     c.fillRect(0, 0, width, height);
     this.crtImage = img;
+    return img;
+  }
+
+  /** Narrow 3x5 text (tables and small notes). */
+  textSmall(str: string, x: number, y: number, colour: string, align: TextAlign = 'left'): void {
+    const font = this.smallFontImage(colour);
+    let left = Math.round(x);
+    if (align === 'center') left -= Math.floor(smallTextWidth(str) / 2);
+    else if (align === 'right') left -= smallTextWidth(str);
+    for (let i = 0; i < str.length; i++) {
+      this.ctx.drawImage(font, smallGlyphIndex(str[i]) * SMALL_W, 0, SMALL_W, SMALL_H, left + i * SMALL_W, Math.round(y), SMALL_W, SMALL_H);
+    }
+  }
+
+  /** Draw something only inside a rectangle (e.g. a two-tone heading). */
+  clipped(x: number, y: number, w: number, h: number, draw: () => void): void {
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.rect(x, y, w, h);
+    this.ctx.clip();
+    draw();
+    this.ctx.restore();
+  }
+
+  private readonly smallByColour = new Map<string, HTMLCanvasElement>();
+
+  private smallFontImage(colour: string): HTMLCanvasElement {
+    let img = this.smallByColour.get(colour);
+    if (img) return img;
+    img = document.createElement('canvas');
+    img.width = SMALL_ORDER.length * SMALL_W;
+    img.height = SMALL_H;
+    const c = get2d(img);
+    c.fillStyle = colour;
+    SMALL_ORDER.forEach((ch, i) =>
+      SMALL_GLYPHS[ch].forEach((row, y) => {
+        for (let x = 0; x < row.length; x++) if (row[x] === '#') c.fillRect(i * SMALL_W + x, y, 1, 1);
+      }),
+    );
+    this.smallByColour.set(colour, img);
     return img;
   }
 

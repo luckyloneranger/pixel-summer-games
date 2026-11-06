@@ -1,4 +1,8 @@
 import type { Game } from '../core/game';
+import { eventIcon } from '../gfx/sprites/icons';
+import { ALL_EVENTS } from '../game/championship';
+import { EVENT_NAMES } from '../game/scoring';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -179,8 +183,11 @@ export class HowToPlayScene implements Scene {
   render(r: Renderer): void {
     const all = pages(this.game.prompts);
     const p = all[this.page];
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'HOW TO PLAY');
+    drawPanel(r, 8, 26, 304, 132);
+    const event = ALL_EVENTS.find((id) => EVENT_NAMES[id] === p.title);
+    if (event) r.image(eventIcon(event), r.width - 76, 29);
     r.text(p.title, 16, 32, PALETTE.YELLOW);
     r.text(`${this.page + 1}/${all.length}`, r.width - 16, 32, PALETTE.GREY_LIGHT, 'right');
     p.lines.forEach((line, i) => r.text(line, 16, 48 + i * 12, PALETTE.WHITE));

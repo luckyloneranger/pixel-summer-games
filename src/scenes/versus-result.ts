@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -42,7 +43,7 @@ export class VersusResultScene implements Scene {
     const cx = r.width / 2;
     const s = this.session;
     const series = s.series!;
-    r.clear(PALETTE.NIGHT);
+    drawBackdrop(r);
     drawHeader(r, 'VERSUS');
 
     // Columns: event, P1 points, P2 points.

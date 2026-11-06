@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -75,8 +76,10 @@ export class HighScoresScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear(PALETTE.NIGHT);
+    drawBackdrop(r);
     drawHeader(r, 'HIGH SCORES');
+    drawPanel(r, 3, 26, 157, 138);
+    drawPanel(r, 162, 26, 155, 138);
     const data = this.game.store.data;
     const rows = this.table === 'week' || this.table === 'alltime' ? [] : data.highScores[this.table];
     const flash = !data.settings.reduceFlashing && Math.floor(this.time / RECORDS.NEW_RECORD_FLASH) % 2 === 1;
@@ -112,7 +115,7 @@ export class HighScoresScene implements Scene {
       if (h && this.table === 'championship' && h.events === undefined) r.text('*', 132, y, PALETTE.GREY);
     }
     if (this.table === 'championship' && rows.some((h) => h.events === undefined)) {
-      r.text('* 4-EVENT RUN', 16, 156, PALETTE.GREY);
+      r.textSmall('* A 4-EVENT RUN (BEFORE THE HIGH JUMP)', 10, 157, PALETTE.GREY_LIGHT);
     }
 
   }
@@ -146,6 +149,6 @@ export class HighScoresScene implements Scene {
       r.text(row.initials, 40, y, PALETTE.WHITE);
       r.text(formatMark(id, row.mark), 72, y, PALETTE.YELLOW);
     });
-    if (this.table === 'week') r.text(b.week, 16, 156, PALETTE.GREY);
+    if (this.table === 'week') r.textSmall(`WEEK ${b.week}`, 16, 157, PALETTE.GREY_LIGHT);
   }
 }

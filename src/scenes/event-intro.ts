@@ -1,4 +1,6 @@
 import type { Game } from '../core/game';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
+import { eventIcon } from '../gfx/sprites/icons';
 import { ALL_EVENTS } from '../game/championship';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
@@ -83,10 +85,9 @@ export class EventIntroScene implements Scene {
   render(r: Renderer): void {
     const cx = r.width / 2;
     const s = this.session;
-    r.clear(PALETTE.NIGHT);
-    r.rect(16, 16, r.width - 32, r.height - 32, PALETTE.NAVY);
-    r.rect(16, 16, r.width - 32, 2, PALETTE.YELLOW);
-    r.rect(16, r.height - 18, r.width - 32, 2, PALETTE.YELLOW);
+    drawBackdrop(r);
+    drawPanel(r, 16, 16, r.width - 32, r.height - 32);
+    r.image(eventIcon(this.eventId, 2), 26, 30); // the event's icon, big
 
     const series = s.series;
     const mode = s.mode === 'versus' ? 'VERSUS - ' : '';

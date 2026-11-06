@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -39,8 +40,9 @@ export class OnlineMenuScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'ONLINE VERSUS');
+    drawPanel(r, 84, 50, 152, 40);
     drawMenu(r, ITEMS, this.selected, 104, 56, 16);
     r.text('PLAY A FRIEND ON ANOTHER DEVICE.', r.width / 2, 104, PALETTE.GREY_LIGHT, 'center');
     r.text('ONE CREATES A ROOM AND SHARES', r.width / 2, 116, PALETTE.GREY_LIGHT, 'center');

@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -72,7 +73,7 @@ export class ControlsScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'CONTROLS');
     const controls = this.game.store.data.settings.controls ?? defaultControls();
     REMAPPABLE.forEach((action, i) => {

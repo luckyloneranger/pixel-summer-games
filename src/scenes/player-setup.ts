@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -142,8 +143,9 @@ export class PlayerSetupScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, this.mode === 'versus' ? 'VERSUS SETUP' : 'PLAYER SETUP');
+    drawPanel(r, 8, 27, 304, this.rows.length * 15 + 10);
     const rows = this.rows;
     const labelX = 32;
     const valueX = 150;

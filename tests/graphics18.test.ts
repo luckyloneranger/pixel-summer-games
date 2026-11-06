@@ -51,3 +51,36 @@ describe('Scale2x (big athletes)', () => {
     expect(big[2]).toBe('.kkk..');
   });
 });
+
+import { EVENT_ICONS, MEDAL_MAP, iconPixels, medalColours } from '../src/gfx/sprites/icons';
+import { SMALL_GLYPHS } from '../src/gfx/small-font';
+import { ALL_EVENTS } from '../src/game/championship';
+import { PALETTE } from '../src/gfx/palette';
+
+describe('menu art', () => {
+  const allowed = new Set<string>(Object.values(PALETTE));
+  it('every event has a 9x9 icon in palette colours', () => {
+    for (const id of ALL_EVENTS) {
+      const map = EVENT_ICONS[id];
+      expect(map).toHaveLength(9);
+      expect(map.every((r) => r.length === 9)).toBe(true);
+      const px = iconPixels(map, { y: PALETTE.YELLOW, w: PALETTE.WHITE, b: PALETTE.SKY, r: PALETTE.RED, o: PALETTE.ORANGE, g: PALETTE.GREEN });
+      expect(px).toHaveLength(11); // with its outline
+      for (const c of px.flat()) if (c !== null) expect(allowed.has(c)).toBe(true);
+    }
+  });
+
+  it('medals come in gold, silver and bronze', () => {
+    const colours = [0, 1, 2].map((p) => medalColours(p).m);
+    expect(new Set(colours).size).toBe(3);
+    for (const p of [0, 1, 2]) for (const c of iconPixels(MEDAL_MAP, medalColours(p)).flat()) if (c) expect(allowed.has(c)).toBe(true);
+  });
+
+  it('the small font has 3x5 glyphs for letters, digits and the usual marks', () => {
+    for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:-/!?') {
+      const g = SMALL_GLYPHS[ch];
+      expect(g, ch).toHaveLength(5);
+      expect(g.every((r) => r.length === 3)).toBe(true);
+    }
+  });
+});

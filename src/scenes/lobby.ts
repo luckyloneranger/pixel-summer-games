@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -159,7 +160,7 @@ export class LobbyScene implements Scene {
 
   render(r: Renderer): void {
     const cx = r.width / 2;
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, this.role === 'host' ? 'YOUR ROOM' : 'JOINING');
     if (this.error) {
       r.text(this.error, cx, 80, PALETTE.RED, 'center');

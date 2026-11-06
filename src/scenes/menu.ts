@@ -1,4 +1,5 @@
 import type { Game } from '../core/game';
+import { drawBackdrop, drawPanel } from '../ui/backdrop';
 import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
@@ -79,8 +80,9 @@ export class MenuScene implements Scene {
   }
 
   render(r: Renderer): void {
-    r.clear(PALETTE.NAVY);
+    drawBackdrop(r);
     drawHeader(r, 'MAIN MENU');
+    drawPanel(r, 84, MENU_TOP - 6, 152, ITEMS.length * MENU_STEP + 8);
     drawMenu(r, ITEMS, this.selected, 104, MENU_TOP, MENU_STEP);
     const p = this.game.prompts;
     // Versus shares one keyboard between two players.
