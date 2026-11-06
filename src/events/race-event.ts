@@ -437,7 +437,9 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
   }
 
   private updateRacer(lane: L, dt: number, keys: PlayerKeys): void {
-    const { left, right, action } = keys;
+    const { left, right } = keys;
+    // Both thumbs on the run pads at once counts as Action too (the hurdles' jump on a phone).
+    const action = keys.action || keys.chord;
     const r = lane.runner;
     const racing = lane.finishTime === null;
     if (racing) this.beforeMove(lane, dt, lane.cpu ? false : action);
@@ -820,7 +822,7 @@ export function roundHundredths(seconds: number): number {
 }
 
 /** CPUs read no keys. */
-const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHeld: false, runHeld: false };
+const NO_KEYS: PlayerKeys = { left: false, right: false, action: false, actionHeld: false, runHeld: false, chord: false };
 
 /** Screen y of a lane's ground line (where feet and dust go). */
 function laneFootY(laneNumber: number): number {

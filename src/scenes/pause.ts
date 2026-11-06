@@ -3,7 +3,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import { PALETTE } from '../gfx/palette';
-import { type MenuItem, drawMenu, moveSelection } from '../ui/widgets';
+import { type MenuItem, drawMenu, moveSelection, rowAt } from '../ui/widgets';
 import type { EventPlayScene } from './event-play';
 import { OptionsScene } from './options';
 
@@ -64,6 +64,15 @@ export class PauseScene implements Scene {
         g.scenes.popTo('MENU');
         break;
     }
+  }
+
+  /** Tap Resume, Restart or Quit. */
+  selectAt(_x: number, y: number): boolean {
+    const h = this.online ? 66 : 92;
+    const i = rowAt(y, (180 - h) / 2 + 34, 13, this.items.length);
+    if (i < 0) return false;
+    this.selected = i;
+    return true;
   }
 
   render(r: Renderer): void {

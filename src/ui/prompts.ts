@@ -107,7 +107,7 @@ export class Prompts {
       case 'javelin':
         return `RUN ${run}  HOLD ${act}, THEN LET GO`;
       case 'hurdles110':
-        return `RUN ${run}  TAP ${act} TO JUMP`;
+        return this.touch ? 'RUN ← →  TAP BOTH AT ONCE: JUMP' : `RUN ${run}  TAP ${act} TO JUMP`;
       case 'tripleJump':
         return `JUMP, THEN TAP ${act} AS YOU LAND`;
       case 'poleVault':

@@ -116,6 +116,11 @@ export class EventPlayScene implements Scene {
     this.update(dt, NO_INPUT);
   }
 
+  /** Field events get a big ACTION area on a phone; races keep the plain pads. */
+  touchLayout(): 'event' | 'eventWide' {
+    return this.event.kind === 'field' ? 'eventWide' : 'event';
+  }
+
   crowdLevel(): number {
     return this.event.crowdLevel?.() ?? 0;
   }

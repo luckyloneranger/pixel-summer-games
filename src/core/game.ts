@@ -65,6 +65,12 @@ export class Game {
     attachKeyboard(this.input);
     this.applyControls();
     this.touch = new TouchControls(canvas, this.input);
+    // A tap on a list menu's row picks it (and presses OK on it, as a tap on a phone list does).
+    this.touch.onMissedTap = (x, y) => {
+      if (!this.scenes.top?.selectAt?.(x, y)) return;
+      this.input.keyDown('TouchOk');
+      this.input.keyUp('TouchOk');
+    };
     this.audio = new AudioEngine(this.store.data.settings);
     this.music = new MusicPlayer(this.audio);
     // The last device used decides the hints: a key or a touch stops gamepad hints.
@@ -221,7 +227,8 @@ export class Game {
     this.scenes.render(this.renderer);
     drawWipe(this.renderer, wipeCover(this.wipeAge));
     const top = this.scenes.top?.name;
-    this.touch.setLayout(top === 'EVENT' ? 'event' : top === 'TITLE' || top === 'DEMO' ? 'title' : 'menu');
+    const eventLayout = this.scenes.top?.touchLayout?.() ?? 'event';
+    this.touch.setLayout(top === 'EVENT' ? eventLayout : top === 'TITLE' || top === 'DEMO' ? 'title' : 'menu');
     this.touch.render(this.renderer);
     if (this.onlineBanner) this.drawBanner(this.onlineBanner);
     this.drawAward(this.lastFrameDt);

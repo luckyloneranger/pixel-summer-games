@@ -4,7 +4,7 @@ import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import { makeRoomCode } from '../net/protocol';
 import { PALETTE } from '../gfx/palette';
-import { type MenuItem, drawHeader, drawMenu, moveSelection } from '../ui/widgets';
+import { type MenuItem, drawHeader, drawMenu, rowAt, moveSelection } from '../ui/widgets';
 import { JoinRoomScene } from './join-room';
 import { LobbyScene } from './lobby';
 
@@ -29,6 +29,13 @@ export class OnlineMenuScene implements Scene {
     if (!input.justPressed('CONFIRM')) return;
     if (this.selected === 0) g.scenes.push(new LobbyScene(g, 'host', makeRoomCode()));
     else g.scenes.push(new JoinRoomScene(g));
+  }
+
+  selectAt(_x: number, y: number): boolean {
+    const i = rowAt(y, 56, 16, ITEMS.length);
+    if (i < 0) return false;
+    this.selected = i;
+    return true;
   }
 
   render(r: Renderer): void {

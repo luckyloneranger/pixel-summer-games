@@ -313,6 +313,8 @@ export const TOUCH = {
   ICON_H: 11, // pause / speaker icon height
   HIT_SLOP: 4, // px of extra touch area around every button
   SWITCH_GUARD: 1.0, // s after leaving an event's buttons when new touches are ignored
+  CHORD_WINDOW: 0.05, // s: both run pads pressed this close together = a jump (hurdles)
+  WIDE_ACTION_TOP: 96, // px: in field events the ACTION area reaches up to here
 };
 
 /** Game-feel effects (screen shake is skipped when "reduce flashing" is on). */

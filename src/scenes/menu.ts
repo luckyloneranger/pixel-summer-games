@@ -3,7 +3,7 @@ import type { InputSnapshot } from '../core/input';
 import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import { PALETTE } from '../gfx/palette';
-import { type MenuItem, drawHeader, drawMenu, moveSelection } from '../ui/widgets';
+import { type MenuItem, drawHeader, drawMenu, moveSelection, rowAt } from '../ui/widgets';
 import { EventSelectScene } from './event-select';
 import { HighScoresScene } from './high-scores';
 import { HowToPlayScene } from './how-to-play';
@@ -22,6 +22,9 @@ const ITEMS: MenuItem[] = [
   { label: 'HOW TO PLAY' },
   { label: 'OPTIONS' },
 ];
+
+const MENU_TOP = 36; // px, first row
+const MENU_STEP = 13; // px between rows
 
 /** Main menu. */
 export class MenuScene implements Scene {
@@ -68,10 +71,17 @@ export class MenuScene implements Scene {
     }
   }
 
+  selectAt(_x: number, y: number): boolean {
+    const i = rowAt(y, MENU_TOP, MENU_STEP, ITEMS.length);
+    if (i < 0) return false;
+    this.selected = i;
+    return true;
+  }
+
   render(r: Renderer): void {
     r.clear(PALETTE.NAVY);
     drawHeader(r, 'MAIN MENU');
-    drawMenu(r, ITEMS, this.selected, 104, 36, 13);
+    drawMenu(r, ITEMS, this.selected, 104, MENU_TOP, MENU_STEP);
     const p = this.game.prompts;
     // Versus shares one keyboard between two players.
     if (p.touch && ITEMS[this.selected].label === 'VERSUS') r.text('VERSUS NEEDS A KEYBOARD', r.width / 2, p.noteY(156), PALETTE.YELLOW, 'center');

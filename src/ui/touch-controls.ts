@@ -19,7 +19,7 @@ export interface TouchButton {
   hidden?: boolean; // works but isn't drawn (the title's tap-anywhere area)
 }
 
-export type TouchLayout = 'event' | 'menu' | 'title';
+export type TouchLayout = 'event' | 'eventWide' | 'menu' | 'title';
 
 const W = DISPLAY.WIDTH;
 const H = DISPLAY.HEIGHT;
@@ -34,6 +34,32 @@ export function eventButtons(): TouchButton[] {
     { code: 'TouchPause', label: 'II', x: W / 2 - TOUCH.ICON_W - 2, y: 1, w: TOUCH.ICON_W, h: TOUCH.ICON_H },
     { code: 'TouchMute', label: 'M', x: W / 2 + 2, y: 1, w: TOUCH.ICON_W, h: TOUCH.ICON_H },
   ];
+}
+
+/**
+ * Field events: the same pads, with ACTION filling the whole middle of the
+ * lower screen, so it's easy to hit at full speed with a thumb that has just
+ * left a run pad.
+ */
+export function eventWideButtons(): TouchButton[] {
+  const pad = eventButtons();
+  const action = pad.find((b) => b.code === 'TouchAction')!;
+  const left = M + TOUCH.PAD_W + 4;
+  action.x = left;
+  action.w = W - 2 * left;
+  action.y = TOUCH.WIDE_ACTION_TOP;
+  action.h = H - M - TOUCH.WIDE_ACTION_TOP;
+  return pad;
+}
+
+/**
+ * Is this run-pad press the second half of a two-thumb chord? Yes if the other
+ * pad went down within CHORD_WINDOW and is still held (alternate tapping lifts
+ * one thumb before the other comes down, or comes later than that).
+ */
+export function isChord(last: { code: string; at: number } | null, code: string, nowMs: number, held: ReadonlySet<string>): boolean {
+  if (!last || last.code === code) return false;
+  return nowMs - last.at <= TOUCH.CHORD_WINDOW * 1000 && held.has(last.code);
 }
 
 /** Top of the menu control bar (game px); menu screens keep the space below it for the buttons. */
@@ -106,6 +132,8 @@ function looksLikeTouchDevice(): boolean {
 export class TouchControls {
   enabled = looksLikeTouchDevice();
   private layout: TouchLayout = 'menu';
+  private lastLayout: TouchLayout = 'menu'; // the layout before the last real switch (for the guard)
+  private lastRunPress: { code: string; at: number } | null = null; // for the two-thumb chord
   private buttons = menuButtons();
   private readonly fingers = new Map<number, string>(); // pointer id -> code held
   private guardUntil = 0; // ms timestamp: ignore new touches until then
@@ -127,13 +155,33 @@ export class TouchControls {
 
   setLayout(layout: TouchLayout): void {
     if (layout === this.layout) return;
+    // Plain and wide event pads press the same codes: keep fingers held across the swap.
+    const sameCodes = (layout === 'event' || layout === 'eventWide') && (this.layout === 'event' || this.layout === 'eventWide');
+    this.layout = layout;
+    this.buttons = this.buttonsFor(layout);
+    if (sameCodes) return;
     this.releaseAll();
     // A finger still drumming on a run pad must not hit the menu button now in
     // its place. Only needed after an event: elsewhere taps are single and slow.
-    if (this.layout === 'event') this.guardUntil = performance.now() + TOUCH.SWITCH_GUARD * 1000;
-    this.layout = layout;
-    this.buttons = layout === 'event' ? eventButtons() : layout === 'title' ? titleButtons() : menuButtons();
+    if (this.lastLayout === 'event' || this.lastLayout === 'eventWide') this.guardUntil = performance.now() + TOUCH.SWITCH_GUARD * 1000;
+    this.lastLayout = layout;
   }
+
+  private buttonsFor(layout: TouchLayout): TouchButton[] {
+    switch (layout) {
+      case 'event':
+        return eventButtons();
+      case 'eventWide':
+        return eventWideButtons();
+      case 'title':
+        return titleButtons();
+      case 'menu':
+        return menuButtons();
+    }
+  }
+
+  /** Called with game pixels when a tap misses every button (list menus pick a row). */
+  onMissedTap: ((x: number, y: number) => void) | null = null;
 
   private at(e: PointerEvent): TouchButton | null {
     const p = screenToGame(e.clientX, e.clientY, this.canvas.getBoundingClientRect());
@@ -148,6 +196,10 @@ export class TouchControls {
     this.canvas.setPointerCapture?.(e.pointerId);
     const b = this.at(e);
     if (b) this.press(e.pointerId, b.code);
+    else if (this.layout === 'menu') {
+      const p = screenToGame(e.clientX, e.clientY, this.canvas.getBoundingClientRect());
+      this.onMissedTap?.(p.x, p.y);
+    }
   }
 
   private move(e: PointerEvent): void {
@@ -166,6 +218,19 @@ export class TouchControls {
   private press(id: number, code: string): void {
     this.fingers.set(id, code);
     this.input.keyDown(code);
+    this.checkChord(code);
+  }
+
+  /** The other run pad went down a moment ago and is still held: both thumbs = a chord. */
+  private checkChord(code: string): void {
+    if (code !== 'TouchLeft' && code !== 'TouchRight') return;
+    const now = performance.now();
+    const last = this.lastRunPress;
+    this.lastRunPress = { code, at: now };
+    if (!isChord(last, code, now, new Set(this.fingers.values()))) return;
+    this.input.keyDown('TouchChord');
+    this.input.keyUp('TouchChord');
+    this.lastRunPress = null;
   }
 
   private release(id: number): void {

@@ -22,6 +22,13 @@ export interface Scene {
   debugLines?(): string[];
   /** The tab was hidden or the window lost focus (events pause themselves). */
   onFocusLost?(): void;
+  /**
+   * A tap on the screen (game pixels) that missed the on-screen buttons. A list
+   * menu picks the row there; return true to also press OK on it.
+   */
+  selectAt?(x: number, y: number): boolean;
+  /** Which on-screen buttons an event wants (default: the plain event pads). */
+  touchLayout?(): 'event' | 'eventWide';
 }
 
 /** A stack of scenes. Only the top one updates; overlays let the one below show. */

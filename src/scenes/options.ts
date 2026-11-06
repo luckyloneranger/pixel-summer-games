@@ -4,7 +4,7 @@ import type { Renderer } from '../core/renderer';
 import type { Scene } from '../core/scene-manager';
 import { AUDIO } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { drawHeader, leftRight, moveSelection } from '../ui/widgets';
+import { drawHeader, leftRight, moveSelection, rowAt } from '../ui/widgets';
 import { ControlsScene } from './controls';
 
 type Row =
@@ -106,6 +106,15 @@ export class OptionsScene implements Scene {
       this.game.store.save();
       this.game.applyVolumes();
     }
+  }
+
+  /** Tap a row to pick it; tap it again to change it. */
+  selectAt(_x: number, y: number): boolean {
+    const i = rowAt(y, 28, ROW_H, ROWS.length);
+    if (i < 0) return false;
+    const again = i === this.row;
+    this.row = i;
+    return again;
   }
 
   render(r: Renderer): void {

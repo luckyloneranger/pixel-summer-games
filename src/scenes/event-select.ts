@@ -7,7 +7,7 @@ import { ALL_EVENTS } from '../game/championship';
 import { EVENT_NAMES, formatMark } from '../game/scoring';
 import { Session } from '../game/session';
 import { PALETTE } from '../gfx/palette';
-import { cycle, drawHeader, leftRight, moveSelection } from '../ui/widgets';
+import { cycle, drawHeader, leftRight, moveSelection, rowAt } from '../ui/widgets';
 import { EventIntroScene } from './event-intro';
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard'];
@@ -42,6 +42,18 @@ export class EventSelectScene implements Scene {
       g.session = session;
       g.scenes.push(new EventIntroScene(g, session, id));
     }
+  }
+
+  /** Tap an event to play it; tap the CPU row to pick it. */
+  selectAt(_x: number, y: number): boolean {
+    const i = rowAt(y, LIST_TOP, ROW_H, ALL_EVENTS.length);
+    if (i >= 0) {
+      this.row = i;
+      return true;
+    }
+    const dy = LIST_TOP + ALL_EVENTS.length * ROW_H + 3;
+    if (y >= dy - 3 && y < dy + 10) this.row = ALL_EVENTS.length;
+    return false;
   }
 
   render(r: Renderer): void {

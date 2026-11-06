@@ -55,6 +55,12 @@ export function drawMenu(r: Renderer, items: readonly MenuItem[], selected: numb
   });
 }
 
+/** Which row of a list drawn from `top`, `lineH` apart, is at screen y (-1 for none). */
+export function rowAt(y: number, top: number, lineH: number, count: number): number {
+  const i = Math.floor((y - top + (lineH - 8) / 2 + 2) / lineH);
+  return i >= 0 && i < count && y >= top - 4 ? i : -1;
+}
+
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 /**

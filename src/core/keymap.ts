@@ -9,6 +9,7 @@ export type Action =
   | 'P2_LEFT'
   | 'P2_RIGHT'
   | 'P2_ACTION'
+  | 'P1_CHORD'
   | 'MENU_UP'
   | 'MENU_DOWN'
   | 'MENU_LEFT'
@@ -32,6 +33,7 @@ export const DEFAULT_KEYMAP: KeyMap = {
   P2_LEFT: ['ArrowLeft'],
   P2_RIGHT: ['ArrowRight'],
   P2_ACTION: ['ArrowUp'],
+  P1_CHORD: ['TouchChord'], // both run pads at once (touch): the hurdles' jump
   MENU_UP: ['ArrowUp', 'KeyW', 'TouchUp', 'PadUp'],
   MENU_DOWN: ['ArrowDown', 'KeyS', 'TouchDown', 'PadDown'],
   MENU_LEFT: ['ArrowLeft', 'KeyA', 'TouchLeft', 'PadLeft'],

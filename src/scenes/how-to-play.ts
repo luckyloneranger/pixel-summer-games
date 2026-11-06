@@ -86,8 +86,8 @@ function pages(p: Prompts): Page[] {
       title: '110 M HURDLES',
       pose: 'jump',
       lines: [
-        `RUN WITH ${run}, AND TAP ${act}`,
-        'TO JUMP EACH HURDLE.',
+        p.touch ? 'RUN WITH ← →, AND TAP BOTH AT' : `RUN WITH ${run}, AND TAP ${act}`,
+        p.touch ? 'ONCE TO JUMP EACH HURDLE.' : 'TO JUMP EACH HURDLE.',
         'HITTING ONE COSTS SPEED,',
         'NOT JUMPING COSTS MORE.',
         'TIP: AT FULL SPEED, JUMP ABOUT',
