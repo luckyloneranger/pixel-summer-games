@@ -4,9 +4,9 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { isRoomCode, parseClientMessage, type ServerMessage } from '../src/net/protocol';
-import { isValidSubmission, rankBoard, weekId, type BoardEntry, type Submission } from '../src/net/leaderboard-rules';
+import { BOARD_EVENTS, isValidSubmission, rankBoard, rankOf, weekId, type BoardEntry, type Submission } from '../src/net/leaderboard-rules';
 
-const MAX_SUBMISSION_BYTES = 256;
+const MAX_SUBMISSION_BYTES = 8192; // a 30 s swim's run is about 4 KB
 const SUBMITS_PER_HOUR = 20; // per connection address, to slow down spam
 const WEEKS_KEPT = 4; // older weeks are deleted
 
@@ -54,8 +54,8 @@ export default {
         }
         if (!isValidSubmission(body)) return json({ ok: false }, 400);
         const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-        const ok = await board.submit(body, ip);
-        return json({ ok }, ok ? 200 : 429);
+        const ranks = await board.submit(body, ip);
+        return ranks ? json({ ok: true, ...ranks }) : json({ ok: false }, 429);
       }
       return json({ ok: false }, 404);
     }
@@ -164,28 +164,51 @@ export class Leaderboard extends DurableObject<Env> {
       'CREATE TABLE IF NOT EXISTS scores (week TEXT NOT NULL, event TEXT NOT NULL, initials TEXT NOT NULL, mark REAL NOT NULL, at INTEGER NOT NULL)',
     );
     ctx.storage.sql.exec('CREATE INDEX IF NOT EXISTS by_board ON scores (week, event)');
+    // Everyone's best mark ever, one row per name and event.
+    ctx.storage.sql.exec(
+      'CREATE TABLE IF NOT EXISTS best (event TEXT NOT NULL, initials TEXT NOT NULL, mark REAL NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (event, initials))',
+    );
+  }
+
+  private weekRows(event: string, week: string): BoardEntry[] {
+    return this.ctx.storage.sql
+      .exec<{ initials: string; mark: number }>('SELECT initials, mark FROM scores WHERE week = ? AND event = ?', week, event)
+      .toArray();
+  }
+
+  private bestRows(event: string): BoardEntry[] {
+    return this.ctx.storage.sql.exec<{ initials: string; mark: number }>('SELECT initials, mark FROM best WHERE event = ?', event).toArray();
   }
 
   /** This week's top marks for an event. */
-  async top(event: string): Promise<{ week: string; rows: BoardEntry[] }> {
+  async top(event: string): Promise<{ week: string; rows: BoardEntry[]; allTime: BoardEntry[] }> {
     const week = weekId(Date.now());
-    const rows = this.ctx.storage.sql
-      .exec<{ initials: string; mark: number }>('SELECT initials, mark FROM scores WHERE week = ? AND event = ?', week, event)
-      .toArray();
-    return { week, rows: rankBoard(event, rows) };
+    return { week, rows: rankBoard(event, this.weekRows(event, week)), allTime: rankBoard(event, this.bestRows(event)) };
   }
 
-  /** Save a mark (already checked). False if this address is sending too many. */
-  async submit(s: Submission, address: string): Promise<boolean> {
+  /** Save a mark (already checked) and say where it ranks. Null if this address is sending too many. */
+  async submit(s: Submission, address: string): Promise<{ weekRank: number; allTimeRank: number } | null> {
     const now = Date.now();
     const times = (this.recent.get(address) ?? []).filter((t) => now - t < 3_600_000);
-    if (times.length >= SUBMITS_PER_HOUR) return false;
+    if (times.length >= SUBMITS_PER_HOUR) return null;
     times.push(now);
     this.recent.set(address, times);
     const week = weekId(now);
     this.ctx.storage.sql.exec('INSERT INTO scores VALUES (?, ?, ?, ?, ?)', week, s.event, s.initials, s.mark, now);
     this.ctx.storage.sql.exec('DELETE FROM scores WHERE week < ?', weekId(now - WEEKS_KEPT * 7 * 86_400_000));
-    return true;
+    // Keep the all-time best per name: insert, or replace only with a better mark.
+    const better = BOARD_EVENTS[s.event].lowerIsBetter ? 'excluded.mark < best.mark' : 'excluded.mark > best.mark';
+    this.ctx.storage.sql.exec(
+      `INSERT INTO best VALUES (?, ?, ?, ?) ON CONFLICT (event, initials) DO UPDATE SET mark = excluded.mark, at = excluded.at WHERE ${better}`,
+      s.event,
+      s.initials,
+      s.mark,
+      now,
+    );
+    return {
+      weekRank: rankOf(s.event, this.weekRows(s.event, week), s.initials),
+      allTimeRank: rankOf(s.event, this.bestRows(s.event), s.initials),
+    };
   }
 }
 

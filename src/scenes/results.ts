@@ -5,7 +5,7 @@ import type { Scene } from '../core/scene-manager';
 import type { EventId, EventResult } from '../events/event';
 import type { EventOutcome } from '../game/championship';
 import { updatePersonalBest } from '../game/records';
-import { submitMark } from '../net/leaderboard';
+import { submitMark, type Ranks } from '../net/leaderboard';
 import { awardsForBests, awardsForEvent, awardsForMatch } from '../game/achievements';
 import { EVENT_KIND, EVENT_NAMES, scoreResults } from '../game/scoring';
 import type { Session } from '../game/session';
@@ -36,12 +36,16 @@ export class ResultsScene implements Scene {
   private readonly outcome: EventOutcome | null;
   private readonly newRecord: boolean;
   private time = 0;
+  /** Where a new best came on the online boards, once the server answers. */
+  private ranks: Ranks | null = null;
 
   constructor(
     private readonly game: Game,
     private readonly session: Session,
     private readonly eventId: EventId,
     raw: EventResult[],
+    /** Races: player 1's run, which backs up a leaderboard mark (see leaderboard-rules.ts). */
+    run: number[] | null = null,
   ) {
     const series = session.series;
     this.outcome = series ? series.record(raw) : null;
@@ -53,8 +57,13 @@ export class ResultsScene implements Scene {
       const mark = r.disqualified ? null : r.mark;
       if (!updatePersonalBest(game.store.data.personalBests, eventId, mark)) continue;
       improved = true;
-      // Opted in: the new best goes to this week's online top 10.
-      if (game.store.data.settings.leaderboard && mark !== null) void submitMark(eventId, r.name, mark);
+      // Opted in: the new best goes to the online boards (races only with player 1's run).
+      if (game.store.data.settings.leaderboard && mark !== null) {
+        const proof = r.playerIndex === 0 ? run : null;
+        void submitMark(eventId, r.name, mark, proof).then((ranks) => {
+          if (ranks) this.ranks = ranks;
+        });
+      }
     }
     this.newRecord = improved;
     if (improved) game.store.save();
@@ -206,6 +215,10 @@ export class ResultsScene implements Scene {
       if (m >= 0) r.text(MEDAL_NAMES[m], cx, top, MEDAL_COLOURS[m], 'center');
     }
     if (this.newRecord && show) r.text('NEW RECORD!', cx, top + 12, PALETTE.CYAN, 'center');
+    if (this.ranks) {
+      const { weekRank, allTimeRank } = this.ranks;
+      r.text(`ONLINE: #${weekRank} THIS WEEK  #${allTimeRank} ALL TIME`, cx, 154, PALETTE.YELLOW, 'center');
+    }
 
     const series = this.session.series;
     if (!series || !this.outcome) {

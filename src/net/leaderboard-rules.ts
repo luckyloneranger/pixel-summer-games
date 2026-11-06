@@ -16,19 +16,53 @@ export const BOARD_EVENTS: Record<string, { lowerIsBetter: boolean; min: number;
   swim50: { lowerIsBetter: true, min: 19, max: 90 },
 };
 
-/** How many names each weekly board shows. */
+/** How many names each board shows. */
 export const BOARD_SIZE = 10;
+
+/**
+ * Races must send the run itself: the position (m) every RUN_SAMPLE seconds.
+ * Top speeds and distances here must match tuning.ts (a test checks).
+ */
+export const RUN_SAMPLE = 0.05; // s between positions (GHOST.SAMPLE)
+export const RACE_RULES: Record<string, { distance: number; topSpeed: number }> = {
+  dash100: { distance: 100, topSpeed: 11.5 }, // RUNNER.MAX_SPEED
+  hurdles110: { distance: 110, topSpeed: 11.5 },
+  swim50: { distance: 50, topSpeed: 2.55 }, // SWIMMER.MAX_SPEED
+};
+const SPEED_SLACK = 1.05; // allow 5% for rounding to the centimetre
+
+/**
+ * Does a race's run back up its time? It must start at the line, never move
+ * backwards or faster than the game allows, end at the finish, and take as
+ * long as the time says.
+ */
+export function runMatches(event: string, mark: number, run: unknown): boolean {
+  const rules = RACE_RULES[event];
+  if (!rules) return true; // field events send no run
+  if (!Array.isArray(run) || run.length < 10 || run.length > 2000) return false;
+  if (!run.every((p) => typeof p === 'number' && Number.isFinite(p))) return false;
+  const maxStep = rules.topSpeed * RUN_SAMPLE * SPEED_SLACK;
+  if (run[0] > maxStep * 2) return false;
+  for (let i = 1; i < run.length; i++) {
+    const step = run[i] - run[i - 1];
+    if (step < -0.01 || step > maxStep + 0.02) return false;
+  }
+  if (Math.abs(run[run.length - 1] - rules.distance) > 0.05) return false;
+  const runTime = (run.length - 2) * RUN_SAMPLE; // the last sample is the line itself
+  return Math.abs(runTime - mark) <= RUN_SAMPLE * 2;
+}
 
 export interface BoardEntry {
   initials: string;
   mark: number;
 }
 
-/** What the game sends: three letters and a mark for an event. */
+/** What the game sends: three letters and a mark for an event (races add the run). */
 export interface Submission {
   event: string;
   initials: string;
   mark: number;
+  run?: number[];
 }
 
 /** Is this a believable submission? (Anything else is ignored.) */
@@ -40,7 +74,14 @@ export function isValidSubmission(x: unknown): x is Submission {
   if (typeof s.initials !== 'string' || !/^[A-Z]{3}$/.test(s.initials)) return false;
   if (typeof s.mark !== 'number' || !Number.isFinite(s.mark)) return false;
   if (Math.abs(Math.round(s.mark * 100) - s.mark * 100) > 1e-6) return false; // marks are to 0.01
-  return s.mark >= rules.min && s.mark <= rules.max;
+  if (s.mark < rules.min || s.mark > rules.max) return false;
+  return runMatches(s.event as string, s.mark, s.run);
+}
+
+/** Where a name comes on a board of everyone's best marks (1 = top; 0 if absent). */
+export function rankOf(event: string, entries: readonly BoardEntry[], initials: string): number {
+  const all = rankBoard(event, entries, Infinity);
+  return all.findIndex((e) => e.initials === initials) + 1;
 }
 
 /** The ISO week a moment falls in, like "2026-W45" (weeks start on Monday, UTC). */
@@ -57,7 +98,7 @@ export function weekId(ms: number): string {
 }
 
 /** Each name's best mark, best first, cut to the board size. */
-export function rankBoard(event: string, entries: readonly BoardEntry[]): BoardEntry[] {
+export function rankBoard(event: string, entries: readonly BoardEntry[], size = BOARD_SIZE): BoardEntry[] {
   const lower = BOARD_EVENTS[event]?.lowerIsBetter ?? false;
   const better = (a: number, b: number) => (lower ? a < b : a > b);
   const best = new Map<string, number>();
@@ -68,5 +109,5 @@ export function rankBoard(event: string, entries: readonly BoardEntry[]): BoardE
   return [...best]
     .map(([initials, mark]) => ({ initials, mark }))
     .sort((a, b) => (lower ? a.mark - b.mark : b.mark - a.mark))
-    .slice(0, BOARD_SIZE);
+    .slice(0, size);
 }

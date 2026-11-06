@@ -28,13 +28,14 @@ const SHORT_NAMES: Record<EventId, string> = {
 /** The two tables kept in this browser. */
 export type ScoreTable = 'championship' | 'versus';
 /** What the screen can show: those, or the weekly online board. */
-type View = ScoreTable | 'week';
-const TABLES: View[] = ['championship', 'versus', 'week'];
-const TABLE_NAMES: Record<View, string> = { championship: 'CHAMPIONSHIP', versus: 'VERSUS', week: 'ONLINE WEEK' };
+type View = ScoreTable | 'week' | 'alltime';
+const TABLES: View[] = ['championship', 'versus', 'week', 'alltime'];
+const TABLE_NAMES: Record<View, string> = { championship: 'CHAMPIONSHIP', versus: 'VERSUS', week: 'ONLINE WEEK', alltime: 'ALL TIME' };
+const ONLINE_VIEWS: readonly View[] = ['week', 'alltime'];
 /** Events on the weekly board, in menu order. */
 const BOARD_LIST = ALL_EVENTS.filter((id) => onBoard(id));
 
-type BoardState = 'loading' | 'failed' | { week: string; rows: BoardEntry[] };
+type BoardState = 'loading' | 'failed' | { week: string; rows: BoardEntry[]; allTime: BoardEntry[] };
 
 /** Top 10 scores (championship or versus, left/right to switch) and personal bests. */
 export class HighScoresScene implements Scene {
@@ -58,7 +59,7 @@ export class HighScoresScene implements Scene {
     this.time += dt;
     const step = leftRight(input);
     if (step !== 0) this.table = TABLES[(TABLES.indexOf(this.table) + step + TABLES.length) % TABLES.length];
-    if (this.table === 'week') {
+    if (ONLINE_VIEWS.includes(this.table)) {
       this.boardEvent = moveSelection(input, this.boardEvent, BOARD_LIST.length);
       this.loadBoard();
     }
@@ -71,13 +72,13 @@ export class HighScoresScene implements Scene {
     r.clear(PALETTE.NIGHT);
     drawHeader(r, 'HIGH SCORES');
     const data = this.game.store.data;
-    const rows = this.table === 'week' ? [] : data.highScores[this.table];
+    const rows = this.table === 'week' || this.table === 'alltime' ? [] : data.highScores[this.table];
     const flash = !data.settings.reduceFlashing && Math.floor(this.time / RECORDS.NEW_RECORD_FLASH) % 2 === 1;
     const highlight = this.table === this.opts.table ? (this.opts.highlight ?? []) : [];
 
     // Left: the chosen top-10 table.
     r.text(`< ${TABLE_NAMES[this.table]} >`, 8, 30, PALETTE.GREY);
-    if (this.table === 'week') this.drawBoard(r);
+    if (ONLINE_VIEWS.includes(this.table)) this.drawBoard(r);
     else this.drawTable(r, rows, highlight, flash);
     // Right: personal bests per event.
     r.text('YOUR BESTS', 168, 30, PALETTE.GREY);
@@ -131,13 +132,14 @@ export class HighScoresScene implements Scene {
     const b = this.boards.get(id);
     if (b === undefined || b === 'loading') return say('LOADING...');
     if (b === 'failed') return say('COULD NOT CONNECT');
-    if (!b.rows.length) return say('NO MARKS YET THIS WEEK');
-    b.rows.forEach((row, i) => {
+    const list = this.table === 'alltime' ? b.allTime : b.rows;
+    if (!list.length) return say(this.table === 'alltime' ? 'NO MARKS YET' : 'NO MARKS YET THIS WEEK');
+    list.forEach((row, i) => {
       const y = 54 + i * 10;
       r.text(String(i + 1).padStart(2, ' '), 16, y, PALETTE.GREY_LIGHT);
       r.text(row.initials, 40, y, PALETTE.WHITE);
       r.text(formatMark(id, row.mark), 72, y, PALETTE.YELLOW);
     });
-    r.text(b.week, 16, 156, PALETTE.GREY);
+    if (this.table === 'week') r.text(b.week, 16, 156, PALETTE.GREY);
   }
 }

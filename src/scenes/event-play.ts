@@ -103,7 +103,8 @@ export class EventPlayScene implements Scene {
 
   private showResults(results: ReturnType<AthleticsEvent['getResults']>): void {
     this.keepGhostIfBest(results);
-    this.game.scenes.replace(new ResultsScene(this.game, this.session, this.eventId, results));
+    const run = this.session.online ? null : (this.event.ghostRun?.() ?? null);
+    this.game.scenes.replace(new ResultsScene(this.game, this.session, this.eventId, results, run));
   }
 
   onFocusLost(): void {
