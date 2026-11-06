@@ -439,7 +439,7 @@ Built in one go at the user's request, instead of one sub-phase at a time.
 - **17f Housekeeping:**
   - The run-up events and the hammer share one message-sync file (`attempt-sync.ts`) instead of two copies.
   - The race's track painting moved to `track-markings.ts`.
-  - One more attempt at the online browser test in WebKit (bringing each window to the front).
+  - Tried the online browser test in WebKit once more, bringing each window to the front. It still timed out on GitHub's machines (the second window gets almost no frames), so it stays skipped for WebKit, with a note in the test.
 - **Tests:** 348 unit tests and 4 browser tests (desktop, phone, online, online rejoin).
 
 **Known issues / notes**
