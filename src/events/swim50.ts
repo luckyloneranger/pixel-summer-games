@@ -30,6 +30,7 @@ export class Swim50Event extends RaceEvent {
   /** Crawl strokes in the water; on the block before GO. */
   protected poseFor(lane: Lane): Pose {
     if (lane.runner.position <= 0) return super.poseFor(lane);
+    if (lane.runner.position < DIVE_DISTANCE && lane.finishTime === null) return 'dive'; // off the block
     const frame = Math.floor(lane.runner.position / STROKE_EVERY) % SWIM_CYCLE.length;
     return lane.finishTime !== null && this.winnerNow !== lane ? 'swim1' : SWIM_CYCLE[frame];
   }
@@ -73,8 +74,28 @@ export class Swim50Event extends RaceEvent {
     if (lane.runner.position <= 0) return;
     const wobble = Math.floor(this.clock * 6 + lane.laneNumber) % 2;
     r.rect(x - 2, footY - 1 - wobble, ATHLETE_W + 4, 1, PALETTE.SKY);
-    r.rect(x, footY + 1, ATHLETE_W, 1, PALETTE.CLOUD); // a little splash and wake
+    // White water: kicked-up splashes behind, more the faster they swim.
+    for (const s of splashes(lane.runner.speedFraction, this.clock, lane.laneNumber)) {
+      r.rect(x + s.dx, footY + s.dy, s.size, 1, PALETTE.CLOUD);
+    }
+    // The splash of the dive itself.
+    if (lane.runner.position < DIVE_DISTANCE + 1.5) {
+      const t = lane.runner.position / (DIVE_DISTANCE + 1.5);
+      for (const dx of [-3, 0, 3, 6]) r.rect(x + 10 + dx, footY - 3 - Math.round((1 - t) * 4) + (dx & 1), 2, 2, PALETTE.WHITE);
+    }
   }
 }
 
 const STROKE_EVERY = 0.9; // m swum per stroke frame
+const DIVE_DISTANCE = 2.5; // m: the dive pose shows until the swimmer is this far out
+
+/** Splash dots behind a swimmer (px from the sprite's left and the waterline), flickering. */
+export function splashes(speedFraction: number, t: number, seed: number): { dx: number; dy: number; size: number }[] {
+  const count = Math.round(speedFraction * 5);
+  const flick = Math.floor(t * 12 + seed * 3);
+  return Array.from({ length: count }, (_, i) => ({
+    dx: -2 - i * 3 - ((flick + i) % 2),
+    dy: -1 - ((flick + i * 2) % 3),
+    size: 1 + ((flick + i) % 2),
+  }));
+}

@@ -40,6 +40,11 @@ export class Projectile {
     this.floor = height;
   }
 
+  /** Upward speed right now (m/s): positive while rising. */
+  get vyNow(): number {
+    return this.vy - this.gravity * this.t;
+  }
+
   /** Launch speed (m/s). */
   get speed(): number {
     return Math.hypot(this.vx, this.vy);

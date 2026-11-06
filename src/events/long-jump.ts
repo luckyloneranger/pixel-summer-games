@@ -1,7 +1,7 @@
 import type { Renderer } from '../core/renderer';
 import { ANIMATION, CPU_FIELD, LONG_JUMP } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { ATHLETE_H, ATHLETE_W, type Pose } from '../gfx/sprites/athlete';
+import { ATHLETE_H, ATHLETE_W, type Pose, celebrationFor } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { floorCentimetres } from './field-attempts';
 import { RunUpFieldEvent, type RunUpConfig } from './run-up-event';
@@ -158,7 +158,10 @@ export class LongJumpEvent extends RunUpFieldEvent {
 
   private pose(): Pose {
     if (this.phase === 'flight') return 'jump';
-    if (this.phase === 'landed') return 'land';
+    if (this.phase === 'landed') {
+      const good = (this.lastMark ?? 0) >= this.qualifyMark && this.phaseTimer > CELEBRATE_AFTER;
+      return good ? celebrationFor(this.current.playerIndex) : 'land';
+    }
     const moving = this.runner.speed > 0 && (this.phase === 'runup' || this.phase === 'hold');
     return moving ? this.runPose() : 'stand';
   }
@@ -171,3 +174,4 @@ const GROUND_Y = RUNWAY_TOP + 10; // where the athlete's feet touch
 const PIT_TOP = RUNWAY_TOP - 6;
 const PIT_H = RUNWAY_H + 12;
 const PUFF: [number, number][] = [[-1, 1], [-0.5, 1.5], [0, 2], [0.5, 1.5], [1, 1], [1.4, 0.5], [-1.4, 0.5]];
+const CELEBRATE_AFTER = 1.4; // s after a qualifying landing (once the tape is out) before celebrating

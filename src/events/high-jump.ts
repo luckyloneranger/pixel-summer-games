@@ -230,7 +230,7 @@ export class HighJumpEvent extends RunUpFieldEvent {
     r.image(this.athleteSprites().get(this.pose(onMat)), x, bottom - ATHLETE_H);
   }
 
-  private pose(onMat: boolean): Pose {
+  protected pose(onMat: boolean): Pose {
     if (this.phase === 'flight') return this.flight.x > this.hcfg.BAR_X - FLOP_FROM ? 'flop' : 'jump';
     if (this.phase === 'landed') return onMat ? 'lie' : 'land';
     const moving = this.runner.speed > 0 && (this.phase === 'runup' || this.phase === 'hold');

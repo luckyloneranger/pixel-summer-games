@@ -5,7 +5,7 @@ import { ANIMATION, RACE_START, RUNNER } from '../game/tuning';
 import { LAYOUT, STADIUM_THEMES, Stadium } from '../gfx/backgrounds';
 import { PALETTE } from '../gfx/palette';
 import type { Look } from '../gfx/sprite';
-import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, type Pose } from '../gfx/sprites/athlete';
+import { ATHLETE_H, ATHLETE_W, AthleteSprites, RUN_CYCLE, celebrationFor, type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { CpuTapper, cpuLineup, playerLook } from './cpu';
 import { SILENT, type AthleticsEvent, type EventContext, type EventId, type EventResult, type SoundSink } from './event';
@@ -659,7 +659,7 @@ export abstract class RaceEvent<L extends Lane = Lane> implements AthleticsEvent
       return RUN_CYCLE[frame];
     }
     if (lane.finishTime === null) return runner.position > 0 ? 'stand' : 'set';
-    return this.winnerNow === lane ? 'celebrate' : 'stand';
+    return this.winnerNow === lane ? celebrationFor(lane.playerIndex >= 0 ? lane.playerIndex : lane.laneNumber) : 'stand';
   }
 
   /** One human racing offline: record the run, and race last best's ghost. */

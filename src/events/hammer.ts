@@ -6,7 +6,7 @@ import { AUDIO, CPU_FIELD, EFFECTS, HAMMER, NET } from '../game/tuning';
 import { Stadium, STADIUM_THEMES } from '../gfx/backgrounds';
 import { drawGroundShadow } from '../gfx/effects';
 import { PALETTE } from '../gfx/palette';
-import { ATHLETE_H, ATHLETE_W, AthleteSprites } from '../gfx/sprites/athlete';
+import { ATHLETE_H, ATHLETE_W, AthleteSprites, celebrationFor, type Pose } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { KEYBOARD_PROMPTS, type Prompts } from '../ui/prompts';
 import { cpuFieldMarks, cpuLineup, playerLook } from './cpu';
@@ -372,16 +372,35 @@ export class HammerEvent implements AthleticsEvent {
   private drawThrower(r: Renderer): void {
     const cx = CIRCLE_X;
     drawGroundShadow(r, cx, GROUND_Y, 0, PALETTE.GREEN_DARK);
-    // Facing the field when the hammer is in front, turned away behind.
-    const front = Math.cos(this.angle) > 0;
-    const pose = this.phase === 'spin' ? (front ? 'throw' : 'stand') : this.phase === 'flight' || this.phase === 'landed' ? 'throw' : 'stand';
-    r.image(this.current.sprites.get(pose), cx - ATHLETE_W / 2, GROUND_Y - ATHLETE_H + 1);
-    if (this.phase !== 'ready' && this.phase !== 'spin') return;
-    // The hammer swinging round on its wire (an ellipse, as seen from the side).
+    const swinging = this.phase === 'ready' || this.phase === 'spin';
+    // The hammer on its wire swings round an ellipse; behind the thrower it's hidden by them.
     const hands = { x: cx, y: GROUND_Y - 14 };
     const ball = { x: cx + Math.cos(this.angle) * WIRE_PX, y: hands.y + 4 - Math.sin(this.angle) * WIRE_TILT };
+    const behind = Math.sin(this.angle) > 0;
+    if (swinging && behind) this.drawHammerBall(r, hands, ball);
+    r.image(this.current.sprites.get(this.pose()), cx - ATHLETE_W / 2, GROUND_Y - ATHLETE_H + 1);
+    if (swinging && !behind) this.drawHammerBall(r, hands, ball);
+  }
+
+  private drawHammerBall(r: Renderer, hands: { x: number; y: number }, ball: { x: number; y: number }): void {
     r.line(hands.x, hands.y, ball.x, ball.y, PALETTE.GREY_LIGHT);
-    r.rect(ball.x - 1, ball.y - 1, 3, 3, PALETTE.GREY_DARK);
+    r.rect(ball.x - 2, ball.y - 2, 4, 4, PALETTE.INK);
+    r.rect(ball.x - 1, ball.y - 1, 2, 2, PALETTE.GREY);
+  }
+
+  /** The thrower turns with the hammer: facing the field, away, back towards us, then round again. */
+  private pose(): Pose {
+    if (this.phase === 'landed') {
+      const good = (this.lastMark ?? 0) >= this.qualifyMark && this.phaseTimer > CELEBRATE_AFTER;
+      return good ? celebrationFor(this.current.playerIndex) : 'throw';
+    }
+    if (this.phase === 'flight') return this.phaseTimer < FOLLOW_TIME ? 'follow' : 'throw';
+    if (this.phase !== 'spin') return 'stand';
+    const deg = ((sectorOffset(this.angle) % 360) + 360) % 360; // 0 = towards the field
+    if (deg < 45 || deg >= 315) return 'throw';
+    if (deg < 135) return 'spinBack';
+    if (deg < 225) return 'throwBack';
+    return 'spinFront';
   }
 
   private drawHammerFlight(r: Renderer): void {
@@ -482,3 +501,5 @@ const CIRCLE_X = 22; // px, centre of the throwing circle
 const WIRE_PX = 16; // px, hammer's reach from the hands
 const WIRE_TILT = 5; // px, how far the circle of swing tilts up and down on screen
 const DIAL = { X: 280, Y: 64, R: 14 };
+const FOLLOW_TIME = 0.35; // s the follow-through shows after letting go
+const CELEBRATE_AFTER = 0.6; // s after landing before a good thrower celebrates

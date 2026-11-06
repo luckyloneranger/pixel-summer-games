@@ -1,7 +1,7 @@
 import type { Renderer } from '../core/renderer';
 import { ANIMATION, CPU_FIELD, JAVELIN } from '../game/tuning';
 import { PALETTE } from '../gfx/palette';
-import { ATHLETE_H, ATHLETE_W, type Pose } from '../gfx/sprites/athlete';
+import { ATHLETE_H, ATHLETE_W, type Pose, celebrationFor } from '../gfx/sprites/athlete';
 import { drawScoreboard } from '../ui/hud';
 import { floorCentimetres } from './field-attempts';
 import { RunUpFieldEvent } from './run-up-event';
@@ -182,11 +182,13 @@ export class JavelinEvent extends RunUpFieldEvent {
   private pose(): Pose {
     switch (this.phase) {
       case 'flight':
-        return 'throw';
+        return this.phaseTimer < FOLLOW_TIME ? 'follow' : 'throw';
       case 'landed':
-        return this.runner.speed > 0 ? 'throw' : 'stand';
-      case 'runup':
+        if ((this.lastMark ?? 0) >= this.qualifyMark && this.phaseTimer > CELEBRATE_AFTER) return celebrationFor(this.current.playerIndex);
+        return 'stand';
       case 'hold':
+        return 'windUp'; // arm drawn back while the angle rises
+      case 'runup':
         return this.runner.speed > 0 ? this.runPose() : 'stand';
       default:
         return 'stand';
@@ -218,3 +220,5 @@ const LAST_FIELD_LINE = 110; // m
 const FIELD_LINE_EVERY = 10; // m
 const TRAIL_DOTS = 8; // dots in the javelin's flight trail
 const TRAIL_GAP = 0.9; // m between trail dots
+const FOLLOW_TIME = 0.35; // s the follow-through shows after letting go
+const CELEBRATE_AFTER = 0.8; // s after a qualifying throw lands before the celebration
